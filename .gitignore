@@ -1,0 +1,6 @@
+node_modules/
+*.tgz
+.DS_Store
+
+# logo exploration, superseded by assets/mark.svg
+assets/directions/
