@@ -1,4 +1,4 @@
-import { test } from "node:test";
+import { test } from "./context.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";

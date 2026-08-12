@@ -1,4 +1,4 @@
-import { test } from "node:test";
+import { test } from "./context.mjs";
 import assert from "node:assert/strict";
 import { createServer as createHttpServer, get } from "node:http";
 import { createServer as createSocketServer } from "node:net";
