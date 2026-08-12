@@ -62,6 +62,14 @@ test("fenced code contributes nothing, fence lines included", () => {
 
 test("headings and table rows are skipped", () => {
   assert.equal(makeExcerpt("# Title\n| a | b |\nreal text"), "real text");
+  assert.equal(makeExcerpt("###### Deep\nreal text"), "real text");
+  assert.equal(makeExcerpt("#\nreal text"), "real text");
+});
+
+test("a hash that starts a ticket reference is body text, not a heading", () => {
+  assert.equal(makeExcerpt("#123 needs review"), "#123 needs review");
+  assert.equal(makeExcerpt("`#123` needs review"), "#123 needs review");
+  assert.equal(makeExcerpt("####### seven hashes"), "####### seven hashes");
 });
 
 test("a separator line is skipped but a two-character line is kept", () => {

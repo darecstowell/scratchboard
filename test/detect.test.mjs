@@ -1,9 +1,9 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { test } from "./context.mjs";
 import { detect, failure, looksLikeTicket } from "../src/detect.mjs";
 
 const fixture = (name) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
@@ -157,6 +157,37 @@ test("the fallback takes the directory whose markdown parses, not the larger pil
   const report = await detect(root);
   assert.equal(report.tickets, "work/**/*.md");
   assert.equal(report.format, "yaml-frontmatter");
+});
+
+test("a whole tree with more claims still loses to the ticket file it holds", async (t) => {
+  const root = await tree(t, {
+    "tasks/todo/1-a/issue.md": TICKET("A", "todo"),
+    "tasks/todo/2-b/issue.md": TICKET("B", "todo"),
+    "tasks/doing/3-c/issue.md": TICKET("C", "doing"),
+    "tasks/done/4-d/issue.md": TICKET("D", "done"),
+    "tasks/done/5-e/issue.md": TICKET("E", "done"),
+    // The tree claims six of eleven. The ticket file claims five of five.
+    "tasks/todo/1-a/plan.md": TICKET("Plan", "todo"),
+    "tasks/todo/2-b/plan.md": "loose note\n",
+    "tasks/doing/3-c/plan.md": "loose note\n",
+    "tasks/done/4-d/plan.md": "loose note\n",
+    "tasks/done/5-e/plan.md": "loose note\n",
+    "tasks/README.md": "# How we file\n",
+  });
+
+  const report = await detect(root);
+  assert.equal(report.tickets, "tasks/**/issue.md");
+  assert.equal(report.fileCount, 5);
+});
+
+test("a clean handful never shrinks a board the whole tree almost reads", async (t) => {
+  const files = { "tasks/notes-1.md": "loose note\n", "tasks/notes-2.md": "loose note\n" };
+  for (const n of [1, 2, 3, 4, 5, 6, 7, 8]) files[`tasks/${n}-t.md`] = TICKET(`T${n}`, "todo");
+  for (const dir of ["a", "b", "c"]) files[`tasks/${dir}/card.md`] = TICKET(dir, "todo");
+
+  const report = await detect(await tree(t, files));
+  assert.equal(report.tickets, "tasks/**/*.md", "three pure cards do not outrank eleven");
+  assert.equal(report.fileCount, 13);
 });
 
 test("a directory nothing parses still reports the files and the presets it tried", async (t) => {

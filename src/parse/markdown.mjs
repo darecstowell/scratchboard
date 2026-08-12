@@ -9,6 +9,7 @@ const EMPHASIS = /(\*\*|__|\*|_|`|~~)/g;
 const LIST_MARK = /^\s*([-*+]|\d+[.)])\s+/;
 const SPACES = /\s+/g;
 const FENCE = /^\s*(```|~~~)/;
+const HEADING = /^#{1,6}(\s|$)/;
 const REF_TOKEN = /#(\d+)/g;
 const PULL_LINK = /\[[^\]\n]*\]\([^)\n]*\/pull\/[^)\n]*\)/g;
 
@@ -66,7 +67,7 @@ export function makeExcerpt(body) {
       if (total >= 80) break;
       continue;
     }
-    if (stripped.startsWith("#") || stripped.startsWith("|")) continue;
+    if (HEADING.test(stripped) || stripped.startsWith("|")) continue;
     if (isSeparator(stripped) && stripped.length > 2) continue;
     if (stripped.startsWith(">")) stripped = stripQuoteMarks(stripped);
     const text = stripMarkdown(stripped);

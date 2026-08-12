@@ -65,3 +65,10 @@ test("--config names a missing file by the path the user typed", () => {
     /no config at nope\/scratchboard\.json/
   );
 });
+
+test("--config on a directory is refused, not read as an empty config", () => {
+  const base = tree();
+  mkdirSync(join(base, "repo", "held"), { recursive: true });
+  assert.throws(() => resolveRoot({ config: "held" }, join(base, "repo")), /no config at held/);
+  assert.throws(() => resolveRoot({ config: "." }, join(base, "repo")), /no config at \./);
+});

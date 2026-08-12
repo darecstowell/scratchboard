@@ -1,8 +1,8 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { test } from "./context.mjs";
 import { init } from "../src/detect.mjs";
 
 const ticket = (title, status) =>
@@ -91,7 +91,7 @@ test("init refuses to overwrite a config it could not parse", async (t) => {
   assert.equal(io.out.join(""), "", "nothing human reaches stdout");
 });
 
-test("init writes a detected config where none exists", async (t) => {
+test("init fills an empty config with what it detected", async (t) => {
   const root = await repo(t);
   const target = join(root, "scratchboard.json");
   await writeFile(target, "{}\n");
@@ -100,6 +100,21 @@ test("init writes a detected config where none exists", async (t) => {
   await init({ config: target, yes: true });
 
   const after = JSON.parse(await readFile(target, "utf8"));
+  assert.equal(after.tickets, "tasks/**/*.md");
+  assert.equal(after.format, "yaml-frontmatter");
+  assert.deepEqual(after.lanes.map((lane) => lane.name), ["Todo", "Done"]);
+});
+
+test("init creates the config beside the tickets when the repo holds none", async (t) => {
+  const root = await repo(t);
+  const here = process.cwd();
+  t.after(() => process.chdir(here));
+  process.chdir(root);
+  capture(t);
+
+  await init({ yes: true });
+
+  const after = JSON.parse(await readFile(join(root, "scratchboard.json"), "utf8"));
   assert.equal(after.tickets, "tasks/**/*.md");
   assert.equal(after.format, "yaml-frontmatter");
   assert.deepEqual(after.lanes.map((lane) => lane.name), ["Todo", "Done"]);

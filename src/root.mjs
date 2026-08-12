@@ -1,7 +1,15 @@
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { dirname, isAbsolute, join, parse, resolve } from "node:path";
 
 export const CONFIG_NAME = "scratchboard.json";
+
+function isFile(path) {
+  try {
+    return statSync(path).isFile();
+  } catch {
+    return false;
+  }
+}
 
 function ascend(from, name) {
   let dir = resolve(from);
@@ -22,7 +30,7 @@ export function resolveRoot(options = {}, cwd = process.cwd()) {
     const configPath = isAbsolute(options.config)
       ? options.config
       : resolve(cwd, options.config);
-    if (!existsSync(configPath)) {
+    if (!isFile(configPath)) {
       throw new Error(`no config at ${options.config}`);
     }
     return { root: dirname(configPath), configPath, source: "flag" };

@@ -118,7 +118,11 @@ export async function scan(context) {
   const scope = globRoot(glob);
 
   const parser = await loadParser(root, config);
-  const files = (await walk(root)).filter((path) => matchGlob(path, glob));
+  // A glob cannot escape upward from its own root, so nothing above it is worth walking.
+  const under = await walk(scope ? join(root, scope) : root);
+  const files = under
+    .map((path) => (scope ? `${scope}/${path}` : path))
+    .filter((path) => matchGlob(path, glob));
 
   for (const wrong of backslashGlobs(config)) {
     warnings.push({ path: wrong, reason: BACKSLASH_REASON });

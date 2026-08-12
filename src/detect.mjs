@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rename, writeFile } from "node:fs/promises";
 import { createInterface } from "node:readline";
 import { join } from "node:path";
 import { matchGlob, walk } from "./walk.mjs";
@@ -176,7 +176,8 @@ export async function readTexts(root, files) {
 
 /**
  * Preset and candidate set are one choice. A tree of loose notes around a repeated ticket file
- * never reaches a majority as a whole, so the narrower set is tried beside the whole tree.
+ * never reaches a majority as a whole, so the narrower set is tried beside the whole tree, and
+ * the winner reads the most files net of the ones it cannot.
  */
 export function pickFormat(sets, texts) {
   const tried = Object.keys(PRESETS);
@@ -186,8 +187,9 @@ export function pickFormat(sets, texts) {
     if (!held.length) continue;
     for (const name of tried) {
       const hits = held.filter((text) => PRESETS[name].claims(text)).length;
-      if (hits * 2 <= held.length) continue;
-      if (!best || hits > best.hits) best = { format: name, hits, set };
+      const net = hits * 2 - held.length;
+      if (net <= 0) continue;
+      if (!best || net > best.net) best = { format: name, net, set };
     }
   }
   if (!best) return { format: null, tried, set: sets[0], sample: sets[0].files[0] || null };
@@ -206,15 +208,14 @@ function readFields(texts, format) {
 }
 
 function pathLanes(files, base) {
-  const dirs = new Map();
+  const dirs = new Set();
   for (const path of files) {
     const rest = base ? path.slice(base.length + 1) : path;
     const cut = rest.indexOf("/");
     if (cut === -1) continue;
-    const dir = rest.slice(0, cut);
-    dirs.set(dir, (dirs.get(dir) || 0) + 1);
+    dirs.add(rest.slice(0, cut));
   }
-  const names = [...dirs.keys()].sort(orderStages);
+  const names = [...dirs].sort(orderStages);
   if (names.length < 2 || names.length > MAX_LANES) return null;
   return names.map((name) => ({
     name: title(name),
@@ -390,8 +391,11 @@ export async function init(options) {
     if (/^n/i.test(keepFacets)) config.facets = [];
   }
 
+  // A failed write must not truncate a config holding keys this version cannot rewrite.
   const target = configPath || join(root, CONFIG_NAME);
-  await writeFile(target, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  const staging = `${target}.writing`;
+  await writeFile(staging, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  await rename(staging, target);
   process.stdout.write(`✓ wrote ${CONFIG_NAME}\n`);
 }
 
