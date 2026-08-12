@@ -14,9 +14,10 @@ The first blanks any markdown link whose target contains `/pull/`. That catches 
 case and misses a bare URL.
 
 The second reads the fourteen characters before the match, lowercases them, and skips the
-reference when they end with `pr ` or `pull request `. Fourteen is exactly the length of
-`pull request `, so `see pull request  #7` with two spaces links, and `PR#7` with no space
-links too.
+reference when that window ends with `pr` and a space, or `pull request` and a space. The
+phrase and its space are thirteen characters, so the window also holds the character in
+front of them. The suffix test is exact, so `see pull request  #7` with two spaces links,
+and `PR#7` with no space links too.
 
 The token itself has no word boundary, so `foo#123` and `abc#12` both count.
 
