@@ -1,0 +1,19 @@
+{
+  "title": "Scratchboard, building itself",
+  "tickets": ".scratch/**/*.md",
+  "format": "yaml-frontmatter",
+  "idPattern": "^(\\d+)-",
+  "lanes": [
+    { "name": "Next", "match": { "path": ".scratch/next/**" } },
+    { "name": "Backlog", "match": { "path": ".scratch/backlog/**" } },
+    { "name": "Someday", "match": { "path": ".scratch/someday/**" }, "collapsed": true }
+  ],
+  "facets": [
+    {
+      "field": "priority",
+      "colors": { "p0": "red", "p1": "amber", "p2": "cyan", "p3": "neutral" }
+    },
+    { "field": "status" },
+    { "field": "labels" }
+  ]
+}
