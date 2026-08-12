@@ -59,7 +59,9 @@ The trigger is a run that stops with `✗ Could not read ticket metadata`. No pr
 format, so the board has nothing to render until you supply a reader.
 
 Read three tickets from different corners of the set, so the parser covers the variation the set
-holds. Then write `scratchboard.parser.mjs` at the repo root:
+holds. Then write `scratchboard.parser.mjs` at the repo root. The block below is the contract it
+has to satisfy rather than code to copy: you supply the four values, and how you read them out of
+the file is yours.
 
 ```js
 export function parse(path, text) {
