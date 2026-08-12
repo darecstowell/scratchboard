@@ -419,7 +419,7 @@
         }
       });
       total += matched;
-      lane.count.textContent = active ? matched + "/" + lane.records.length : String(lane.records.length);
+      lane.count.textContent = active ? matched + "/" + lane.total : String(lane.total);
       lane.empty.hidden = matched !== 0;
     });
 
@@ -1147,6 +1147,7 @@
       window: { x: window.scrollX, y: window.scrollY },
       search: {
         focused: document.activeElement === el.search,
+        value: el.search.value,
         start: el.search.selectionStart,
         end: el.search.selectionEnd
       },
@@ -1161,6 +1162,9 @@
       if (lane.list && typeof top === "number") lane.list.scrollTop = top;
     });
     window.scrollTo(memory.window.x, memory.window.y);
+    /* a repaint lands on the committed state.q, so keystrokes still inside the debounce
+       would be typed away by paintControls */
+    if (memory.search.value !== el.search.value) el.search.value = memory.search.value;
     if (memory.search.focused) {
       el.search.focus();
       try {

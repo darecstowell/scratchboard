@@ -27,17 +27,22 @@ function tokens(selector) {
 }
 
 const THEMES = [
-  ["latte", tokens('html[data-theme="latte"]'), "bg-root"],
-  ["phosphor", tokens('html[data-theme="phosphor"]'), "bg-raised"],
+  ["latte", tokens('html[data-theme="latte"]')],
+  ["phosphor", tokens('html[data-theme="phosphor"]')],
 ];
 
 const TEXT = 4.5;
+/* every one of these carries text somewhere: bg-deep under the two search boxes,
+   bg-overlay under every hover. One named background checks none of the others. */
+const SURFACES = ["bg-deep", "bg-root", "bg-surface", "bg-raised", "bg-overlay"];
 
-for (const [name, theme, worst] of THEMES) {
-  test(`${name} carries every text tone at ${TEXT} to 1 or better`, () => {
+for (const [name, theme] of THEMES) {
+  test(`${name} carries every text tone at ${TEXT} to 1 or better on every surface`, () => {
     for (const tone of ["fg-1", "fg-2", "fg-3", "fg-4"]) {
-      const got = contrast(theme[tone], theme[worst]);
-      assert.ok(got >= TEXT, `${tone} ${theme[tone]} is ${got.toFixed(2)} on ${worst}`);
+      for (const surface of SURFACES) {
+        const got = contrast(theme[tone], theme[surface]);
+        assert.ok(got >= TEXT, `${tone} ${theme[tone]} is ${got.toFixed(2)} on ${surface}`);
+      }
     }
   });
 
@@ -88,4 +93,39 @@ test("the clear-filters button lives in the toolbar and ships hidden", () => {
   assert.match(bar, /id="clear-filters"[^>]*hidden/);
   assert.equal(html.split('id="clear-filters"').length - 1, 1, "one button, one id");
   assert.match(css, /\.btn-clear\[hidden\] \{ display: none; \}/);
+});
+
+test("the card keeps a focus ring on an engine with no :has()", () => {
+  assert.equal(css.split(".tkt-open:focus-visible").length - 1, 2, "one reset, one card rule");
+  assert.match(
+    css,
+    /@supports selector\(:has\(\*\)\) \{\s*\.tkt-open:focus-visible \{ outline: none; \}\s*\}/,
+    "the outline reset sits outside a :has() feature query"
+  );
+  assert.match(css, /\.tkt:has\(\.tkt-open:focus-visible\)\s*\{[^}]*outline:\s*var\(--focus-outline\)/);
+});
+
+test("the notice announces itself to a screen reader", () => {
+  const html = readFileSync(new URL("../src/ui/index.html", import.meta.url), "utf8");
+  const notice = html.slice(html.indexOf('id="notice"') - 40, html.indexOf('id="notice"') + 60);
+  assert.match(notice, /role="status"/);
+  assert.match(notice, /aria-live="polite"/);
+});
+
+const board = readFileSync(new URL("../src/ui/board.js", import.meta.url), "utf8");
+
+test("a lane count reads the payload total, not the rendered record count", () => {
+  const line = board.split("\n").find((text) => text.includes("lane.count.textContent"));
+  assert.ok(line, "the lane count assignment is no longer in board.js");
+  assert.match(line, /lane\.total/);
+  assert.equal(line.includes("lane.records.length"), false, "the count must not re-derive the total");
+});
+
+test("a repaint carries the search text that is still inside the debounce", () => {
+  const start = board.indexOf("function capture()");
+  const snapshot = board.slice(start, board.indexOf("function restore(", start));
+  assert.match(snapshot, /value:\s*el\.search\.value/, "capture() drops the typed value");
+
+  const restore = board.slice(board.indexOf("function restore("), board.indexOf("function render("));
+  assert.match(restore, /el\.search\.value\s*=\s*memory\.search\.value/, "restore() never puts it back");
 });
