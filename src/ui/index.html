@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>scratchboard</title>
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml" />
+  <!-- Theme resolves before first paint. This inline script owns the theme;
+       board.js must not touch it. Key: scratchboard-theme, values: latte | phosphor. -->
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("scratchboard-theme"); } catch (e) {}
+      if (t !== "latte" && t !== "phosphor") {
+        t = matchMedia("(prefers-color-scheme: dark)").matches ? "phosphor" : "latte";
+      }
+      document.documentElement.dataset.theme = t;
+    })();
+  </script>
+  <link rel="stylesheet" href="board.css" />
+</head>
+<body>
+<div class="frame">
+
+  <!-- ======================= header ======================= -->
+  <header class="hd">
+    <span class="hd-title" data-board-title>scratchboard</span>
+
+    <nav class="hd-counts" id="hd-counts" aria-label="Ticket counts"></nav>
+
+    <span class="hd-spacer"></span>
+    <span class="hd-notice" id="notice" hidden></span>
+    <button type="button" class="theme-btn" id="theme-toggle" title="Switch theme">
+      <span class="theme-glyph" aria-hidden="true">&#9632;</span>
+      <span class="theme-opt theme-opt--latte">latte</span>
+      <span class="theme-opt theme-opt--phosphor">phosphor</span>
+    </button>
+  </header>
+
+  <!-- ======================= toolbar ======================= -->
+  <!-- board.js inserts one facet control per payload facet between the search
+       box and the sort control. -->
+  <div class="bar">
+    <label class="search" for="search-input">
+      <input id="search-input" type="search" placeholder="search id, title, body, field"
+             autocomplete="off" spellcheck="false" aria-label="Search tickets" />
+      <kbd aria-hidden="true">/</kbd>
+    </label>
+
+    <button type="button" class="btn-clear" id="clear-filters" hidden>clear filters</button>
+
+    <label class="sort" for="sort-select" id="sort-label">
+      <span class="fl-label">sort</span>
+      <span class="sort-wrap">
+        <select id="sort-select" aria-label="Sort tickets">
+          <option value="updated" selected>updated</option>
+          <option value="id" id="sort-by-id">id</option>
+          <option value="title">title</option>
+        </select>
+        <span class="sort-caret" aria-hidden="true">&#9662;</span>
+      </span>
+    </label>
+  </div>
+
+  <!-- ======================= board ======================= -->
+  <!-- board.js builds one <section class="col"> per payload lane into .lanes,
+       in payload order. -->
+  <main class="board" aria-label="Ticket board">
+    <div class="lanes" id="lanes"></div>
+
+    <!-- board-level empty state: unhide when every lane filters to zero -->
+    <div class="board-empty" id="board-empty" hidden>
+      <span class="board-empty-glyph" aria-hidden="true">[ 0 ]</span>
+      <p class="board-empty-title">No ticket matches</p>
+      <p class="board-empty-line">Loosen a filter, or clear them all.</p>
+    </div>
+  </main>
+</div>
+
+<!-- ======================= ticket detail ======================= -->
+<!-- Opened with detail.showModal(), which gives Escape-to-close and the
+     backdrop for free. board.js fills every slot; the fact rows are built
+     from the ticket's own fields, so the <dl> ships empty. -->
+<dialog class="detail" id="detail" aria-labelledby="detail-title">
+  <article class="detail-in">
+    <header class="detail-head">
+      <div class="detail-top">
+        <span class="badge" data-detail-badge hidden></span>
+        <span class="detail-id" data-detail-id></span>
+        <button type="button" class="detail-copy" id="detail-copy">copy path</button>
+        <span class="detail-esc"><kbd>esc</kbd> closes</span>
+        <button type="button" class="detail-close" id="detail-close" autofocus aria-label="Close the ticket">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+        </button>
+      </div>
+      <h2 class="detail-title" id="detail-title" data-detail-title></h2>
+    </header>
+
+    <dl class="detail-facts"></dl>
+
+    <div class="detail-body" data-detail-body></div>
+  </article>
+</dialog>
+
+<!-- The bake step replaces the contents of this element with the payload. -->
+<script type="application/json" id="payload">{}</script>
+
+<!-- Theme toggle only. Everything else belongs to board.js; see the contract. -->
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var next = document.documentElement.dataset.theme === "latte" ? "phosphor" : "latte";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("scratchboard-theme", next); } catch (e) {}
+  });
+</script>
+<script src="board.js"></script>
+
+<!-- ========================================================================
+CONTRACT FOR board.js — every hook, state class, and template in one place.
+
+OWNERSHIP
+- Theme is owned by the two inline scripts in this file (head + above).
+  Storage key "scratchboard-theme", values "latte" | "phosphor", applied as
+  html[data-theme]. board.js must not write either.
+- Everything else dynamic is board.js's: the header title and counts, the
+  lane sections, the facet controls, the card lists, filtering, sorting,
+  the detail dialog, keyboard shortcuts, empty states.
+- Nothing in this file names a lane or a field. Both come from the payload.
+
+PAYLOAD
+  Read once from <script type="application/json" id="payload">, parsed at
+  load. The bake step writes it; nothing is fetched over the network.
+
+  { version, generated_at, root, title,
+    counts: { total, byLane: { LANE: N } },
+    lanes:  [ { name, collapsed, ticketIds } ],          — payload order wins
+    facets: { FIELD: [ { value, count } ] },             — count order wins
+    facetConfig: [ { field, colors: { VALUE: ACCENT } } ],   — optional
+    tickets: [ { id, slug, title, path, lane, fields,
+                 excerpt, body, refs, created, updated, date_source } ],
+    warnings: [ { path, reason } ] }
+
+  id is a STRING or null. Never coerce it with Number(). A ticket with no id
+  still renders; the board keys every DOM lookup on `path`, which is always
+  present, and hides the id sort and the ref chips when no ticket has an id.
+  `fields` is a flat map of string or string[] values, addressed by name.
+  ACCENT is one of "red" | "amber" | "cyan" | "green" | "neutral".
+
+IDS
+  #search-input        search field
+  #sort-select         values: "updated" (default) | "id" | "title"
+  #sort-by-id          the id <option>; hidden when no ticket carries an id
+  #hd-counts           header count nav, one entry per lane
+  #lanes               the horizontal scroller that holds every lane section
+  #board-empty         board-level empty state
+  #clear-filters       toolbar button; resets search + all facets, then
+                          re-renders. Unhidden whenever a filter is active
+  #notice              one-line header notice, used by the soft re-render
+  #detail              the <dialog>; #detail-close closes it
+  #detail-copy         copies the [data-detail-path] text to the clipboard
+  #payload             the inline JSON payload
+
+LANES
+  board.js builds one section per payload lane, in payload order, and never
+  sorts them. Each carries [data-lane] with the lane name:
+    section.col[data-lane]
+      header.col-head
+        span.col-glyph, h2.col-name, span.col-count
+        button.col-toggle   — only on a lane the payload marks collapsed
+      ol.col-list
+      p.col-empty[hidden]   — "none match"
+  A lane with "collapsed": true starts with class "is-collapsed" (the narrow
+  rail) and builds its cards lazily on first expand. .col-toggle mirrors the
+  class in aria-expanded; its two spans swap via CSS, so do not rewrite their
+  text. Expanded lanes have min-width 280px and grow to fill; when they no
+  longer fit, #lanes scrolls horizontally. Nothing assumes a lane count.
+
+CARD STATE AND ATTRIBUTES
+  .tkt                 one ticket card (an <li>)
+  [data-path]          the ticket path; THE DOM KEY, always present
+  [data-id]            the id string, no "#"; omitted when the ticket has none
+  [data-lane]          the lane name
+  [data-accent]        "red"|"amber"|"cyan"|"green"|"neutral"; omitted when
+                       the badge facet gives the ticket no value (the left
+                       edge and the badge key off it)
+  [data-updated]       YYYY-MM-DD, day precision, same shape shortDate() reads
+  hidden               set/remove the attribute to filter cards in and out;
+                       CSS handles display
+  .tkt-open            the stretched button inside .tkt-title; click opens
+                       the detail view for closest(".tkt")
+
+FACET CONTROLS
+  One control per payload facet, inserted into .bar before #sort-label, in
+  facetConfig order when present, else payload.facets key order. The control
+  shape follows the facet's DISTINCT VALUE COUNT, never its name:
+    fewer than 12 values  — chips, at most 6 of them (highest count first),
+                            the remainder in a trailing "more" dropdown
+    12 or more            — one dropdown with a search box over its options
+  Chips are .fl-chip[data-value] inside .fl-group[data-field]; state lives in
+  aria-pressed="true|false" only — CSS styles [aria-pressed="true"], there is
+  no extra class. A chip carries [data-accent] from the facet's colors map,
+  and falls back to neutral. Multi-select, OR within a facet, AND across
+  facets.
+  A dropdown is .fl-dd[data-field] wrapping checkboxes (value = exact facet
+  value). When one or more are checked, add class "is-active" to the
+  <details> and set its .fl-dd-val to the first checked value plus " +N" for
+  the rest (e.g. "macos +2"); with none checked, remove the class and set
+  "all". Typing in a dropdown's .fl-dd-search input hides non-matching rows
+  (substring match). Close every <details> on outside click and on Escape.
+
+CARD FACET RENDERING
+  The BADGE FACET is the first facet whose config carries a colors map. Its
+  value paints the card badge, the card's left edge, and [data-accent].
+  Every other facet renders in .tkt-tail: a scalar value as <span class="tag
+  tkt-status">, list values as up to three <span class="tkt-label"> followed
+  by <span class="tkt-more">+N</span>.
+
+FILTER STATE IN THE URL
+  #q=<search>&f.<field>=<v1>,<v2>&sort=<key>&open=<lane>,<lane>
+  Every part is optional and every value is percent-encoded. "f." keys are
+  facet field names. "sort" is omitted while it is "updated". "open" lists
+  the lanes the payload marks collapsed that the user has expanded. Written
+  with history.replaceState at the end of every apply(), so it fires no
+  hashchange; a real navigation re-reads it and repaints.
+
+KEYBOARD
+  "/"  (when focus is not already in an input) focus #search-input and
+       prevent default. Escape inside #search-input clears it, then blurs.
+  The detail dialog: open with document.getElementById("detail").showModal()
+  so Escape-to-close and the backdrop come from the platform. Wire
+  #detail-close to dialog.close(). Return focus to the opening .tkt-open.
+  "c"  (dialog open, focus not in an input) runs the #detail-copy action.
+
+COPY PATH BUTTON
+  #detail-copy sits in .detail-top between [data-detail-id] and .detail-esc,
+  and holds the right-hand group against the panel edge (it carries the
+  margin-left:auto that .detail-esc drops while the button precedes it).
+  It copies the [data-detail-path] text, so the clipboard matches the PATH
+  row exactly. Labels and state classes, one at a time:
+    rest    "copy path"    no state class
+    done    "copied"       class "is-done"     (green)
+    failed  "copy failed"  class "is-failed"   (red)
+  Both state labels revert to rest after 1400 ms. CSS uppercases the label;
+  keep the DOM text lowercase. navigator.clipboard.writeText runs first and
+  a hidden textarea plus document.execCommand("copy") is the fallback, so
+  a non-secure context still copies. The scan-notes view has no path, so it
+  sets the "hidden" attribute on the button.
+  #detail-close carries autofocus, so showModal() keeps giving the drawer's
+  first focus to the close control, not to the button that precedes it.
+
+COUNTS
+  #hd-counts and each .col-count show the UNFILTERED total per lane, taken
+  from counts.byLane. When a filter is active .col-count shows
+  "matches/total" (e.g. "4/53"); the header counts stay total.
+
+EMPTY STATES
+  Per lane: unhide the lane's .col-empty when its filtered list is empty.
+  Board level: unhide #board-empty when every lane is empty (it overlays the
+  whole board). A board that carries no tickets at all reads its title and
+  line from the payload's warnings instead of the filter copy.
+
+DETAIL SLOTS (all inside #detail)
+  [data-detail-badge]  the badge facet's value: set text + [data-accent];
+                          set the "hidden" attribute when the ticket has none
+  [data-detail-id]        "#" + id; empty when the ticket has no id
+  [data-detail-title]     title text
+  [data-detail-path]      the ticket path, inside <code>
+  [data-detail-body]      innerHTML = rendered markdown. The stylesheet
+                          covers h1-h4, p, ul/ol, task-list checkboxes
+                          (disabled inputs), pre/code, blockquote, table,
+                          del, hr, a.
+  dl.detail-facts is rebuilt per ticket: a "lane" row, one row per key in
+  ticket.fields (facet values as .tag spans, everything else as text), the
+  path row, a dates row, and a refs row. The refs row is omitted when the
+  ticket has no refs or when no ticket in the payload carries an id.
+
+REFS
+  ticket.refs holds ID STRINGS. A ref that resolves renders as
+  <button class="tag" data-ref="ID">#ID</button> and opens that ticket in
+  the same dialog; one that does not renders as an inert <span class="tag">.
+  Look the target up by id, with no Number() coercion.
+
+SOFT RE-RENDER
+  window.scratchboard.render(payload) replaces the payload and rebuilds in
+  place. It records each lane's scrollTop, the window scroll, the search box
+  value and selection, the expanded collapsed lanes, and the open ticket;
+  resets every lane's lazy-build flag; rebuilds; then restores. A ticket that
+  the new payload no longer holds closes the dialog and names itself in
+  #notice.
+
+TEMPLATES (copy exactly; substitute the UPPERCASE tokens)
+
+Card:
+<li class="tkt" data-path="PATH" data-id="ID" data-lane="LANE"
+    data-accent="ACCENT" data-updated="YYYY-MM-DD">
+  <div class="tkt-top">
+    <span class="badge" data-accent="ACCENT">BADGE_VALUE</span>
+    <span class="tkt-id">#ID</span>
+    <time class="tkt-date" datetime="YYYY-MM-DD">MON DD</time>
+  </div>
+  <h3 class="tkt-title"><button type="button" class="tkt-open" aria-haspopup="dialog">TITLE</button></h3>
+  <div class="tkt-tail">
+    <span class="tag tkt-status">SCALAR_FACET_VALUE</span>
+    <span class="tkt-labels">
+      LIST FACET VALUES: up to three <span class="tkt-label">VALUE</span>,
+      then <span class="tkt-more">+N</span> when more remain
+    </span>
+  </div>
+</li>
+(Omit data-id and .tkt-id when the ticket has no id; omit data-accent and
+the badge span when the badge facet gives it no value.)
+
+Chip:
+<button type="button" class="fl-chip" data-value="VALUE" data-accent="ACCENT" aria-pressed="false" title="COUNT tickets">VALUE</button>
+
+Dropdown option row:
+<li><label class="fl-opt"><input type="checkbox" value="VALUE" /><span class="fl-opt-name">VALUE</span><span class="fl-opt-count">COUNT</span></label></li>
+
+Fact tag for a facet value in .detail-facts:
+<span class="tag">VALUE</span>
+========================================================================= -->
+</body>
+</html>
