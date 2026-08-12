@@ -28,7 +28,9 @@ test("an async cleanup is awaited", async () => {
   const order = [];
   await withCleanups(async (t) => {
     t.after(async () => {
-      await new Promise((done) => setTimeout(done, 1));
+      await new Promise((done) => {
+        setTimeout(done, 1);
+      });
       order.push("slow");
     });
   });
