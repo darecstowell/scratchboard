@@ -31,9 +31,19 @@ function pythonFields(ticket) {
   };
 }
 
+const asId = (value) => (value === null || value === undefined ? null : String(value));
+
+/** Python drops any line beginning with #. Node drops ATX headings, so `#12 shipped` survives. */
+const hasBareHash = (body) =>
+  String(body || "")
+    .split("\n")
+    .some((line) => /^#{1,6}\S/.test(line.trim()));
+
 function compareTickets(py, node, report) {
-  const pyById = new Map(py.tickets.map((t) => [String(t.id), t]));
-  const nodeById = new Map(node.tickets.map((t) => [String(t.id), t]));
+  // Keyed on path, never on id: a ticket is allowed to have no id, and two may share one.
+  const pyByPath = new Map(py.tickets.map((t) => [t.path, t]));
+  const nodeByPath = new Map(node.tickets.map((t) => [t.path, t]));
+  const nodeIds = new Set(node.tickets.map((t) => asId(t.id)).filter((id) => id !== null));
 
   report.category(
     "readable tickets",
@@ -43,30 +53,38 @@ function compareTickets(py, node, report) {
     py.tickets.length
   );
 
-  const idFailures = [];
-  for (const id of pyById.keys()) if (!nodeById.has(id)) idFailures.push(`only python: ${id}`);
-  for (const id of nodeById.keys()) if (!pyById.has(id)) idFailures.push(`only node: ${id}`);
-  report.category("ticket ids", idFailures, pyById.size);
+  const pathFailures = [];
+  for (const path of pyByPath.keys()) if (!nodeByPath.has(path)) pathFailures.push(`only python: ${path}`);
+  for (const path of nodeByPath.keys()) if (!pyByPath.has(path)) pathFailures.push(`only node: ${path}`);
+  report.category("ticket paths", pathFailures, pyByPath.size);
 
-  const shared = [...pyById.keys()].filter((id) => nodeById.has(id));
+  const shared = [...pyByPath.keys()].filter((path) => nodeByPath.has(path));
+  const ids = [];
   const titles = [];
-  const plain = { slug: [], path: [], excerpt: [], body: [] };
+  const plain = { slug: [], excerpt: [], body: [] };
   const fields = [];
   const refs = [];
   let emptyShape = 0;
   let refsToUnreadable = 0;
+  let bareHash = 0;
 
-  for (const id of shared) {
-    const p = pyById.get(id);
-    const n = nodeById.get(id);
+  for (const path of shared) {
+    const p = pyByPath.get(path);
+    const n = nodeByPath.get(path);
 
+    if (asId(p.id) !== asId(n.id)) {
+      ids.push(`${path}: python ${JSON.stringify(p.id)}, node ${JSON.stringify(n.id)}`);
+    }
     if (p.title !== n.title) {
-      titles.push(`${id}: ${JSON.stringify(p.title)} vs ${JSON.stringify(n.title)}`);
+      titles.push(`${path}: ${JSON.stringify(p.title)} vs ${JSON.stringify(n.title)}`);
     }
     for (const key of Object.keys(plain)) {
-      if (p[key] !== n[key]) {
-        plain[key].push(`${id}: python ${JSON.stringify(p[key])}, node ${JSON.stringify(n[key])}`);
+      if (p[key] === n[key]) continue;
+      if (key === "excerpt" && hasBareHash(n.body)) {
+        bareHash += 1;
+        continue;
       }
+      plain[key].push(`${path}: python ${JSON.stringify(p[key])}, node ${JSON.stringify(n[key])}`);
     }
 
     const pf = pythonFields(p);
@@ -77,26 +95,31 @@ function compareTickets(py, node, report) {
         emptyShape += 1;
         continue;
       }
-      fields.push(`${id}.${key}: python ${JSON.stringify(pf[key])}, node ${JSON.stringify(nf[key])}`);
+      fields.push(`${path}.${key}: python ${JSON.stringify(pf[key])}, node ${JSON.stringify(nf[key])}`);
     }
 
     // Python keeps ids from ticket directories that never became tickets. Node cannot.
-    const pyRefs = p.refs.map(String).filter((ref) => nodeById.has(ref));
+    const pyRefs = p.refs.map(String).filter((ref) => nodeIds.has(ref));
     refsToUnreadable += p.refs.length - pyRefs.length;
     const nodeRefs = n.refs.map(String);
     if (pyRefs.join(",") !== nodeRefs.join(",")) {
-      refs.push(`${id}: python [${pyRefs}], node [${nodeRefs}]`);
+      refs.push(`${path}: python [${pyRefs}], node [${nodeRefs}]`);
     }
   }
 
+  report.category("ticket ids", ids, shared.length);
   report.category("titles", titles, shared.length);
   report.category("field values", fields, shared.length);
   report.category("slug", plain.slug, shared.length);
-  report.category("path", plain.path, shared.length);
   report.category("excerpt", plain.excerpt, shared.length);
   report.category("body", plain.body, shared.length);
   report.category("refs", refs, shared.length);
 
+  if (bareHash) {
+    report.note(
+      `${bareHash} excerpts differ because python drops every line beginning with #, and node drops only an ATX heading, so a line opening with a ticket reference stays in the excerpt`
+    );
+  }
   if (emptyShape) {
     report.note(
       `${emptyShape} fields empty on both sides in a different shape: python emits its four fixed keys as null, node carries only the keys the file holds and writes a null value as ""`
