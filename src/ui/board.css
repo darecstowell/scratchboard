@@ -2,7 +2,8 @@
    Self-contained: no import, no runtime dependency, no network. */
 
 /* ---- fonts (self-hosted, latin + latin-ext) ---- */
-/* Spline Sans Mono and Martian Mono are both SIL OFL 1.1. Notices and full texts: licenses/. */
+/* Spline Sans Mono and Martian Mono are both SIL OFL 1.1. The latte palette derives from
+   Catppuccin, MIT. Notices and full texts: licenses/. */
 @font-face {
   font-family: "Spline Sans Mono";
   font-style: normal;

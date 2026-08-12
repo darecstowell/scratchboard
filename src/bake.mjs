@@ -18,6 +18,12 @@ export const FONT_NOTICE = [
   "Copyright 2021 The Martian Mono Project Authors (https://github.com/evilmartians/mono)",
 ];
 
+/** MIT asks for the notice in every copy, and a baked file is a copy that travels alone. */
+export const PALETTE_NOTICE = [
+  "The latte theme derives from Catppuccin, under the MIT License.",
+  "Copyright (c) 2021 Catppuccin (https://github.com/catppuccin/catppuccin)",
+];
+
 const LIVE_RELOAD = `<script>
 (function () {
   if (typeof EventSource !== "function") return;
@@ -60,7 +66,19 @@ async function dataUrl(url, mime) {
   return `data:${mime};base64,${(await readFile(url)).toString("base64")}`;
 }
 
-let assets = null;
+/** A rejection must not stick: the live server bakes per request and would answer 500 forever. */
+export function once(load) {
+  let pending = null;
+  return () => {
+    if (!pending) {
+      pending = load();
+      pending.catch(() => {
+        pending = null;
+      });
+    }
+    return pending;
+  };
+}
 
 async function loadAssets() {
   const here = import.meta.url;
@@ -82,10 +100,7 @@ async function loadAssets() {
   return { template, style, script, favicon };
 }
 
-export function assetsOnce() {
-  if (!assets) assets = loadAssets();
-  return assets;
-}
+export const assetsOnce = once(loadAssets);
 
 export async function bake({ payload, live = false }) {
   const { template, style, script, favicon } = await assetsOnce();
@@ -103,7 +118,7 @@ export async function bake({ payload, live = false }) {
     `<script>\n${codeForElement(script, "script")}\n</script>${live ? `\n${LIVE_RELOAD}` : ""}`
   );
 
-  return `${comment(FONT_NOTICE)}\n${html}`;
+  return `${comment(FONT_NOTICE)}\n${comment(PALETTE_NOTICE)}\n${html}`;
 }
 
 /** A private directory the caller owns, so no pre-made name in a shared temp can be followed. */
