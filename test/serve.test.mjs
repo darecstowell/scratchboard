@@ -98,6 +98,22 @@ function hold(port) {
 
 const close = (server) => new Promise((closed) => server.close(closed));
 
+/** The host owns the ephemeral range too, so a contiguous run is found by trying. */
+async function holdRun(count, attempts = 20) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const first = await hold(0);
+    const base = first.address().port;
+    const held = [first];
+    try {
+      for (let step = 1; step < count; step += 1) held.push(await hold(base + step));
+      return { base, held };
+    } catch {
+      for (const server of held) await close(server);
+    }
+  }
+  throw new Error(`no run of ${count} free ports after ${attempts} attempts`);
+}
+
 test("the board binds 127.0.0.1 and nothing else", async (t) => {
   const running = await start(t, await fixture(t));
   const address = running.server.address();
@@ -121,9 +137,11 @@ test("the printed url and the opened url both name the port really bound", async
     opener: (url) => opened.push(url),
   });
 
-  assert.equal(running.port, taken + 1);
-  assert.deepEqual(opened, [`http://127.0.0.1:${taken + 1}/`]);
-  assert.ok(printed.join("").includes(`serving http://127.0.0.1:${taken + 1}/`));
+  const bound = running.server.address().port;
+  assert.ok(bound > taken && bound < taken + PORT_TRIES, `walked to ${bound} from ${taken}`);
+  assert.equal(running.port, bound);
+  assert.deepEqual(opened, [`http://127.0.0.1:${bound}/`]);
+  assert.ok(printed.join("").includes(`serving http://127.0.0.1:${bound}/`));
   assert.equal(printed.join("").includes(String(taken)), false);
   assert.ok(printed.join("").includes("watching tickets"));
 
@@ -139,26 +157,24 @@ test("a busy port walks up, and the reported port is the one really bound", asyn
   const server = createHttpServer(() => {});
   t.after(() => close(server));
 
+  /* another process on the host may own the next port, so the walk-up is a relation,
+     not an exact step */
   const port = await listen(server, taken);
-  assert.equal(port, taken + 1);
+  assert.ok(port > taken && port < taken + PORT_TRIES, `walked to ${port} from ${taken}`);
   assert.equal(server.address().port, port);
-  assert.notEqual(port, taken);
 });
 
 test("it walks past a run of busy ports", async (t) => {
-  const first = await hold(0);
-  const base = first.address().port;
-  const second = await hold(base + 1);
-  const third = await hold(base + 2);
+  const { base, held } = await holdRun(3);
   t.after(async () => {
-    await close(first);
-    await close(second);
-    await close(third);
+    for (const server of held) await close(server);
   });
 
   const server = createHttpServer(() => {});
   t.after(() => close(server));
-  assert.equal(await listen(server, base), base + 3);
+  const port = await listen(server, base);
+  assert.ok(port >= base + 3, `stopped at ${port}, inside the run held from ${base}`);
+  assert.ok(port < base + PORT_TRIES);
 });
 
 test("an exhausted range fails loudly and names it", async (t) => {
@@ -244,6 +260,18 @@ test("the poller drives the same push path as the native watcher", async (t) => 
     writeFile(join(root, "tickets", "todo", "2-second.md"), ticket("Second, edited"))
   );
   assert.ok(event.data.tickets.some((entry) => entry.title === "Second, edited"));
+});
+
+test("an edit made the instant the poller is serving still reaches the stream", async (t) => {
+  const root = await fixture(t);
+  const running = await start(t, root, { watchMode: "poll" });
+
+  /* serve resolves only once the baseline is taken, so this edit is a change and
+     not part of the snapshot the poller compares against */
+  await writeFile(join(root, "tickets", "todo", "1-first.md"), ticket("First, raced"));
+
+  const event = await firstEvent(`${running.url}events`, () => running.watcher.poll());
+  assert.ok(event.data.tickets.some((entry) => entry.title === "First, raced"));
 });
 
 test("the poller reports a change on its own", async (t) => {

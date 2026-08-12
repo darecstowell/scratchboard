@@ -190,6 +190,8 @@ export async function serve({ root, config, options = {}, payload, warnings = []
   };
 
   const watcher = createWatcher({ dirs, onChange, mode: options.watchMode });
+  /* the poller reports against a baseline, so an edit before it lands would be swallowed */
+  if (watcher.ready) await watcher.ready;
 
   const say = options.print || ((text) => process.stdout.write(text));
   if (options.quiet !== true) {
