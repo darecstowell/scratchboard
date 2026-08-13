@@ -18,8 +18,8 @@ The parts most likely to break:
 - Globs match against root-relative POSIX paths. A path that arrives with backslashes matches
   nothing and the ticket disappears with no warning.
 - `root.mjs` walks up to a parent directory. A drive root ends that walk differently from `/`.
-- The bake path writes to the OS temp directory and opens the file. `open` is not the command
-  Windows uses.
+- The bake path writes to the OS temp directory and spawns an opener on the file.
+  `openCommand()` maps `win32` to `explorer.exe`, and that branch has never run.
 
 ## Done when
 
