@@ -1,7 +1,7 @@
 ---
 title: Narrow the npm publish token to scratchboard alone
 status: ready-for-human
-priority: p1
+priority: p0
 labels: [security, release, ci]
 ---
 

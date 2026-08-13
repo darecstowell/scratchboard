@@ -1,34 +1,30 @@
 ---
 title: Capture the still screenshots and the animated demo
 status: ready-for-human
-priority: p0
+priority: p1
 labels: [docs, marketing]
 ---
 
 # Capture the still screenshots and the animated demo
 
-The README carries comment placeholders where three images go and no images. A Pages demo
-does not render inside a social post, an npm listing, or a search result, so the stills are
-what most people will see first.
+A Pages demo does not render inside a social post, an npm listing, or a search result, so the
+stills are what most people see first.
 
-0.1.0 is published, so that empty README is the npm page a stranger reads today.
+Done, and no placeholder is left in the README:
 
-Done: `assets/board-tour.gif`, the header hero. Filters, sort, and a ticket opening, at 800
-wide and 908 kB.
+- `assets/board-tour.gif`, the header hero. Filters, sort, and a ticket opening.
+- `assets/screenshot-phosphor.png` and `assets/screenshot-latte.png`, both 1600 wide, both
+  reading this repo's own tickets rather than a fixture.
+
+This drops off p0 with them, because the empty README was the reason it carried one.
 
 Still needed:
 
-- One still of the board in `phosphor`, wide.
-- One still of the same board in `latte`, wide, so the pair reads as one product with two
-  themes rather than two products.
 - One short animated capture of a live reload: an agent edits a ticket in one pane, the card
   moves in the other. That is the thing nobody believes until they see it. The tour GIF does
-  not cover this, because every card in it moves because a human clicked.
-
-Capture them against the live demo board, not a fixture, so the tickets in the picture are
-the tickets in the repo.
+  not cover it, because every card in it moves because a human clicked.
 
 ## Done when
 
-The remaining three files are committed, the README placeholders are replaced with real
-images and their captions, and the wide stills are readable at the width GitHub renders them.
+The live reload capture sits under the `--serve` section, and it shows a file changing on one
+side and the board answering on the other.

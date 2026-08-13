@@ -36,15 +36,11 @@ npx skills add darecstowell/scratchboard    # the skill, for the setup that need
 
 Node 18 or later.
 
-<!-- IMAGE SLOT 1: wide still of the board in the phosphor theme.
-     File: assets/screenshot-phosphor.png
-     Intended size: 1600x1000, rendered at full README width.
-     Caption: The board in phosphor, reading this repo's own tickets. -->
+![The board in phosphor, reading this repo's own tickets](assets/screenshot-phosphor.png)
 
-<!-- IMAGE SLOT 2: wide still of the same board in the latte theme.
-     File: assets/screenshot-latte.png
-     Intended size: 1600x1000, rendered at full README width.
-     Caption: The same board in latte. -->
+![The same board in latte](assets/screenshot-latte.png)
+
+One board, two themes. Both are the tickets in this repo, not a fixture.
 
 **Live demo:** [darecstowell.github.io/scratchboard](https://darecstowell.github.io/scratchboard/)
 is this repo's own backlog, baked by this repo's own scratchboard on every push to `main`.
