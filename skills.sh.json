@@ -1,0 +1,10 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "groupings": [
+    {
+      "title": "Scratchboard",
+      "description": "Scratchboard renders the markdown tickets already in your repo as a kanban board in the browser. This skill reads your ticket layout, decides the lanes and facets, and writes the config so the board matches your repo on the first run.",
+      "skills": ["scratchboard"]
+    }
+  ]
+}

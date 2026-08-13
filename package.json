@@ -1,0 +1,45 @@
+{
+  "name": "scratchboard",
+  "version": "0.1.0",
+  "description": "Render the markdown tickets already in your repo as a kanban board. Read-only by choice, zero config.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Darec Stowell",
+  "homepage": "https://github.com/darecstowell/scratchboard#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darecstowell/scratchboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/darecstowell/scratchboard/issues"
+  },
+  "keywords": [
+    "kanban",
+    "markdown",
+    "board",
+    "tickets",
+    "issues",
+    "cli",
+    "agents",
+    "skills"
+  ],
+  "bin": {
+    "scratchboard": "bin/cli.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "licenses/",
+    "assets/favicon.svg",
+    "assets/mark.svg",
+    "assets/wordmark.svg",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test"
+  }
+}
