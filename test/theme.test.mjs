@@ -107,18 +107,22 @@ test("the card keeps a focus ring on an engine with no :has()", () => {
 
 test("the notice announces itself to a screen reader", () => {
   const html = readFileSync(new URL("../src/ui/index.html", import.meta.url), "utf8");
-  const notice = html.slice(html.indexOf('id="notice"') - 40, html.indexOf('id="notice"') + 60);
+  /* one whole tag, never a window over its neighbours: `[^>]` cannot cross a tag boundary */
+  const notice = html.match(/<[^>]*\sid="notice"(?=[\s/>])[^>]*>/)?.[0] ?? "";
+  assert.ok(notice, "the notice element is no longer in the template");
   assert.match(notice, /role="status"/);
   assert.match(notice, /aria-live="polite"/);
 });
 
 const board = readFileSync(new URL("../src/ui/board.js", import.meta.url), "utf8");
 
-test("a lane count reads the payload total, not the rendered record count", () => {
-  const line = board.split("\n").find((text) => text.includes("lane.count.textContent"));
-  assert.ok(line, "the lane count assignment is no longer in board.js");
-  assert.match(line, /lane\.total/);
-  assert.equal(line.includes("lane.records.length"), false, "the count must not re-derive the total");
+test("every lane count reads the payload total, not the rendered record count", () => {
+  const lines = board.split("\n").filter((text) => text.includes("lane.count.textContent"));
+  assert.ok(lines.length, "the lane count assignment is no longer in board.js");
+  for (const line of lines) {
+    assert.match(line, /lane\.total/);
+    assert.equal(line.includes("lane.records.length"), false, "the count must not re-derive the total");
+  }
 });
 
 test("a repaint carries the search text that is still inside the debounce", () => {

@@ -93,10 +93,15 @@ function firstEvent(url, act) {
 
 function hold(port) {
   const blocker = createSocketServer();
-  return new Promise((held) => blocker.listen(port, HOST, () => held(blocker)));
+  return new Promise((held) => {
+    blocker.listen(port, HOST, () => held(blocker));
+  });
 }
 
-const close = (server) => new Promise((closed) => server.close(closed));
+const close = (server) =>
+  new Promise((closed) => {
+    server.close(closed);
+  });
 
 /** The host owns the ephemeral range too, so a contiguous run is found by trying. */
 async function holdRun(count, attempts = 20) {

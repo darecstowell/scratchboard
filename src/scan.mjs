@@ -66,7 +66,9 @@ async function loadParser(root, config) {
     try {
       module = await import(pathToFileURL(join(root, config.parser)).href);
     } catch (error) {
-      throw new Error(`custom parser ${config.parser} did not load: ${error.message}`);
+      throw new Error(`custom parser ${config.parser} did not load: ${error.message}`, {
+        cause: error,
+      });
     }
     if (typeof module.parse !== "function") {
       throw new Error(`custom parser ${config.parser} exports no parse function`);
