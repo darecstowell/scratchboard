@@ -73,7 +73,7 @@ than a location, so a ticket never gets moved to join one.
 
 ```json
 {
-  "title": "OffMain",
+  "title": "Roadmap",
   "tickets": ".scratch/**/issue.md",
   "format": "yaml-frontmatter",
   "idPattern": "^(\\d+)-",
@@ -165,11 +165,10 @@ it covers, including the base64 bytes inlined into a baked board.
 The `latte` and `phosphor` themes are original palettes derived from Catppuccin rather than
 copies of it.
 
-## Built while making OffMain
+## Where it came from
 
-Scratchboard is a piece of [OffMain](https://offmain.dev) that turned out to be useful on its
-own. OffMain locks your distracting apps until your GitHub activity meets the contract you set.
-Its ticket tree is the corpus every change here is tested against.
+Scratchboard was the internal board on [OffMain](https://offmain.dev) and turned out to be
+useful on its own. That repo's ticket tree is the corpus every change here is tested against.
 
 ## Licence
 
