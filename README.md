@@ -1,10 +1,26 @@
-<img src="assets/wordmark.svg" alt="scratchboard" width="328">
+<div align="center">
 
-# Your markdown tickets as a kanban board. Read-only by choice.
+<img src="assets/mark.svg" alt="" width="92">
 
-[![npm](https://img.shields.io/npm/v/scratchboard.svg)](https://www.npmjs.com/package/scratchboard)
-[![test](https://github.com/darecstowell/scratchboard/actions/workflows/test.yml/badge.svg)](https://github.com/darecstowell/scratchboard/actions/workflows/test.yml)
-[![license](https://img.shields.io/npm/l/scratchboard.svg)](./LICENSE)
+<h1>scratchboard</h1>
+
+<p><b>Your markdown tickets as a kanban board, for any git repository</b></p>
+
+<p>Tickets are agent-driven, so the agent moves the card. Read-only by choice.</p>
+
+<p>
+  <a href="https://www.npmjs.com/package/scratchboard"><img alt="npm" src="https://img.shields.io/npm/v/scratchboard.svg"></a>
+  <a href="https://www.npmjs.com/package/scratchboard"><img alt="downloads" src="https://img.shields.io/npm/dm/scratchboard.svg"></a>
+  <a href="https://github.com/darecstowell/scratchboard/actions/workflows/test.yml"><img alt="test" src="https://github.com/darecstowell/scratchboard/actions/workflows/test.yml/badge.svg"></a>
+  <a href="./LICENSE"><img alt="license" src="https://img.shields.io/npm/l/scratchboard.svg"></a>
+  <img alt="node" src="https://img.shields.io/node/v/scratchboard.svg">
+</p>
+
+<p><code>npx scratchboard</code></p>
+
+<img src="assets/board-tour.gif" alt="Filtering the board by priority and status, sorting it, then opening a ticket" width="800">
+
+</div>
 
 `npx scratchboard` reads the markdown tickets already in your repo, maps them to lanes, and
 opens a board in your browser. One self-contained HTML file in your temp directory. No config,
