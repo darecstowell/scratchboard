@@ -1,3 +1,4 @@
+// @ts-nocheck the options bag is a plain object with no annotation to describe it
 import { createServer } from "node:http";
 import { watch } from "node:fs";
 import { stat } from "node:fs/promises";

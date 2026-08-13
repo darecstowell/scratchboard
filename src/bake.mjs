@@ -161,14 +161,15 @@ async function offerToSave({ root, report, configPath, say }) {
   say(`  wrote ${CONFIG_NAME}\n`);
 }
 
-export async function bakeToFile({ payload, options, report, root, configPath, print }) {
+export async function bakeToFile({ payload, options, report, root, configPath, print = null }) {
   const say = print || ((text) => process.stdout.write(text));
   const html = await bake({ payload });
   const target = options.out ? resolve(options.out) : await tempTarget();
-  const write = options.out
-    ? { encoding: "utf8" }
-    : { encoding: "utf8", flag: "wx", mode: 0o600 };
-  await writeFile(target, html, write);
+  await writeFile(
+    target,
+    html,
+    options.out ? { encoding: "utf8" } : { encoding: "utf8", flag: "wx", mode: 0o600 }
+  );
 
   const opened = options.open === false ? false : openInBrowser(target);
   say(`${summary(payload, report)}  ${opened ? "opened" : "wrote"} ${target}\n`);
