@@ -17,7 +17,7 @@ secret can publish any package the account owns, not just this one.
 A published version cannot be recalled, so the blast radius of this token is every package on
 the account, permanently.
 
-Every release runs on the wide token until this lands, `0.1.1` included.
+Every release runs on the wide token until this lands.
 
 ## Done when
 
