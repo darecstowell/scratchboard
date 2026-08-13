@@ -26,4 +26,4 @@ naming this repository and that workflow run. `npx scratchboard` runs from the p
 registry with nothing installed.
 
 The token is still scoped to every package on the account, which the first publish required.
-Narrowing it is #23, and it lands before the next publish.
+Narrowing it is #23.

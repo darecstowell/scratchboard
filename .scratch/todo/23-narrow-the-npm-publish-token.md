@@ -17,8 +17,10 @@ secret can publish any package the account owns, not just this one.
 A published version cannot be recalled, so the blast radius of this token is every package on
 the account, permanently.
 
+Every release runs on the wide token until this lands, `0.1.1` included.
+
 ## Done when
 
 A new granular automation token scoped to `scratchboard` alone replaces `NPM_TOKEN` in the
 repository secrets, the old token is revoked on npmjs.com, and a release runs green on the
-new one. Do this before the next publish.
+new one.
