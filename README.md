@@ -27,7 +27,7 @@ opens a board in your browser. One self-contained HTML file in your temp directo
 no dependencies, nothing written back to your repo.
 
 There is no drag and drop and no write-back. Tickets are agent-driven, so the agent moves the
-card. A mouse does not need to.
+card. This keeps your current flow safe.
 
 ```bash
 npx scratchboard                            # the board
