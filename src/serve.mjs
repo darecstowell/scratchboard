@@ -212,7 +212,9 @@ export async function serve({ root, config, options = {}, payload, warnings = []
       await pending;
       for (const client of clients) client.end();
       clients.clear();
-      await new Promise((closed) => server.close(closed));
+      await new Promise((closed) => {
+        server.close(closed);
+      });
     },
   };
 }

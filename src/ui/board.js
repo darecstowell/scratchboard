@@ -26,7 +26,7 @@
     const held = [];
     const hold = (html) => "\u0000" + (held.push(html) - 1) + "\u0000";
 
-    let work = String(text).replace(/\\([\\`*_{}\[\]()#+\-.!~|>])/g, (_, ch) => hold(esc(ch)));
+    let work = String(text).replace(/\\([\\`*_{}[\]()#+\-.!~|>])/g, (_, ch) => hold(esc(ch)));
     work = work.replace(/(`+)([^`\n]+)\1/g, (_, __, code) => hold("<code>" + esc(code) + "</code>"));
     work = esc(work);
     work = work.replace(/~~([^~]+)~~/g, "<del>$1</del>");
@@ -674,8 +674,8 @@
     let ok = false;
     try {
       ok = document.execCommand("copy");
-    } catch (error) {
-      ok = false;
+    } catch {
+      /* an engine is allowed to refuse the command outright */
     }
     pad.remove();
     if (focused && document.contains(focused)) focused.focus();
@@ -779,7 +779,7 @@
   function decode(value) {
     try {
       return decodeURIComponent(value);
-    } catch (error) {
+    } catch {
       return value;
     }
   }
@@ -1169,7 +1169,7 @@
       el.search.focus();
       try {
         el.search.setSelectionRange(memory.search.start, memory.search.end);
-      } catch (error) {
+      } catch {
         /* a search input rejects a range in some engines */
       }
     }
@@ -1195,7 +1195,7 @@
   let payload;
   try {
     payload = JSON.parse((node && node.textContent) || "null");
-  } catch (error) {
+  } catch {
     payload = undefined;
   }
   if (payload === undefined) fail("the payload is not valid JSON");
