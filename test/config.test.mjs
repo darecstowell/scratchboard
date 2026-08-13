@@ -155,3 +155,51 @@ test("a path lane leaves status a facet, so folder and triage stay separate axes
   });
   assert.deepEqual(Object.keys(payload.facets), ["status", "labels"]);
 });
+
+const laneScan = (facets) =>
+  scan({
+    root: LANES,
+    config: {
+      tickets: "tickets/**/issue.md",
+      format: "yaml-frontmatter",
+      lanes: [{ name: "All", match: { path: "tickets/**" } }],
+      facets,
+    },
+    version: "0.1.0",
+  });
+
+test("without an order, facet values fall by count and then by name", async () => {
+  const payload = await laneScan([{ field: "status" }]);
+  assert.deepEqual(
+    payload.facets.status.map((one) => one.value),
+    ["ready", "Ready", "doing", "done"]
+  );
+});
+
+test("a declared order places its values, and the rest fall in behind by count", async () => {
+  const payload = await laneScan([{ field: "status", order: ["done", "doing", "ready"] }]);
+  assert.deepEqual(
+    payload.facets.status.map((one) => one.value),
+    ["done", "doing", "ready", "Ready"]
+  );
+});
+
+test("an order naming a value no ticket carries places the rest anyway", async () => {
+  const payload = await laneScan([{ field: "status", order: ["blocked", "done"] }]);
+  assert.deepEqual(
+    payload.facets.status.map((one) => one.value),
+    ["done", "ready", "Ready", "doing"]
+  );
+});
+
+test("a value named twice in an order still outranks an unlisted value", async () => {
+  const payload = await laneScan([{ field: "status", order: ["done", "done"] }]);
+  assert.equal(payload.facets.status[0].value, "done", "the repeat must not sink the value");
+});
+
+test("an order that is not an array warns, and the facet still renders", async () => {
+  const warnings = [];
+  const config = validate({ facets: [{ field: "status", order: "p0" }] }, warnings);
+  assert.equal("order" in config.facets[0], false);
+  assert.ok(said(warnings, "order in facets[0] must be an array"));
+});

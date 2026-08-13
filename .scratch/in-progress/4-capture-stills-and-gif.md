@@ -1,7 +1,7 @@
 ---
 title: Capture the still screenshots and the animated demo
 status: ready-for-human
-priority: p1
+priority: p0
 labels: [docs, marketing]
 ---
 
@@ -10,6 +10,8 @@ labels: [docs, marketing]
 The README carries comment placeholders where three images go and no images. A Pages demo
 does not render inside a social post, an npm listing, or a search result, so the stills are
 what most people will see first.
+
+0.1.0 is published, so that empty README is the npm page a stranger reads today.
 
 Needed:
 

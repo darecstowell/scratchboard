@@ -1,19 +1,30 @@
 {
-  "title": "Scratchboard, building itself",
+  "title": "scratchboard",
   "tickets": ".scratch/**/*.md",
   "format": "yaml-frontmatter",
   "idPattern": "^(\\d+)-",
   "lanes": [
-    { "name": "Next", "match": { "path": ".scratch/next/**" } },
-    { "name": "Backlog", "match": { "path": ".scratch/backlog/**" } },
-    { "name": "Someday", "match": { "path": ".scratch/someday/**" }, "collapsed": true }
+    { "name": "Todo", "match": { "path": ".scratch/todo/**" } },
+    { "name": "In progress", "match": { "path": ".scratch/in-progress/**" } },
+    { "name": "Done", "match": { "path": ".scratch/done/**" } }
   ],
   "facets": [
     {
       "field": "priority",
+      "order": ["p0", "p1", "p2", "p3"],
       "colors": { "p0": "red", "p1": "amber", "p2": "cyan", "p3": "neutral" }
     },
-    { "field": "status" },
+    {
+      "field": "status",
+      "order": [
+        "ready-for-agent",
+        "ready-for-human",
+        "needs-triage",
+        "needs-info",
+        "deferred",
+        "shipped"
+      ]
+    },
     { "field": "labels" }
   ]
 }

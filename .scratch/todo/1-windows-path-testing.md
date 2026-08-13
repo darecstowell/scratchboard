@@ -16,7 +16,8 @@ The parts most likely to break:
 - `walk()` builds relative paths with a literal `/`, then `scan()` joins them back with
   `node:path`. That round trip is correct on POSIX and unverified on Windows.
 - Globs match against root-relative POSIX paths. A path that arrives with backslashes matches
-  nothing and the ticket disappears with no warning.
+  nothing. `scan()` warns only when the glob matches no file at all, so a run that loses some
+  tickets and keeps the rest drops them silently.
 - `root.mjs` walks up to a parent directory. A drive root ends that walk differently from `/`.
 - The bake path writes to the OS temp directory and spawns an opener on the file.
   `openCommand()` maps `win32` to `explorer.exe`, and that branch has never run.

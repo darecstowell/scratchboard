@@ -10,7 +10,7 @@ const KNOWN_KEYS = new Set([
   "facets",
 ]);
 const KNOWN_LANE_KEYS = new Set(["name", "match", "collapsed"]);
-const KNOWN_FACET_KEYS = new Set(["field", "colors"]);
+const KNOWN_FACET_KEYS = new Set(["field", "colors", "order"]);
 export const FORMATS = new Set(["yaml-frontmatter", "key-value-block"]);
 export const CATCH_ALL = "Unmapped";
 
@@ -116,6 +116,10 @@ function cleanFacet(facet, index, warn) {
   }
   const out = { field: shape.field };
   if (shape.colors && typeof shape.colors === "object") out.colors = { ...shape.colors };
+  if (shape.order !== undefined) {
+    if (Array.isArray(shape.order)) out.order = shape.order.map(String);
+    else warn(`order in ${where} must be an array, ignored`);
+  }
   return out;
 }
 

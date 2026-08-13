@@ -82,6 +82,20 @@ async function loadParser(root, config) {
   return { parse: preset.parse, format: config.format };
 }
 
+/** A declared value keeps its declared place. Everything else falls in behind it by count. */
+function facetOrder(order) {
+  const declared = order || [];
+  const rank = new Map(declared.map((value, index) => [value, index]));
+  // The list length, not the map size: a name written twice keeps the higher index.
+  const behind = declared.length;
+  return (a, b) => {
+    const left = rank.has(a[0]) ? rank.get(a[0]) : behind;
+    const right = rank.has(b[0]) ? rank.get(b[0]) : behind;
+    if (left !== right) return left - right;
+    return b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
+  };
+}
+
 function buildFacets(tickets, config) {
   const skip = laneFields(config.lanes);
   const out = {};
@@ -95,7 +109,7 @@ function buildFacets(tickets, config) {
       }
     }
     out[facet.field] = [...tally]
-      .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+      .sort(facetOrder(facet.order))
       .map(([value, count]) => ({ value, count }));
   }
   return out;
