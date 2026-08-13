@@ -84,8 +84,10 @@ async function loadParser(root, config) {
 
 /** A declared value keeps its declared place. Everything else falls in behind it by count. */
 function facetOrder(order) {
-  const rank = new Map((order || []).map((value, index) => [value, index]));
-  const behind = rank.size;
+  const declared = order || [];
+  const rank = new Map(declared.map((value, index) => [value, index]));
+  // The list length, not the map size: a name written twice keeps the higher index.
+  const behind = declared.length;
   return (a, b) => {
     const left = rank.has(a[0]) ? rank.get(a[0]) : behind;
     const right = rank.has(b[0]) ? rank.get(b[0]) : behind;

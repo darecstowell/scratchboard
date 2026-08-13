@@ -105,20 +105,32 @@ test("the card keeps a focus ring on an engine with no :has()", () => {
   assert.match(css, /\.tkt:has\(\.tkt-open:focus-visible\)\s*\{[^}]*outline:\s*var\(--focus-outline\)/);
 });
 
-test("the theme button shows the sun and the name of the theme it switches to", () => {
+test("the theme button shows the sun for latte, the moon for phosphor", () => {
   const html = readFileSync(new URL("../src/ui/index.html", import.meta.url), "utf8");
   const start = html.indexOf('id="theme-toggle"');
   const button = html.slice(start, html.indexOf("</button>", start));
 
-  for (const theme of ["latte", "phosphor"]) {
-    const glyph = new RegExp(`theme-glyph theme-opt theme-opt--${theme}`);
-    assert.match(button, glyph, `no glyph is paired with ${theme}`);
+  const glyphOf = (theme) => {
+    const at = button.indexOf(`<svg class="theme-glyph theme-opt theme-opt--${theme}"`);
+    assert.notEqual(at, -1, `no glyph is paired with ${theme}`);
     assert.equal(button.split(`theme-opt--${theme}`).length - 1, 2, "one glyph, one name");
-  }
+    return button.slice(at, button.indexOf("</svg>", at));
+  };
+
+  /* a disc with rays around it, never the crescent */
+  const sun = glyphOf("latte");
+  assert.match(sun, /<circle /, "the sun lost its disc");
+  assert.ok(sun.split("M").length - 1 >= 4, "the sun lost its rays");
+
+  /* one arc cut by another, and no disc, or it reads as a second sun */
+  const moon = glyphOf("phosphor");
+  assert.equal(moon.includes("<circle"), false, "the moon must not carry a disc");
+  assert.match(moon, /<path d="M[\d.]+ [\d.]+A/, "the moon lost its crescent");
+
   /* the glyph hides with its name, so the sun never sits beside "phosphor" */
   assert.match(css, /html\[data-theme="latte"\] \.theme-opt--latte \{ display: none; \}/);
   assert.match(css, /html\[data-theme="phosphor"\] \.theme-opt--phosphor \{ display: none; \}/);
-  assert.match(css, /\.theme-btn \.theme-glyph \{[^}]*stroke: currentColor/);
+  assert.match(css, /\.theme-btn \.theme-glyph \{[^}]*stroke: currentcolor/);
 });
 
 test("the notice announces itself to a screen reader", () => {

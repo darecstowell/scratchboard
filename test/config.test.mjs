@@ -192,6 +192,11 @@ test("an order naming a value no ticket carries places the rest anyway", async (
   );
 });
 
+test("a value named twice in an order still outranks an unlisted value", async () => {
+  const payload = await laneScan([{ field: "status", order: ["done", "done"] }]);
+  assert.equal(payload.facets.status[0].value, "done", "the repeat must not sink the value");
+});
+
 test("an order that is not an array warns, and the facet still renders", async () => {
   const warnings = [];
   const config = validate({ facets: [{ field: "status", order: "p0" }] }, warnings);
