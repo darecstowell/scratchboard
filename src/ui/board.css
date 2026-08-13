@@ -387,7 +387,17 @@ kbd {
   background: var(--surface-hover);
   color: var(--fg-1);
 }
-.theme-btn .theme-glyph { color: var(--fg-4); }
+/* sun offers latte, moon offers phosphor, each paired with the name beside it */
+.theme-btn .theme-glyph {
+  width: 13px;
+  height: 13px;
+  color: var(--fg-4);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+.theme-btn:hover .theme-glyph { color: var(--fg-1); }
 /* the button names the theme it switches to */
 html[data-theme="latte"] .theme-opt--latte { display: none; }
 html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }

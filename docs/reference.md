@@ -79,7 +79,7 @@ board is already open. Answering no writes nothing.
 | `idPattern` | regex source | Pulls a ticket ID out of the file or folder name. The first capture group wins, and the whole match is used when there is no group. |
 | `parser` | path | A local module that reads a format neither preset covers. Replaces `format`. |
 | `lanes` | array | Lane name, match rule, and whether it starts collapsed. |
-| `facets` | array | Which metadata fields become filter chips, and their colours. |
+| `facets` | array | Which metadata fields become filter chips, their colours, and their value order. |
 
 Config wins key by key, and detection fills the rest. Detection is skipped entirely when
 `tickets`, `lanes`, and one of `format` or `parser` are all set, which is what makes a committed
@@ -137,11 +137,16 @@ status as two separate axes.
 
 ## Facets
 
-Any metadata field can become a filter chip. A facet takes an optional colour map.
+Any metadata field can become a filter chip. A facet takes an optional colour map and an
+optional value order.
 
 ```json
 "facets": [
-  { "field": "priority", "colors": { "p0": "red", "p1": "amber", "p2": "cyan", "p3": "neutral" } },
+  {
+    "field": "priority",
+    "order": ["p0", "p1", "p2", "p3"],
+    "colors": { "p0": "red", "p1": "amber", "p2": "cyan", "p3": "neutral" }
+  },
   { "field": "labels" }
 ]
 ```
@@ -149,7 +154,11 @@ Any metadata field can become a filter chip. A facet takes an optional colour ma
 - The named colours are `red`, `amber`, `cyan`, `green`, and `neutral`. Any value you do not
   name, and any name that is not one of those five, falls back to `neutral`.
 - The first facet carrying a colour map is also the badge on the card face.
-- Values within a facet are ordered by how many tickets carry them, then by name.
+- Without an `order`, values are ordered by how many tickets carry them, then by name. That
+  reads well for labels and badly for a scale, because `p2` leads whenever it is the most
+  common.
+- With an `order`, every value you name takes its named place. Anything you leave out falls
+  in behind by count, and a name no ticket carries is skipped rather than drawn empty.
 - A facet may be written as a bare string, so `"facets": ["labels"]` is the same as
   `[{ "field": "labels" }]`.
 

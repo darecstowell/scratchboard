@@ -105,6 +105,22 @@ test("the card keeps a focus ring on an engine with no :has()", () => {
   assert.match(css, /\.tkt:has\(\.tkt-open:focus-visible\)\s*\{[^}]*outline:\s*var\(--focus-outline\)/);
 });
 
+test("the theme button shows the sun and the name of the theme it switches to", () => {
+  const html = readFileSync(new URL("../src/ui/index.html", import.meta.url), "utf8");
+  const start = html.indexOf('id="theme-toggle"');
+  const button = html.slice(start, html.indexOf("</button>", start));
+
+  for (const theme of ["latte", "phosphor"]) {
+    const glyph = new RegExp(`theme-glyph theme-opt theme-opt--${theme}`);
+    assert.match(button, glyph, `no glyph is paired with ${theme}`);
+    assert.equal(button.split(`theme-opt--${theme}`).length - 1, 2, "one glyph, one name");
+  }
+  /* the glyph hides with its name, so the sun never sits beside "phosphor" */
+  assert.match(css, /html\[data-theme="latte"\] \.theme-opt--latte \{ display: none; \}/);
+  assert.match(css, /html\[data-theme="phosphor"\] \.theme-opt--phosphor \{ display: none; \}/);
+  assert.match(css, /\.theme-btn \.theme-glyph \{[^}]*stroke: currentColor/);
+});
+
 test("the notice announces itself to a screen reader", () => {
   const html = readFileSync(new URL("../src/ui/index.html", import.meta.url), "utf8");
   /* one whole tag, never a window over its neighbours: `[^>]` cannot cross a tag boundary */

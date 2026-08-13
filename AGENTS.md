@@ -57,8 +57,12 @@ zero-config run and a hand-written config produce the same lanes. Run both for a
 ## The board is dogfooded
 
 `.scratch/` holds this project's real backlog, and every push bakes it to the Pages demo with
-scratchboard itself. Those tickets are public copy. File real, unstarted work: a ticket
-describing something already done is a lie the demo tells on every page load.
+scratchboard itself. Those tickets are public copy.
+
+Three lanes, and the folder is the lane: `todo/`, `in-progress/`, `done/`. A ticket lives where
+its work actually is, so moving a card means moving the file. Nothing sits in `in-progress/`
+that nobody has started, and nothing reaches `done/` that is not shipped and verifiable in the
+history. A ticket in the wrong lane is a lie the demo tells on every page load.
 
 ## Shipped copy
 
