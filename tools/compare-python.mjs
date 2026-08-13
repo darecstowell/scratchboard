@@ -2,6 +2,7 @@
 // Reads both scanners live at one commit and compares them. Never hardcodes a count.
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { makeExcerpt } from "../src/parse/markdown.mjs";
 import { CLI, Report, SPEC_CONFIG, facetTally, run, withConfig } from "./corpus.mjs";
 
 const isEmpty = (value) =>
@@ -33,11 +34,18 @@ function pythonFields(ticket) {
 
 const asId = (value) => (value === null || value === undefined ? null : String(value));
 
-/** Python drops any line beginning with #. Node drops ATX headings, so `#12 shipped` survives. */
-const hasBareHash = (body) =>
+const withoutHashLines = (body) =>
   String(body || "")
     .split("\n")
-    .some((line) => /^#{1,6}\S/.test(line.trim()));
+    .filter((line) => !line.trim().startsWith("#"))
+    .join("\n");
+
+/**
+ * Python drops any line beginning with #. Node drops ATX headings, so `#12 shipped` survives.
+ * Feeding python's own rule back through node's builder proves a divergence is only that,
+ * so an unrelated excerpt regression on the same ticket still fails.
+ */
+const isBareHashOnly = (py) => py.excerpt === makeExcerpt(withoutHashLines(py.body));
 
 function compareTickets(py, node, report) {
   // Keyed on path, never on id: a ticket is allowed to have no id, and two may share one.
@@ -80,7 +88,7 @@ function compareTickets(py, node, report) {
     }
     for (const key of Object.keys(plain)) {
       if (p[key] === n[key]) continue;
-      if (key === "excerpt" && hasBareHash(n.body)) {
+      if (key === "excerpt" && isBareHashOnly(p)) {
         bareHash += 1;
         continue;
       }
@@ -117,7 +125,7 @@ function compareTickets(py, node, report) {
 
   if (bareHash) {
     report.note(
-      `${bareHash} excerpts differ because python drops every line beginning with #, and node drops only an ATX heading, so a line opening with a ticket reference stays in the excerpt`
+      `${bareHash} excerpts differ by that rule alone, each one checked: python drops every line beginning with #, and node drops only an ATX heading, so a line opening with a ticket reference stays in the excerpt`
     );
   }
   if (emptyShape) {
