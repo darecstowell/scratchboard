@@ -7,8 +7,10 @@ the card.
 ## The rules that bite
 
 **Zero dependencies, and it covers the test setup.** `node:test` and `node:assert` only. The rule
-is the product, because an `npx` run that installs nothing is why anyone tries this. CI has no
-install step, and adding one is the tell that the rule broke.
+is the product, because an `npx` run that installs nothing is why anyone tries this. `npm test`
+needs nothing installed, and a line under `dependencies` or `devDependencies` in `package.json`
+is the tell that the rule broke. Lint and type tooling is fetched for the run by `npx` at a
+pinned version, in CI and locally alike, and is never declared. `tools/guard.mjs` holds the line.
 
 **Node 18 is the floor.** A version check failing on first contact is a bad first impression, so
 run the suite on 18 as well as current before calling a change done.

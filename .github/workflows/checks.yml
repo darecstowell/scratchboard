@@ -1,0 +1,53 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: house rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      # Nothing installed. The guard is node: builtins only, the same as the package.
+      - run: node tools/guard.mjs
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      # Fetched for this run and thrown away. Pinned, so a new major cannot turn CI red overnight.
+      - run: npx --yes eslint@10.8.1 .
+
+  types:
+    name: types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      # typeRoots is read back off the temporary npx directory, because the node types live
+      # there for the length of this command and nowhere in the repository.
+      - name: Check the types
+        run: |
+          set -euo pipefail
+          npx --yes --package typescript@7.0.2 --package @types/node@18.19.130 -- \
+            sh -c 'tsc -p jsconfig.json --typeRoots "$(dirname "$(dirname "$(command -v tsc)")")/@types"'
