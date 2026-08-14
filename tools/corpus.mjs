@@ -20,7 +20,11 @@ export const SPEC_CONFIG = {
     { name: "Done", match: { path: ".scratch/done/**" }, collapsed: true },
   ],
   facets: [
-    { field: "priority", colors: { p0: "red", p1: "amber", p2: "cyan", p3: "neutral" } },
+    {
+      field: "priority",
+      order: ["p0", "p1", "p2", "p3"],
+      colors: { p0: "red", p1: "amber", p2: "cyan", p3: "neutral" },
+    },
     { field: "status" },
     { field: "labels" },
   ],

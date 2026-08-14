@@ -217,3 +217,97 @@ test("a preferred directory holding only a repo doc does not outrank a real boar
   assert.equal(looksLikeTicket("issues/README.md"), false);
   assert.equal(looksLikeTicket("tasks/1-a.md"), true);
 });
+
+const facetFor = (report, field) => report.facets.find((facet) => facet.field === field);
+
+/** Twelve tickets across two lane folders, so the folders place the lanes and the field stays a
+ *  facet. Twelve also keeps four distinct values under the tag-like ratio. */
+function graded(values, field = "priority") {
+  const files = {};
+  values.forEach((value, i) => {
+    const lane = i % 2 ? "done" : "todo";
+    files[`tasks/${lane}/${i + 1}-t.md`] = `---\ntitle: T${i + 1}\n${field}: ${value}\n---\n\nBody.\n`;
+  });
+  return files;
+}
+
+const CYCLE = (scale) => Array.from({ length: 12 }, (_, i) => scale[i % scale.length]);
+
+test("a p0-to-p3 facet is ranked and accented without any config", async (t) => {
+  const report = await detect(await tree(t, graded(CYCLE(["p2", "p0", "p3", "p1"]))));
+  const facet = facetFor(report, "priority");
+
+  assert.deepEqual(facet.order, ["p0", "p1", "p2", "p3"]);
+  assert.deepEqual(facet.colors, { p0: "red", p1: "amber", p2: "cyan", p3: "neutral" });
+});
+
+test("a critical-to-low facet reads the same ranking as p0-to-p3", async (t) => {
+  const values = ["medium", "critical", "low", "high"];
+  const report = await detect(await tree(t, graded(CYCLE(values))));
+  const facet = facetFor(report, "priority");
+
+  assert.deepEqual(facet.order, ["critical", "high", "medium", "low"]);
+  assert.deepEqual(facet.colors, {
+    critical: "red",
+    high: "amber",
+    medium: "cyan",
+    low: "neutral",
+  });
+});
+
+test("the value as written is the key, so case survives the round trip", async (t) => {
+  const report = await detect(await tree(t, graded(CYCLE(["P2", "P0", "P3", "P1"]))));
+  const facet = facetFor(report, "priority");
+
+  assert.deepEqual(facet.order, ["P0", "P1", "P2", "P3"]);
+  assert.deepEqual(facet.colors, { P0: "red", P1: "amber", P2: "cyan", P3: "neutral" });
+});
+
+test("a vocabulary detection does not know is left unordered and uncoloured", async (t) => {
+  const report = await detect(await tree(t, graded(CYCLE(["spicy", "mild", "zesty", "tangy"]))));
+  const facet = facetFor(report, "priority");
+
+  assert.equal(facet.order, undefined);
+  assert.equal(facet.colors, undefined);
+});
+
+test("half the values matching is not a majority, so the field keeps its own order", async (t) => {
+  const report = await detect(await tree(t, graded(CYCLE(["p0", "p1", "spicy", "mild"]))));
+  const facet = facetFor(report, "priority");
+
+  assert.equal(facet.order, undefined);
+  assert.equal(facet.colors, undefined);
+});
+
+test("an odd value among conventional ones sorts last and takes no accent", async (t) => {
+  const report = await detect(await tree(t, graded(CYCLE(["p0", "p1", "p2", "spicy"]))));
+  const facet = facetFor(report, "priority");
+
+  assert.deepEqual(facet.order, ["p0", "p1", "p2", "spicy"]);
+  assert.deepEqual(facet.colors, { p0: "red", p1: "amber", p2: "cyan" });
+});
+
+test("one match is a coincidence, and two is the floor for a convention", async (t) => {
+  const report = await detect(await tree(t, graded(CYCLE(["p0", "spicy", "mild", "zesty"]))));
+  const facet = facetFor(report, "priority");
+
+  assert.equal(facet.order, undefined);
+  assert.equal(facet.colors, undefined);
+});
+
+test("a stage-like facet is ordered by workflow, and never accented", async (t) => {
+  const values = ["done", "triage", "doing", "ready"];
+  const report = await detect(await tree(t, graded(CYCLE(values), "state")));
+  const facet = facetFor(report, "state");
+
+  assert.deepEqual(facet.order, ["triage", "ready", "doing", "done"]);
+  assert.equal(facet.colors, undefined, "green is the board's own on-state, so stages stay plain");
+});
+
+test("a tag vocabulary is neither ranked nor accented", async () => {
+  const report = await detect(fixture("detect-folders"));
+  const facet = facetFor(report, "labels");
+
+  assert.equal(facet.order, undefined);
+  assert.equal(facet.colors, undefined);
+});

@@ -55,17 +55,25 @@
 
     <button type="button" class="btn-clear" id="clear-filters" hidden>clear filters</button>
 
-    <label class="sort" for="sort-select" id="sort-label">
+    <div class="sort" id="sort-label" role="group" aria-label="Sort tickets">
       <span class="fl-label">sort</span>
-      <span class="sort-wrap">
-        <select id="sort-select" aria-label="Sort tickets">
-          <option value="updated" selected>updated</option>
-          <option value="id" id="sort-by-id">id</option>
-          <option value="title">title</option>
-        </select>
-        <span class="sort-caret" aria-hidden="true">&#9662;</span>
-      </span>
-    </label>
+      <details class="fl-dd" id="sort-dd">
+        <summary class="fl-dd-btn" aria-label="Sort tickets">
+          <span class="fl-dd-val" id="sort-val">updated</span>
+          <span class="fl-dd-caret" aria-hidden="true">&#9662;</span>
+        </summary>
+        <div class="fl-dd-pop">
+          <ul class="fl-dd-list">
+            <li><label class="fl-opt"><input type="radio" name="sort" value="updated" checked />
+              <span class="fl-opt-name">updated</span></label></li>
+            <li id="sort-by-id"><label class="fl-opt"><input type="radio" name="sort" value="id" />
+              <span class="fl-opt-name">id</span></label></li>
+            <li><label class="fl-opt"><input type="radio" name="sort" value="title" />
+              <span class="fl-opt-name">title</span></label></li>
+          </ul>
+        </div>
+      </details>
+    </div>
   </div>
 
   <!-- ======================= board ======================= -->
@@ -93,7 +101,10 @@
       <div class="detail-top">
         <span class="badge" data-detail-badge hidden></span>
         <span class="detail-id" data-detail-id></span>
-        <button type="button" class="detail-copy" id="detail-copy">copy path</button>
+        <button type="button" class="detail-copy" id="detail-copy">
+          <span class="detail-copy-glyph" aria-hidden="true"></span>
+          <span class="detail-copy-text">copy path</span>
+        </button>
         <span class="detail-esc"><kbd>esc</kbd> closes</span>
         <button type="button" class="detail-close" id="detail-close" autofocus aria-label="Close the ticket">
           <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
@@ -154,8 +165,9 @@ PAYLOAD
 
 IDS
   #search-input        search field
-  #sort-select         values: "updated" (default) | "id" | "title"
-  #sort-by-id          the id <option>; hidden when no ticket carries an id
+  #sort-dd             sort dropdown; one radio per key, name="sort"
+  #sort-val            the key the sort button reads
+  #sort-by-id          the id row; hidden when no ticket carries an id
   #hd-counts           header count nav, one entry per lane
   #lanes               the horizontal scroller that holds every lane section
   #board-empty         board-level empty state

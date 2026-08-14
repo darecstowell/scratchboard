@@ -36,6 +36,12 @@ failure a scan can survive.
 **Unknown config keys warn, and survive.** They are ignored on read and written back untouched,
 so a config written against a newer version still renders on an older build.
 
+**The icon set is small on purpose, and its two halves must agree.** Octicons are inlined as
+path data in `board.js`, because a baked board fetches nothing. Every icon is bytes in every
+board, so the set is curated rather than complete. `config.mjs` validates icon names against its
+own list, and `test/icons.test.mjs` reads the bundle to hold the two together. Adding an icon
+means both lists and the reference table.
+
 **Both themes clear WCAG AA for text.** `test/theme.test.mjs` computes the ratios from the
 stylesheet, so a palette edit that regresses contrast fails the suite instead of shipping.
 

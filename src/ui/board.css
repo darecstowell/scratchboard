@@ -3,7 +3,7 @@
 
 /* ---- fonts (self-hosted, latin + latin-ext) ---- */
 /* Spline Sans Mono and Martian Mono are both SIL OFL 1.1. The latte palette derives from
-   Catppuccin, MIT. Notices and full texts: licenses/. */
+   Catppuccin, MIT, and the detail glyphs from Octicons, MIT. Notices and full texts: licenses/. */
 @font-face {
   font-family: "Spline Sans Mono";
   font-style: normal;
@@ -195,6 +195,9 @@
   --focus-outline: 1px solid var(--green);
   --focus-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 22%, transparent);
 
+  /* every control a toolbar row sits on shares one height, or the row reads as ragged */
+  --control-h: 28px;
+
   --lane-min: 280px;
 }
 
@@ -373,7 +376,7 @@ kbd {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 28px;
+  height: var(--control-h);
   padding: 0 10px;
   font: 500 12px/1 var(--font-mono);
   color: var(--fg-2);
@@ -427,7 +430,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 32px;
+  height: var(--control-h);
   padding: 0 10px;
   flex: 0 1 300px;
   min-width: 200px;
@@ -446,7 +449,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   background: transparent;
   border: none;
   outline: none;
-  font: 400 12.5px var(--font-mono);
+  font: 400 var(--text-xs) var(--font-mono);
   color: var(--fg-1);
   caret-color: var(--green);
 }
@@ -467,7 +470,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   --chip-tint: var(--bg-overlay);
   display: inline-flex;
   align-items: center;
-  height: 26px;
+  height: var(--control-h);
   padding: 0 9px;
   font: 500 11px/1 var(--font-mono);
   color: var(--chip);
@@ -500,7 +503,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 26px;
+  height: var(--control-h);
   padding: 0 9px;
   font: 500 11px/1 var(--font-mono);
   color: var(--fg-2);
@@ -616,35 +619,11 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   gap: 8px;
   margin-left: auto;
 }
-.sort-wrap { position: relative; }
-.sort select {
-  height: 26px;
-  padding: 0 26px 0 9px;
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  border: 1px solid var(--line-2);
-  border-radius: 0;
-  font: 500 11px var(--font-mono);
-  color: var(--fg-2);
-  cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease-out);
-}
-.sort select:hover { background: var(--surface-hover); }
-.sort select:focus {
-  outline: none;
-  border-color: var(--green);
-  box-shadow: var(--focus-shadow);
-}
-.sort-caret {
-  position: absolute;
-  right: 9px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--fg-4);
-  font-size: 10px;
-  pointer-events: none;
-}
+/* three short keys, so the facet panel width would be mostly empty */
+#sort-dd .fl-dd-pop { width: auto; min-width: 132px; }
+/* one of a set, so the marker is a dot rather than the facet checkbox */
+#sort-dd .fl-opt input { border-radius: 50%; }
+#sort-dd .fl-opt input:checked::before { border-radius: 50%; }
 
 /* ---- board. The lane count is open, so lanes hold a readable minimum and
    the rail scrolls sideways rather than squeezing a card too narrow. ---- */
@@ -1022,10 +1001,10 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   color: var(--fg-3);
 }
 .detail-copy {
-  margin-left: auto;
   display: inline-flex;
   align-items: center;
-  height: 28px;
+  gap: 6px;
+  height: var(--control-h);
   padding: 0 10px;
   font: 500 10px/1 var(--font-mono);
   letter-spacing: var(--tracking-micro);
@@ -1049,7 +1028,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   background: var(--red-tint);
   border-color: var(--red);
 }
-.detail-copy + .detail-esc { margin-left: 0; }
+.detail-copy-glyph { display: inline-flex; }
 
 /* off-screen scratch field for the execCommand fallback */
 .copy-pad {
@@ -1075,8 +1054,8 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: var(--control-h);
+  height: var(--control-h);
   padding: 0;
   color: var(--fg-3);
   background: transparent;
@@ -1106,10 +1085,19 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   overflow-y: auto;
 }
 .detail-facts dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font: 500 10px/1.4 var(--font-mono);
   letter-spacing: var(--tracking-micro);
   text-transform: uppercase;
   color: var(--fg-4);
+}
+/* the glyph labels the row, so it recedes further than the word it sits beside */
+.detail-facts dt > svg {
+  flex: none;
+  color: var(--fg-4);
+  opacity: 0.7;
 }
 .detail-facts dd {
   margin: 0;

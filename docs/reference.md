@@ -8,6 +8,7 @@ Everything scratchboard reads and every option it takes. The [README](../README.
 - [Globs](#globs)
 - [Lanes](#lanes)
 - [Facets](#facets)
+- [Icons](#icons)
 - [Detection](#detection)
 - [Ticket identity and dates](#ticket-identity-and-dates)
 - [Custom parsers](#custom-parsers)
@@ -79,7 +80,7 @@ board is already open. Answering no writes nothing.
 | `idPattern` | regex source | Pulls a ticket ID out of the file or folder name. The first capture group wins, and the whole match is used when there is no group. |
 | `parser` | path | A local module that reads a format neither preset covers. Replaces `format`. |
 | `lanes` | array | Lane name, match rule, and whether it starts collapsed. |
-| `facets` | array | Which metadata fields become filter chips, their colours, and their value order. |
+| `facets` | array | Which metadata fields become filter chips, their colours, their value order, and their icon. |
 
 Config wins key by key, and detection fills the rest. Detection is skipped entirely when
 `tickets`, `lanes`, and one of `format` or `parser` are all set, which is what makes a committed
@@ -137,13 +138,14 @@ status as two separate axes.
 
 ## Facets
 
-Any metadata field can become a filter chip. A facet takes an optional colour map and an
-optional value order.
+Any metadata field can become a filter chip. A facet takes an optional colour map, an optional
+value order, and an optional icon.
 
 ```json
 "facets": [
   {
     "field": "priority",
+    "icon": "alert",
     "order": ["p0", "p1", "p2", "p3"],
     "colors": { "p0": "red", "p1": "amber", "p2": "cyan", "p3": "neutral" }
   },
@@ -154,6 +156,7 @@ optional value order.
 - The named colours are `red`, `amber`, `cyan`, `green`, and `neutral`. Any value you do not
   name, and any name that is not one of those five, falls back to `neutral`.
 - The first facet carrying a colour map is also the badge on the card face.
+- `icon` marks the field's row in the ticket detail. See [Icons](#icons).
 - Without an `order`, values are ordered by how many tickets carry them, then by name. That
   reads well for labels and badly for a scale, because `p2` leads whenever it is the most
   common.
@@ -161,6 +164,38 @@ optional value order.
   in behind by count, and a name no ticket carries is skipped rather than drawn empty.
 - A facet may be written as a bare string, so `"facets": ["labels"]` is the same as
   `[{ "field": "labels" }]`.
+
+## Icons
+
+Every row in the ticket detail carries a small glyph beside its name. The icons are
+[Octicons](https://github.com/primer/octicons), MIT, inlined as path data so a baked board still
+fetches nothing.
+
+The set is deliberately small, because every icon is bytes in every board:
+
+`alert`, `book`, `calendar`, `check`, `columns`, `copy`, `cross-reference`, `file`, `link`,
+`milestone`, `package`, `person`, `tag`, `workflow`.
+
+The rows the board builds itself are fixed: `lane` takes `columns`, `path` takes `file`, `dates`
+takes `calendar`, and `refs` takes `cross-reference`. The copy button in the ticket header takes
+`copy`, and swaps to `check` while it confirms.
+
+A metadata row takes the `icon` its facet names. With no `icon` named, these field names carry a
+default, so a board reads right with no config at all:
+
+| Field | Icon |
+| --- | --- |
+| `priority`, `severity` | `alert` |
+| `status`, `state` | `workflow` |
+| `labels`, `tags`, `type` | `tag` |
+| `assignee`, `owner` | `person` |
+| `milestone`, `epic` | `milestone` |
+| `component`, `area` | `package` |
+| `link`, `url` | `link` |
+| `source` | `book` |
+
+Any other field is drawn with no icon rather than a guessed one. An `icon` naming something
+outside the set warns and the row keeps its default.
 
 ## Detection
 
@@ -188,6 +223,18 @@ starts collapsed. With neither folders nor a field to go on, everything lands in
 
 **Proposing facets.** Every other field whose values repeat, measured as distinct values against
 total occurrences. A field where nearly every value is unique is an identifier, not a filter.
+
+**Ranking and colouring a facet.** Detection knows two conventional vocabularies. A priority
+scale reads `p0` to `p4`, or `blocker`, `critical`, `urgent`, `high`, `major`, `medium`,
+`moderate`, `normal`, `low`, `minor`, `trivial`, `none`. It is ranked most urgent first and
+accented red, amber, cyan, then neutral. A stage vocabulary is the same one that orders lanes,
+and it is ranked but never accented, because green is the board's own on-state.
+
+A facet is only ranked when at least two of its values are in one vocabulary and those values
+are the majority. Anything else keeps count order and stays neutral, so a vocabulary detection
+does not know is never guessed at. A value the scale does not hold sorts last and takes no
+colour. Case is preserved, so a board writing `P0` is ranked and coloured the same as one
+writing `p0`. Every part of this is a default that a `colors` or `order` in the config replaces.
 
 **`idPattern`.** Set to `^(\d+)[-_]` when any ticket file or folder name starts with digits.
 
@@ -259,6 +306,10 @@ that would not load.
 | Escape | close the open ticket, then an open filter dropdown, then clear the search box |
 | `c` | copy the path of the open ticket |
 | sort | by updated, by ID, or by title. The ID sort hides itself when no ticket has one |
+
+A facet with a long tail of values collapses into a dropdown. A facet with a short list shows
+its values as chips, and any that do not fit the toolbar row move into a `+N` dropdown beside
+them, so a board with long status names does not push the toolbar taller.
 
 Search covers the ID, `#` and the ID, the title, the slug, the path, every field value, and the
 ticket body. Search, filters, sort, and the open ticket all live in the URL hash, so a filtered
