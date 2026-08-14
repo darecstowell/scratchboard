@@ -529,7 +529,9 @@
   }
 
   function buildFacetControls() {
-    el.bar.querySelectorAll(".fl-group, .fl-dd").forEach((node) => node.remove());
+    // Only the groups this function built. The sort dropdown is a .fl-dd the page declares,
+    // and clearing by that class deleted it on the first render.
+    el.bar.querySelectorAll(".fl-group").forEach((node) => node.remove());
     drops = [];
 
     facets.forEach((facet, index) => {
