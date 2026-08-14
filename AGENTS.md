@@ -36,6 +36,11 @@ failure a scan can survive.
 **Unknown config keys warn, and survive.** They are ignored on read and written back untouched,
 so a config written against a newer version still renders on an older build.
 
+**The toolbar has two owners.** Search and sort are declared in `index.html`; the facet controls
+are built by `board.js` and rebuilt on every render. What that rebuild clears has to miss
+everything the page declares, or it deletes a control nobody rebuilds. `test/ui.test.mjs` reads
+both files and holds the line, because nothing here runs a DOM.
+
 **The icon set is small on purpose, and its two halves must agree.** Octicons are inlined as
 path data in `board.js`, because a baked board fetches nothing. Every icon is bytes in every
 board, so the set is curated rather than complete. `config.mjs` validates icon names against its
