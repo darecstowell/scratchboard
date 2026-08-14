@@ -4,7 +4,27 @@
   const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
   const ACCENTS = new Set(["red", "amber", "cyan", "green", "neutral"]);
   const CHIP_MAX = 6;
+  const CHIP_BUDGET = 56;
   const DROPDOWN_AT = 12;
+  /* Octicons, MIT. The set is deliberately small: every name here is bytes in every baked
+     board, and a name this map does not hold warns at config read. */
+  const ICONS = {
+    "alert": '<path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/>',
+    "book": '<path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z"/>',
+    "calendar": '<path d="M4.75 0a.75.75 0 0 1 .75.75V2h5V.75a.75.75 0 0 1 1.5 0V2h1.25c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0 1 13.25 16H2.75A1.75 1.75 0 0 1 1 14.25V3.75C1 2.784 1.784 2 2.75 2H4V.75A.75.75 0 0 1 4.75 0ZM2.5 7.5v6.75c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25V7.5Zm10.75-4H2.75a.25.25 0 0 0-.25.25V6h11V3.75a.25.25 0 0 0-.25-.25Z"/>',
+    "check": '<path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>',
+    "columns": '<path d="M2.75 0h2.5C6.216 0 7 .784 7 1.75v12.5A1.75 1.75 0 0 1 5.25 16h-2.5A1.75 1.75 0 0 1 1 14.25V1.75C1 .784 1.784 0 2.75 0Zm8 0h2.5C14.216 0 15 .784 15 1.75v12.5A1.75 1.75 0 0 1 13.25 16h-2.5A1.75 1.75 0 0 1 9 14.25V1.75C9 .784 9.784 0 10.75 0ZM2.5 1.75v12.5c0 .138.112.25.25.25h2.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Zm8 0v12.5c0 .138.112.25.25.25h2.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/>',
+    "copy": '<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>',
+    "cross-reference": '<path d="M2.75 3.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 13H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 14.543V13H2.75A1.75 1.75 0 0 1 1 11.25v-7.5C1 2.784 1.784 2 2.75 2h5.5a.75.75 0 0 1 0 1.5ZM16 1.25v4.146a.25.25 0 0 1-.427.177L14.03 4.03l-3.75 3.75a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734l3.75-3.75-1.543-1.543A.25.25 0 0 1 11.604 1h4.146a.25.25 0 0 1 .25.25Z"/>',
+    "file": '<path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"/>',
+    "link": '<path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"/>',
+    "milestone": '<path d="M7.75 0a.75.75 0 0 1 .75.75V3h3.634c.414 0 .814.147 1.13.414l2.07 1.75a1.75 1.75 0 0 1 0 2.672l-2.07 1.75a1.75 1.75 0 0 1-1.13.414H8.5v5.25a.75.75 0 0 1-1.5 0V10H2.75A1.75 1.75 0 0 1 1 8.25v-3.5C1 3.784 1.784 3 2.75 3H7V.75A.75.75 0 0 1 7.75 0Zm4.384 8.5a.25.25 0 0 0 .161-.06l2.07-1.75a.248.248 0 0 0 0-.38l-2.07-1.75a.25.25 0 0 0-.161-.06H2.75a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h9.384Z"/>',
+    "package": '<path d="m8.878.392 5.25 3.045c.54.314.872.89.872 1.514v6.098a1.75 1.75 0 0 1-.872 1.514l-5.25 3.045a1.75 1.75 0 0 1-1.756 0l-5.25-3.045A1.75 1.75 0 0 1 1 11.049V4.951c0-.624.332-1.201.872-1.514L7.122.392a1.75 1.75 0 0 1 1.756 0ZM7.875 1.69l-4.63 2.685L8 7.133l4.755-2.758-4.63-2.685a.248.248 0 0 0-.25 0ZM2.5 5.677v5.372c0 .09.047.171.125.216l4.625 2.683V8.432Zm6.25 8.271 4.625-2.683a.25.25 0 0 0 .125-.216V5.677L8.75 8.432Z"/>',
+    "person": '<path d="M10.561 8.073a6.005 6.005 0 0 1 3.432 5.142.75.75 0 1 1-1.498.07 4.5 4.5 0 0 0-8.99 0 .75.75 0 0 1-1.498-.07 6.004 6.004 0 0 1 3.431-5.142 3.999 3.999 0 1 1 5.123 0ZM10.5 5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z"/>',
+    "tag": '<path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/>',
+    "workflow": '<path d="M0 1.75C0 .784.784 0 1.75 0h3.5C6.216 0 7 .784 7 1.75v3.5A1.75 1.75 0 0 1 5.25 7H4v4a1 1 0 0 0 1 1h4v-1.25C9 9.784 9.784 9 10.75 9h3.5c.966 0 1.75.784 1.75 1.75v3.5A1.75 1.75 0 0 1 14.25 16h-3.5A1.75 1.75 0 0 1 9 14.25v-.75H5A2.5 2.5 0 0 1 2.5 11V7h-.75A1.75 1.75 0 0 1 0 5.25Zm1.75-.25a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h3.5a.25.25 0 0 0 .25-.25v-3.5a.25.25 0 0 0-.25-.25Zm9 9a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h3.5a.25.25 0 0 0 .25-.25v-3.5a.25.25 0 0 0-.25-.25Z"/>',
+  };
+
   const LANE_GLYPH =
     '<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">' +
     '<path d="M1.5 1.5h13v13h-13v-13Zm1.5 1.5v10h10V3H3Z"/><path d="M5.5 5.5h5v5h-5v-5Z"/></svg>';
@@ -250,7 +270,8 @@
     headCounts: document.getElementById("hd-counts"),
     notice: document.getElementById("notice"),
     search: document.getElementById("search-input"),
-    sort: document.getElementById("sort-select"),
+    sortDrop: document.getElementById("sort-dd"),
+    sortVal: document.getElementById("sort-val"),
     sortById: document.getElementById("sort-by-id"),
     sortLabel: document.getElementById("sort-label"),
     lanes: document.getElementById("lanes"),
@@ -457,10 +478,13 @@
     );
   }
 
-  function makeDropdown(facet, label, values, withSearch, key) {
+  /** `resting` is what the button reads with nothing picked. The field name lives on the group
+   *  beside it, the same as a chip group, so the button only ever reports its own selection. */
+  function makeDropdown(facet, values, withSearch, key, resting, name) {
     const drop = document.createElement("details");
     drop.className = "fl-dd";
     drop.dataset.field = facet.field;
+    drop.dataset.resting = resting;
     const searchId = "fl-search-" + key;
     const search = withSearch
       ? `<label class="fl-dd-search" for="${searchId}"><span class="search-glyph" aria-hidden="true">/</span>` +
@@ -468,12 +492,40 @@
         ` autocomplete="off" spellcheck="false" aria-label="Filter the ${esc(facet.field)} list" /></label>`
       : "";
     drop.innerHTML =
-      `<summary class="fl-dd-btn"><span class="fl-label">${esc(label)}</span>` +
-      '<span class="fl-dd-val">all</span>' +
+      `<summary class="fl-dd-btn" aria-label="${esc(name)}">` +
+      `<span class="fl-dd-val">${esc(resting)}</span>` +
       '<span class="fl-dd-caret" aria-hidden="true">&#9662;</span></summary>' +
       `<div class="fl-dd-pop">${search}<ul class="fl-dd-list">${values.map(optionHtml).join("")}</ul></div>`;
     drops.push(drop);
     return drop;
+  }
+
+  /** Sort is built into the page, the facet controls are not, and both close the same ways. */
+  function everyDrop() {
+    return drops.concat(el.sortDrop);
+  }
+
+  function makeGroup(facet) {
+    const group = document.createElement("div");
+    group.className = "fl-group";
+    group.dataset.field = facet.field;
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Filter by " + facet.field);
+    group.innerHTML = `<span class="fl-label">${esc(facet.field)}</span>`;
+    return group;
+  }
+
+  /** The board is monospace, so a character count is a faithful width. Budgeting by width keeps
+   *  a group of long values from wrapping the toolbar the way a fixed item count did. */
+  function inlineChips(values) {
+    let spent = 0;
+    let taken = 0;
+    while (taken < values.length && taken < CHIP_MAX) {
+      spent += values[taken].value.length;
+      if (taken && spent > CHIP_BUDGET) break;
+      taken += 1;
+    }
+    return taken;
   }
 
   function buildFacetControls() {
@@ -482,20 +534,23 @@
 
     facets.forEach((facet, index) => {
       if (!facet.values.length) return;
+      const group = makeGroup(facet);
+
       if (facet.values.length >= DROPDOWN_AT) {
-        el.bar.insertBefore(makeDropdown(facet, facet.field, facet.values, true, index), el.sortLabel);
+        const name = "Filter by " + facet.field;
+        group.appendChild(makeDropdown(facet, facet.values, true, index, "all", name));
+        el.bar.insertBefore(group, el.sortLabel);
         return;
       }
-      const group = document.createElement("div");
-      group.className = "fl-group";
-      group.dataset.field = facet.field;
-      group.setAttribute("role", "group");
-      group.setAttribute("aria-label", "Filter by " + facet.field);
-      const chips = facet.values.slice(0, CHIP_MAX);
-      const rest = facet.values.slice(CHIP_MAX);
-      group.innerHTML =
-        `<span class="fl-label">${esc(facet.field)}</span>` + chips.map((entry) => chipHtml(facet, entry)).join("");
-      if (rest.length) group.appendChild(makeDropdown(facet, "more", rest, false, index));
+
+      const inline = inlineChips(facet.values);
+      const chips = facet.values.slice(0, inline);
+      const rest = facet.values.slice(inline);
+      group.insertAdjacentHTML("beforeend", chips.map((entry) => chipHtml(facet, entry)).join(""));
+      if (rest.length) {
+        const name = rest.length + " more " + facet.field;
+        group.appendChild(makeDropdown(facet, rest, false, index, "+" + rest.length, name));
+      }
       el.bar.insertBefore(group, el.sortLabel);
     });
   }
@@ -526,12 +581,15 @@
       ? picked.length > 1
         ? picked[0] + " +" + (picked.length - 1)
         : picked[0]
-      : "all";
+      : drop.dataset.resting;
   }
 
   function paintControls() {
     el.search.value = state.q;
-    el.sort.value = state.sort;
+    el.sortVal.textContent = state.sort;
+    el.sortDrop.querySelectorAll("input[type=radio]").forEach((box) => {
+      box.checked = box.value === state.sort;
+    });
     el.bar.querySelectorAll(".fl-chip").forEach((chip) => {
       const field = chip.closest(".fl-group").dataset.field;
       chip.setAttribute("aria-pressed", pickedFor(field).has(chip.dataset.value) ? "true" : "false");
@@ -597,9 +655,51 @@
 
   // ------------------------------------------------------------- detail
 
+  /** Config names the icon for a field. These cover the rows the board builds itself, plus the
+   *  field names common enough that a stranger's board reads right with no config at all. */
+  const DEFAULT_ICONS = {
+    lane: "columns",
+    path: "file",
+    dates: "calendar",
+    refs: "cross-reference",
+    priority: "alert",
+    severity: "alert",
+    status: "workflow",
+    state: "workflow",
+    labels: "tag",
+    tags: "tag",
+    type: "tag",
+    assignee: "person",
+    owner: "person",
+    milestone: "milestone",
+    epic: "milestone",
+    source: "book",
+    component: "package",
+    area: "package",
+    link: "link",
+    url: "link",
+  };
+
+  function glyphSvg(name, size) {
+    if (!ICONS[name]) return "";
+    return (
+      '<svg width="' + size + '" height="' + size + '" viewBox="0 0 16 16" fill="currentColor"' +
+      ' aria-hidden="true">' +
+      ICONS[name] +
+      "</svg>"
+    );
+  }
+
+  function iconFor(term) {
+    const facet = facetByField.get(term);
+    const named = facet && facet.icon ? facet.icon : DEFAULT_ICONS[term];
+    return named ? glyphSvg(named, 12) : "";
+  }
+
   function factRow(term, html, className) {
     const dt = document.createElement("dt");
-    dt.textContent = term;
+    dt.innerHTML = iconFor(term);
+    dt.appendChild(document.createTextNode(term));
     const dd = document.createElement("dd");
     if (className) dd.className = className;
     dd.innerHTML = html;
@@ -657,7 +757,10 @@
 
   function markCopy(result) {
     clearTimeout(copyTimer);
-    el.detailCopy.textContent = COPY_LABELS[result];
+    const text = el.detailCopy.querySelector(".detail-copy-text");
+    const glyph = el.detailCopy.querySelector(".detail-copy-glyph");
+    if (text) text.textContent = COPY_LABELS[result];
+    if (glyph) glyph.innerHTML = glyphSvg(result === "done" ? "check" : "copy", 12);
     el.detailCopy.classList.toggle("is-done", result === "done");
     el.detailCopy.classList.toggle("is-failed", result === "failed");
     if (result !== "rest") copyTimer = setTimeout(() => markCopy("rest"), COPY_REVERT_MS);
@@ -837,8 +940,12 @@
     }, 120);
   });
 
-  el.sort.addEventListener("change", () => {
-    state.sort = SORTS[el.sort.value] ? el.sort.value : "updated";
+  el.sortDrop.addEventListener("change", (event) => {
+    const pick = event.target.closest("input[type=radio]");
+    if (!pick) return;
+    state.sort = SORTS[pick.value] ? pick.value : "updated";
+    el.sortVal.textContent = state.sort;
+    el.sortDrop.open = false;
     sortRecords();
     apply();
   });
@@ -888,7 +995,7 @@
   );
 
   document.addEventListener("click", (event) => {
-    drops.forEach((drop) => {
+    everyDrop().forEach((drop) => {
       if (drop.open && !drop.contains(event.target)) drop.open = false;
     });
   });
@@ -970,7 +1077,7 @@
     }
     if (event.key !== "Escape") return;
     if (el.detail.open) return;
-    const openDrop = drops.filter((drop) => drop.open)[0];
+    const openDrop = everyDrop().filter((drop) => drop.open)[0];
     if (openDrop) {
       openDrop.open = false;
       return;
@@ -1051,14 +1158,18 @@
       if (order.indexOf(field) === -1) order.push(field);
     });
     const colors = new Map();
+    const icons = new Map();
     config.forEach((entry) => {
-      if (entry && entry.field && entry.colors) colors.set(entry.field, entry.colors);
+      if (!entry || !entry.field) return;
+      if (entry.colors) colors.set(entry.field, entry.colors);
+      if (entry.icon) icons.set(entry.field, entry.icon);
     });
 
     facets = order.map((field) => ({
       field,
       values: Array.isArray(tallies[field]) ? tallies[field] : [],
-      colors: colors.get(field) || null
+      colors: colors.get(field) || null,
+      icon: icons.get(field) || null
     }));
     facetByField = new Map(facets.map((facet) => [facet.field, facet]));
     badgeFacet = facets.filter((facet) => facet.colors)[0] || null;
@@ -1092,10 +1203,7 @@
       };
     });
     hasIds = byId.size > 0;
-    if (el.sortById) {
-      if (hasIds && !el.sortById.parentNode) el.sort.insertBefore(el.sortById, el.sort.options[1] || null);
-      else if (!hasIds && el.sortById.parentNode) el.sortById.remove();
-    }
+    if (el.sortById) el.sortById.hidden = !hasIds;
 
     const counts = (data.counts && data.counts.byLane) || {};
     lanes = (data.lanes || []).map((lane) => ({

@@ -95,14 +95,18 @@ than a location, so a ticket never gets moved to join one.
     { "name": "Done",        "match": { "path": ".scratch/done/**" }, "collapsed": true }
   ],
   "facets": [
-    { "field": "priority", "colors": { "p0": "red", "p1": "amber", "p2": "cyan", "p3": "neutral" } },
+    { "field": "priority", "icon": "alert", "colors": { "p0": "red", "p1": "amber", "p2": "cyan", "p3": "neutral" } },
     { "field": "labels" }
   ]
 }
 ```
 
-Every key, every flag, the glob tokens, the lane and facet rules, and what detection does in
-full: [`docs/reference.md`](./docs/reference.md).
+A `priority` of `p0` to `p3`, or of `critical` to `low`, is ranked and coloured with no config at
+all, and so is a `status`. Naming `colors` or `order` yourself replaces the default. Detection
+leaves a vocabulary it does not recognise alone rather than guessing at it.
+
+Every key, every flag, the glob tokens, the lane and facet rules, the icon set, and what
+detection does in full: [`docs/reference.md`](./docs/reference.md).
 
 ## The skill
 
@@ -173,6 +177,7 @@ it covers, including the base64 bytes inlined into a baked board.
 | [Spline Sans Mono](https://github.com/SorkinType/SplineSansMono) | SIL Open Font License 1.1 | [`licenses/OFL-SplineSansMono.txt`](./licenses/OFL-SplineSansMono.txt) |
 | [Martian Mono](https://github.com/evilmartians/mono) | SIL Open Font License 1.1 | [`licenses/OFL-MartianMono.txt`](./licenses/OFL-MartianMono.txt) |
 | [Catppuccin](https://github.com/catppuccin/catppuccin) | MIT | [`licenses/Catppuccin-MIT.txt`](./licenses/Catppuccin-MIT.txt) |
+| [Octicons](https://github.com/primer/octicons) | MIT | [`licenses/MIT-Octicons.txt`](./licenses/MIT-Octicons.txt) |
 
 The `latte` and `phosphor` themes are original palettes derived from Catppuccin rather than
 copies of it.

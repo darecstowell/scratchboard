@@ -30,6 +30,28 @@ const STAGE_RANK = [
   /^(review|in-review|testing|qa|blocked|waiting)/i,
 ];
 
+/** Two conventional vocabularies, ranked most urgent first. Insertion order is the rank. */
+const PRIORITY_SCALE = new Map([
+  ["p0", "red"],
+  ["blocker", "red"],
+  ["critical", "red"],
+  ["urgent", "red"],
+  ["p1", "amber"],
+  ["high", "amber"],
+  ["major", "amber"],
+  ["p2", "cyan"],
+  ["medium", "cyan"],
+  ["moderate", "cyan"],
+  ["normal", "cyan"],
+  ["p3", "neutral"],
+  ["low", "neutral"],
+  ["minor", "neutral"],
+  ["p4", "neutral"],
+  ["trivial", "neutral"],
+  ["none", "neutral"],
+]);
+const PRIORITY_ORDER = [...PRIORITY_SCALE.keys()];
+
 function rank(value) {
   if (DONE_LIKE.test(value)) return STAGE_RANK.length + 1;
   const found = STAGE_RANK.findIndex((re) => re.test(value));
@@ -38,6 +60,48 @@ function rank(value) {
 
 function orderStages(a, b) {
   return rank(a) - rank(b) || (a < b ? -1 : a > b ? 1 : 0);
+}
+
+function stageLike(value) {
+  return DONE_LIKE.test(value) || STAGE_RANK.some((re) => re.test(value));
+}
+
+function priorityRank(value) {
+  const at = PRIORITY_ORDER.indexOf(value.toLowerCase());
+  return at === -1 ? PRIORITY_ORDER.length : at;
+}
+
+function orderPriorities(a, b) {
+  return priorityRank(a) - priorityRank(b) || (a < b ? -1 : a > b ? 1 : 0);
+}
+
+/** One odd value among conventional ones is still a conventional facet. Two named values is the
+ *  floor, because a single match is a coincidence. */
+function mostly(known, values) {
+  return known.length >= 2 && known.length * 2 > values.length;
+}
+
+/**
+ * A facet whose values are mostly one of the two vocabularies is ordered by it, and a priority
+ * scale also carries an accent per tier. Anything unrecognised is left neutral and sorts last,
+ * so a stranger's own vocabulary is never guessed at.
+ */
+function conventions(field, values) {
+  const facet = { field };
+
+  const scaled = values.filter((value) => PRIORITY_SCALE.has(value.toLowerCase()));
+  if (mostly(scaled, values)) {
+    facet.order = [...values].sort(orderPriorities);
+    facet.colors = {};
+    for (const value of facet.order) {
+      const accent = PRIORITY_SCALE.get(value.toLowerCase());
+      if (accent) facet.colors[value] = accent;
+    }
+    return facet;
+  }
+
+  if (mostly(values.filter(stageLike), values)) facet.order = [...values].sort(orderStages);
+  return facet;
 }
 
 function gitIgnored(root, paths) {
@@ -276,7 +340,7 @@ function pickFacets(parsed, laneField) {
       }
     }
     if (!occurrences || seen.size < 2) continue;
-    if (seen.size / occurrences < TAG_LIKE_RATIO) facets.push({ field });
+    if (seen.size / occurrences < TAG_LIKE_RATIO) facets.push(conventions(field, [...seen]));
   }
   return facets;
 }

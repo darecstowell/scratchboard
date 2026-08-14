@@ -1,6 +1,6 @@
 {
   "name": "scratchboard",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Render the markdown tickets already in your repo as a kanban board. Read-only by choice, zero config.",
   "type": "module",
   "license": "MIT",

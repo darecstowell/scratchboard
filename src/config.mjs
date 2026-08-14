@@ -10,7 +10,24 @@ const KNOWN_KEYS = new Set([
   "facets",
 ]);
 const KNOWN_LANE_KEYS = new Set(["name", "match", "collapsed"]);
-const KNOWN_FACET_KEYS = new Set(["field", "colors", "order"]);
+const KNOWN_FACET_KEYS = new Set(["field", "colors", "order", "icon"]);
+/** The Octicons the board inlines. `test/icons.test.mjs` holds this to what the UI actually has. */
+export const ICON_NAMES = new Set([
+  "alert",
+  "book",
+  "calendar",
+  "check",
+  "columns",
+  "copy",
+  "cross-reference",
+  "file",
+  "link",
+  "milestone",
+  "package",
+  "person",
+  "tag",
+  "workflow",
+]);
 export const FORMATS = new Set(["yaml-frontmatter", "key-value-block"]);
 export const CATCH_ALL = "Unmapped";
 
@@ -115,6 +132,10 @@ function cleanFacet(facet, index, warn) {
     return null;
   }
   const out = { field: shape.field };
+  if (shape.icon !== undefined) {
+    if (ICON_NAMES.has(shape.icon)) out.icon = shape.icon;
+    else warn(`unknown icon "${shape.icon}" in ${where}, ignored`);
+  }
   if (shape.colors && typeof shape.colors === "object") out.colors = { ...shape.colors };
   if (shape.order !== undefined) {
     if (Array.isArray(shape.order)) out.order = shape.order.map(String);
