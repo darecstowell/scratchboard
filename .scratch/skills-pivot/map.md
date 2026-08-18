@@ -20,7 +20,9 @@ file formats, argument shapes, or what a board can see.
 
 Standing constraints already settled with the user:
 
-- Zero dependencies holds, including for anything that draws a graph.
+- Zero dependencies is now itself under question. See
+  [Should the zero-dependency rule be lifted?](./issues/12-lift-the-zero-dependency-rule.md).
+  Assume it holds until that resolves.
 - Read-only holds.
 - Lanes become triage roles. The folder stops being the lane.
 - A sixth terminal state, scratchboard's own, completes the lifecycle his five roles lack.
@@ -54,6 +56,10 @@ Standing constraints already settled with the user:
 - What happens when his conventions change. There is no version to pin to, so the response has
   to be something other than a version matrix.
 - How a baked board handles an effort with forty tickets.
+- Whether mermaid rendering, if it lands at all, applies to ticket bodies only or to every
+  document the board renders.
+- What else a dependency budget would buy, if the rule is lifted. The question has only been
+  asked of mermaid and of graph layout so far.
 
 ## Out of scope
 
