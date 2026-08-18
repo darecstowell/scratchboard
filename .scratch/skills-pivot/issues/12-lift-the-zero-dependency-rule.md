@@ -1,4 +1,4 @@
-# 12 — Should the zero-dependency rule be lifted?
+# 12. Should the zero-dependency rule be lifted?
 
 Type: grilling
 Blocked by: 13

@@ -1,4 +1,4 @@
-# 03 — How does the board recognize an effort folder and tell one shape from another?
+# 03. How does the board recognize an effort folder and tell one shape from another?
 
 Type: grilling
 Blocked by: 01

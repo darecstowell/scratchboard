@@ -1,4 +1,4 @@
-# 13 — Research: what mermaid rendering costs, and whether bake time avoids it
+# 13. Research: what mermaid rendering costs, and whether bake time avoids it
 
 Type: research
 Blocked by: none

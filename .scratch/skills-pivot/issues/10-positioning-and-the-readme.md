@@ -1,4 +1,4 @@
-# 10 — What does the README claim, and who is it addressed to?
+# 10. What does the README claim, and who is it addressed to?
 
 Type: grilling
 Blocked by: 01

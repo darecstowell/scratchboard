@@ -1,4 +1,4 @@
-# 06 — What non-ticket documents enter the payload, and how?
+# 06. What non-ticket documents enter the payload, and how?
 
 Type: grilling
 Blocked by: 03, 04

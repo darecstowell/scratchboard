@@ -35,8 +35,8 @@ Standing constraints already settled with the user:
 
 <!-- one line per resolved ticket: gist, then the link for the detail -->
 
-- [Research: laying out a dependency graph in a self-contained HTML file with no dependencies](./issues/05-research-dag-layout-zero-deps.md)
-  — a hand-written layered layout costs 350 to 550 lines, CSS alone cannot do it, and layout can
+- [Research: laying out a dependency graph in a self-contained HTML file with no dependencies](./issues/05-research-dag-layout-zero-deps.md):
+  a hand-written layered layout costs 350 to 550 lines, CSS alone cannot do it, and layout can
   run at bake time rather than in the browser, so the zero-dependency rule is looser than
   assumed. Build the frontier-first list first.
 

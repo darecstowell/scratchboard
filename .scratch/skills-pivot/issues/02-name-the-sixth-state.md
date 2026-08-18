@@ -1,4 +1,4 @@
-# 02 — Name the sixth lifecycle state, and decide what writes it
+# 02. Name the sixth lifecycle state, and decide what writes it
 
 Type: grilling
 Blocked by: 01

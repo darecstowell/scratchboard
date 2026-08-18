@@ -1,4 +1,4 @@
-# 09 — Migrate this repo's own board to triage-role lanes
+# 09. Migrate this repo's own board to triage-role lanes
 
 Type: task
 Blocked by: 02

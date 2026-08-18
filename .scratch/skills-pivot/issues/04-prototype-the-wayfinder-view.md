@@ -1,4 +1,4 @@
-# 04 — Prototype the wayfinder view
+# 04. Prototype the wayfinder view
 
 Type: prototype
 Blocked by: none

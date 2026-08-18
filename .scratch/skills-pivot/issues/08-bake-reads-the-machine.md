@@ -1,4 +1,4 @@
-# 08 — Should the bake read the machine's installed skills?
+# 08. Should the bake read the machine's installed skills?
 
 Type: grilling
 Blocked by: 07

@@ -1,4 +1,4 @@
-# 07 — Which skills does the launcher offer, and who writes the argument templates?
+# 07. Which skills does the launcher offer, and who writes the argument templates?
 
 Type: grilling
 Blocked by: none

@@ -1,4 +1,4 @@
-# 05 — Research: laying out a dependency graph in a self-contained HTML file with no dependencies
+# 05. Research: laying out a dependency graph in a self-contained HTML file with no dependencies
 
 Type: research
 Blocked by: none

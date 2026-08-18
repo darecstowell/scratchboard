@@ -1,4 +1,4 @@
-# 14 — One wayfinder view or several, and does it change shape as the map grows?
+# 14. One wayfinder view or several, and does it change shape as the map grows?
 
 Type: grilling
 Blocked by: 04

@@ -1,4 +1,4 @@
-# 11 — What does the board still promise a repo that uses none of these skills?
+# 11. What does the board still promise a repo that uses none of these skills?
 
 Type: grilling
 Blocked by: 01
