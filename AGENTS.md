@@ -75,6 +75,13 @@ its work actually is, so moving a card means moving the file. Nothing sits in `i
 that nobody has started, and nothing reaches `done/` that is not shipped and verifiable in the
 history. A ticket in the wrong lane is a lie the demo tells on every page load.
 
+Wayfinder efforts are the one exception, and they are not tickets. An effort is a map and its
+decision tickets at `.scratch/<effort>/`, outside the three lanes, and it is planning rather
+than backlog. `docs/agents/issue-tracker.md` holds the conventions. The scanner cannot yet tell
+an effort from a ticket, so effort files currently land in `Unmapped` on the demo, which
+[ticket 3 in the skills pivot](.scratch/skills-pivot/issues/03-recognize-an-effort-folder.md)
+carries.
+
 ## Shipped copy
 
 The README, `--help`, CLI output, and the skill are all read by users. Plain and specific, with
