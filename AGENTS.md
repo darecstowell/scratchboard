@@ -91,3 +91,20 @@ genuinely cannot, and keep it to one line.
 ## Commits
 
 Branch `<type>/<slug>`. Imperative subject, 72 characters.
+
+## Agent skills
+
+### Issue tracker
+
+Tickets are markdown files in `.scratch/`, and the folder is the lane. See
+[docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
+
+### Triage labels
+
+The five canonical roles, unchanged, read from each ticket's `status` field. See
+[docs/agents/triage-labels.md](docs/agents/triage-labels.md).
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See
+[docs/agents/domain.md](docs/agents/domain.md).
