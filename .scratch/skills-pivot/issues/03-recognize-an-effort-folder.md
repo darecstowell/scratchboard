@@ -23,6 +23,9 @@ id 10 is on 2 tickets: .scratch/skills-pivot/issues/10-..., .scratch/todo/10-...
 id 11 is on 2 tickets: .scratch/skills-pivot/issues/11-..., .scratch/todo/11-...
 ```
 
+Re-measured on 2026-08-18, after the effort grew: `Unmapped` holds 18, the 15 effort tickets
+plus `map.md` and both research files. The junk grows with the effort, so it is not a fixed cost.
+
 The id collision was not predicted. His convention numbers effort tickets from `01` inside each
 effort, while lane tickets are numbered globally across the board, and `idPattern` matches both.
 So ids collide as soon as an effort passes ten tickets, and a second effort collides from `01`.
