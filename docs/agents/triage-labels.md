@@ -18,3 +18,9 @@ The lane is a separate axis. `status` says how ready a ticket is, and the folder
 work is. Do not use one to mean the other.
 
 Edit the right-hand column to change the vocabulary.
+
+`scratchboard.json` does not match this table. Its `status` facet carries `deferred` and
+`shipped` and no `wontfix`, which is this repo improvising the terminal state the five roles
+lack. Treat the table as the current agreement and the config as the open question, which
+[Name the sixth lifecycle state](../../.scratch/skills-pivot/issues/02-name-the-sixth-state.md)
+settles.

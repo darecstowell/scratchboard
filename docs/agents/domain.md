@@ -42,4 +42,4 @@ does not use, so think again, or there is a real gap, so note it for `/domain-mo
 
 If your output contradicts an ADR, say so instead of overriding it quietly:
 
-> _Contradicts ADR-0007 (zero dependencies), but worth reopening because..._
+> _Contradicts ADR-0001 (zero dependencies), but worth reopening because..._

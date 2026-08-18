@@ -47,7 +47,7 @@ Standing constraints already settled with the user:
   publish a reader spec, the dialect the board reads, and never the layout other tools write.
   Authority stops at reading, upstream wins every name it defines, and a drift test holds the
   doc and the dialect module together. A `supports mattpocock/skills v1.2.x` badge is defended
-  by fixtures. Tolerance runs in three tiers, and the new middle one, recognized but half read,
+  by fixtures. Tolerance runs in three tiers, and the new middle one, recognized but half-read,
   raises a diagnostic that names the fix.
 
 ## Not yet specified
@@ -63,10 +63,10 @@ Standing constraints already settled with the user:
   seeing the toolbar after the lane change lands.
 - Whether a `to-tickets` feature folder earns a view of its own, distinct from a wayfinder
   effort.
-- Whether the board can read the installed version on a machine that took the plugin install
-  rather than `find-skills`. The version is on disk in that case, and reading it is the same act
+- Whether the board reads the installed version of the skills. A plugin install puts that
+  version on disk, where a bake could read it. A `find-skills` install does not.
   [Should the bake read the machine's installed skills](./issues/08-bake-reads-the-machine.md)
-  is deciding, so it waits on that.
+  decides whether the bake reads it at all, so this waits on that ticket.
 - How a baked board handles an effort with forty tickets.
 - Whether mermaid rendering, if it lands at all, applies to ticket bodies only or to every
   document the board renders.

@@ -46,14 +46,22 @@ holds it.
 ## Wayfinding operations
 
 Used by `/wayfinder`. The **map** is a file with one **child** file for each ticket. Efforts
-live outside the three lanes, in `.scratch/<effort>/`, so they do not bake as cards.
+live outside the three lanes, in `.scratch/<effort>/`.
+
+That keeps them out of `Todo`, `In progress`, and `Done`, and it does not keep them off the
+board. The `tickets` glob is `.scratch/**/*.md`, so every effort file becomes a card in the
+trailing `Unmapped` lane, and effort numbering from `01` collides with the board's global
+numbering. Recognizing an effort folder is the subject of
+[How does the board recognize an effort folder](../../.scratch/skills-pivot/issues/03-recognize-an-effort-folder.md),
+and no config the scanner reads today can express the exclusion.
 
 - **Map**: `.scratch/<effort>/map.md` with the Notes, Decisions-so-far, and Fog body.
 - **Child ticket**: `.scratch/<effort>/issues/NN-<slug>.md`, numbered from `01`, with the
   question in the body. A `Type:` line records the ticket type (`research`, `prototype`,
   `grilling`, or `task`). A `Status:` line records `claimed` or `resolved`.
-- **Blocking**: a `Blocked by: NN, NN` line near the top. A ticket is unblocked when every file
-  it names is `resolved`.
+- **Blocking**: a `Blocked by: NN, NN` line near the top, naming ticket numbers. A ticket is
+  unblocked when every ticket it names carries `Status: resolved`. `Blocked by: none` means it
+  has no blockers.
 - **Frontier**: read `.scratch/<effort>/issues/` for files that are open, unblocked, and
   unclaimed. The first by number wins.
 - **Claim**: set `Status: claimed` and save the file before any work.
