@@ -2,6 +2,7 @@
 
 Type: research
 Blocked by: none
+Status: resolved
 
 ## Question
 
@@ -55,5 +56,3 @@ adjacency matrix as a real alternative rather than a fallback.
 
 Two claims are flagged unverified in the file: the full text of the Stasko and Zhang sunburst
 paper, and the internal layout algorithm of `html-graph`.
-
-Status: resolved
