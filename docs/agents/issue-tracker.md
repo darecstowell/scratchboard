@@ -11,7 +11,7 @@ Pages demo on every push. The tickets are public copy.
   all three lanes, because the number identifies the ticket and the lane can change.
 - State lives in YAML frontmatter, not in the body:
 
-  ```
+  ```yaml
   ---
   title: Narrow the npm publish token to scratchboard alone
   status: ready-for-human

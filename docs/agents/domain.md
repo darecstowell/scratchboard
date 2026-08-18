@@ -19,7 +19,7 @@ the constraints that a change must keep.
 
 This repo is single-context:
 
-```
+```text
 /
 ├── AGENTS.md
 ├── CONTEXT.md
