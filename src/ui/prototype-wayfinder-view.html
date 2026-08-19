@@ -1,0 +1,263 @@
+<!doctype html>
+<!-- PROTOTYPE, throwaway. Ticket 04 of the skills-pivot effort. Three structurally different
+     takes on the wayfinder map view. Zero dependencies, hand-drawn, one file. Double-click it. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE: the wayfinder view</title>
+<style>
+:root{
+  --bg-deep:#dce0e8; --bg-root:#eff1f5; --bg-surface:#f5f7fa; --bg-raised:#fbfcfe; --bg-overlay:#e3e7ef;
+  --line-1:#dde1ea; --line-2:#7d8bac;
+  --fg-1:#363851; --fg-2:#454762; --fg-3:#51546e; --fg-4:#5d617c;
+  --green:#2e7526; --amber:#8c5c0e; --red:#c01742; --cyan:#167083;
+  --green-dim:#6fac66; --amber-dim:#cda05c; --red-dim:#d06f88; --cyan-dim:#5fa9bb;
+  --green-tint:#dcedd5; --amber-tint:#f5e5c2; --red-tint:#f7d8de; --cyan-tint:#d8ebf1;
+  --font-mono:"Spline Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-root);color:var(--fg-1);font-family:var(--font-mono);font-size:13px;line-height:1.5;padding-bottom:72px}
+a{color:var(--cyan)}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 20px 0}
+.proto-flag{background:var(--amber-tint);border:1px solid var(--amber-dim);color:var(--amber);padding:6px 10px;border-radius:6px;font-size:11px;margin-bottom:16px}
+h1{font-size:15px;margin:0 0 2px;letter-spacing:.02em}
+.dest{background:var(--bg-surface);border:1px solid var(--line-1);border-left:3px solid var(--green);border-radius:6px;padding:10px 12px;margin:0 0 18px}
+.dest b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--fg-3);margin-bottom:3px}
+h2{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--fg-3);margin:22px 0 8px;font-weight:500}
+h2 .n{color:var(--fg-4);font-weight:400}
+.card{background:var(--bg-raised);border:1px solid var(--line-1);border-radius:6px;padding:10px 12px}
+.badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;border:1px solid;letter-spacing:.04em}
+.t-grilling{background:var(--cyan-tint);border-color:var(--cyan-dim);color:var(--cyan)}
+.t-research{background:var(--green-tint);border-color:var(--green-dim);color:var(--green)}
+.t-prototype{background:var(--amber-tint);border-color:var(--amber-dim);color:var(--amber)}
+.t-task{background:var(--red-tint);border-color:var(--red-dim);color:var(--red)}
+.id{color:var(--fg-4);font-variant-numeric:tabular-nums}
+details{margin:0 0 6px}
+summary{cursor:pointer;color:var(--fg-2);padding:5px 0;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--fg-4)}
+details[open]>summary::before{content:"▾ "}
+.dim{color:var(--fg-4)}
+ul.plain{margin:4px 0 10px;padding-left:18px;color:var(--fg-3)}
+ul.plain li{margin:3px 0}
+
+/* ---- A: frontier ---- */
+.frontier{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:10px}
+.frontier .card{border-left:3px solid var(--green)}
+.frontier .card .q{color:var(--fg-2);margin-top:6px;font-size:12px}
+.inflight .card{border-left:3px solid var(--amber);margin-bottom:8px}
+.blocked-row{display:flex;gap:10px;padding:4px 0;border-bottom:1px dashed var(--line-1);color:var(--fg-3)}
+.blocked-row .w{color:var(--fg-4);margin-left:auto;font-size:11px}
+
+/* ---- B: graph ---- */
+.graphbox{background:var(--bg-surface);border:1px solid var(--line-1);border-radius:6px;padding:12px;overflow-x:auto}
+svg{display:block}
+.node rect{stroke-width:1.5}
+.node text{font-family:var(--font-mono);font-size:11px;fill:var(--fg-1)}
+.node .sub{font-size:9px;fill:var(--fg-4)}
+edge{}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--fg-3)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;border:1px solid}
+
+/* ---- C: route ---- */
+.route{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:0;align-items:stretch;background:var(--bg-surface);border:1px solid var(--line-1);border-radius:6px;overflow:hidden}
+.stage{padding:12px;border-right:1px solid var(--line-1)}
+.stage h3{margin:0 0 8px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--fg-3);font-weight:500}
+.stage.done{background:var(--green-tint)}
+.stage.now{background:var(--bg-raised)}
+.stage.ahead{background:var(--bg-overlay)}
+.goal{background:var(--fg-1);color:var(--bg-raised);padding:12px 14px;display:flex;align-items:center;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:.1em;font-size:11px;text-transform:uppercase}
+.pill{display:block;background:var(--bg-raised);border:1px solid var(--line-1);border-radius:4px;padding:5px 8px;margin-bottom:5px;font-size:11.5px}
+.stage.done .pill{background:rgba(255,255,255,.55);border-color:var(--green-dim)}
+.stage.ahead .pill{opacity:.72;border-style:dashed}
+.fogband{margin-top:12px;background:repeating-linear-gradient(135deg,var(--bg-overlay) 0 9px,var(--bg-surface) 9px 18px);border:1px dashed var(--line-2);border-radius:6px;padding:10px 12px;color:var(--fg-3)}
+.oos{margin-top:10px;border-left:3px solid var(--red-dim);background:var(--bg-surface);border-radius:0 6px 6px 0;padding:8px 12px;color:var(--fg-4);font-size:11.5px}
+
+/* ---- switcher ---- */
+.bar{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;display:flex;gap:4px;background:var(--bg-raised);border:1px solid var(--line-2);border-radius:24px;padding:4px;box-shadow:0 4px 18px rgba(54,56,81,.16);z-index:10}
+.bar button{font-family:var(--font-mono);font-size:12px;border:0;background:transparent;color:var(--fg-3);padding:6px 14px;border-radius:20px;cursor:pointer}
+.bar button[aria-pressed=true]{background:var(--fg-1);color:var(--bg-raised)}
+.note{color:var(--fg-4);font-size:11.5px;margin:10px 0 0;max-width:70ch}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="proto-flag">PROTOTYPE, throwaway. Ticket 04, skills-pivot. Real data from this map, 15 tickets. Nothing here is production code.</div>
+  <h1 id="title"></h1>
+  <div class="dest"><b>Destination</b><span id="destination"></span></div>
+  <div id="view"></div>
+  <p class="note" id="note"></p>
+</div>
+
+<div class="bar">
+  <button data-v="frontier">A · frontier</button>
+  <button data-v="graph">B · graph</button>
+  <button data-v="route">C · route</button>
+</div>
+
+<script>
+// ---------- fixture: the real skills-pivot map ----------
+const DEST = "A locked decision on whether scratchboard specializes around mattpocock/skills, and exactly where the coupling line sits.";
+const T = [
+  {id:"01",type:"grilling", state:"resolved",blk:[],          t:"Does scratchboard publish the local-markdown tracker spec?"},
+  {id:"02",type:"grilling", state:"resolved",blk:["01"],      t:"Name the sixth lifecycle state, and decide what writes it"},
+  {id:"03",type:"grilling", state:"resolved",blk:["01"],      t:"How does the board recognize an effort folder?"},
+  {id:"04",type:"prototype",state:"claimed", blk:[],          t:"Prototype the wayfinder view"},
+  {id:"05",type:"research", state:"resolved",blk:[],          t:"Laying out a dependency graph with zero dependencies"},
+  {id:"06",type:"grilling", state:"open",    blk:["03","04"], t:"What non-ticket documents enter the payload, and how?"},
+  {id:"07",type:"grilling", state:"open",    blk:[],          t:"Which skills does the launcher offer?"},
+  {id:"08",type:"grilling", state:"open",    blk:["07"],      t:"Should the bake read the machine's installed skills?"},
+  {id:"09",type:"task",     state:"open",    blk:["02"],      t:"Migrate this repo's own board to triage-role lanes"},
+  {id:"10",type:"grilling", state:"open",    blk:["01"],      t:"What does the README claim, and who is it addressed to?"},
+  {id:"11",type:"grilling", state:"open",    blk:["01"],      t:"What does the board promise a repo using none of these skills?"},
+  {id:"12",type:"grilling", state:"open",    blk:["13"],      t:"Should the zero-dependency rule be lifted?"},
+  {id:"13",type:"research", state:"claimed", blk:[],          t:"What mermaid rendering costs, and whether bake time avoids it"},
+  {id:"14",type:"grilling", state:"open",    blk:["04"],      t:"One wayfinder view or several?"},
+  {id:"15",type:"grilling", state:"open",    blk:["03","07"], t:"How does the board offer its own repair skill?"},
+];
+const FOG = [
+  "Dependency edges. Two incompatible Blocked by formats exist.",
+  "Spec-to-ticket linkage. No parent pointer in either direction.",
+  "Where CONTEXT.md and ADRs sit in the interface.",
+  "Lane icons and single-word priority labels.",
+  "Whether a to-tickets folder earns a view of its own.",
+  "Whether the board reads the installed version of the skills.",
+  "How a baked board handles an effort with forty tickets.",
+  "Whether mermaid applies to ticket bodies only, or every document.",
+  "What else a dependency budget would buy, if the rule is lifted.",
+  "Whether groups is the right name for the config key.",
+  "Whether done and out-of-scope are offered upstream.",
+];
+const OOS = [
+  "A skills browser showing usage and enabled state. Two of three columns cannot be built.",
+  "Integrating /improve-codebase-architecture. It never references a ticket.",
+  "Rendering prototype and research assets. Both live on throwaway branches.",
+  "A read-write board. It contradicts the reason this is read-only.",
+  "Talking to GitHub, GitLab, or Jira APIs for tracker-native state.",
+];
+const byId = Object.fromEntries(T.map(t=>[t.id,t]));
+const isDone = t => t.state==="resolved";
+const unblocked = t => t.blk.every(b=>isDone(byId[b]));
+const frontier = T.filter(t=>t.state==="open" && unblocked(t));
+const inflight = T.filter(t=>t.state==="claimed");
+const blocked  = T.filter(t=>t.state==="open" && !unblocked(t));
+const done     = T.filter(isDone);
+const esc = s => s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const badge = t => `<span class="badge t-${t.type}">${t.type}</span>`;
+
+// ---------- A: frontier-first ----------
+function frontierView(){
+  const card = t => `<div class="card">${badge(t)} <span class="id">${t.id}</span>
+    <div class="q">${esc(t.t)}</div></div>`;
+  return `
+  <h2>Takeable now <span class="n">${frontier.length}</span></h2>
+  <div class="frontier">${frontier.map(card).join("")}</div>
+
+  <h2>In flight <span class="n">${inflight.length}</span></h2>
+  <div class="inflight">${inflight.map(card).join("")}</div>
+
+  <h2>Waiting <span class="n">${blocked.length}</span></h2>
+  ${blocked.map(t=>`<div class="blocked-row">${badge(t)}<span class="id">${t.id}</span>
+     <span>${esc(t.t)}</span><span class="w">waits on ${t.blk.join(", ")}</span></div>`).join("")}
+
+  <h2>Behind us</h2>
+  <details><summary>Decided <span class="dim">${done.length}</span></summary>
+    <ul class="plain">${done.map(t=>`<li><span class="id">${t.id}</span> ${esc(t.t)}</li>`).join("")}</ul></details>
+  <details><summary>Not yet specified <span class="dim">${FOG.length}</span></summary>
+    <ul class="plain">${FOG.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></details>
+  <details><summary>Out of scope <span class="dim">${OOS.length}</span></summary>
+    <ul class="plain">${OOS.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></details>`;
+}
+
+// ---------- B: layered graph, layout computed here (bake time in the real thing) ----------
+function depth(t,seen={}){
+  if(seen[t.id]!==undefined) return seen[t.id];
+  const d = t.blk.length ? 1+Math.max(...t.blk.map(b=>depth(byId[b],seen))) : 0;
+  return seen[t.id]=d;
+}
+function graphView(){
+  const seen={}; T.forEach(t=>depth(t,seen));
+  const layers=[]; T.forEach(t=>{(layers[seen[t.id]] ||= []).push(t)});
+  const NW=196, NH=42, GX=54, GY=30, PAD=14;
+  const rows = Math.max(...layers.map(l=>l.length));
+  const W = PAD*2 + layers.length*NW + (layers.length-1)*GX;
+  const H = PAD*2 + rows*NH + (rows-1)*GY;
+  const pos={};
+  layers.forEach((layer,li)=>layer.forEach((t,ri)=>{
+    pos[t.id]={x:PAD+li*(NW+GX), y:PAD+ri*(NH+GY)};
+  }));
+  const fill = t => isDone(t) ? "var(--green-tint)" : t.state==="claimed" ? "var(--amber-tint)"
+              : unblocked(t) ? "var(--bg-raised)" : "var(--bg-overlay)";
+  const stroke = t => isDone(t) ? "var(--green-dim)" : t.state==="claimed" ? "var(--amber-dim)"
+              : unblocked(t) ? "var(--line-2)" : "var(--line-1)";
+  let edges="";
+  T.forEach(t=>t.blk.forEach(b=>{
+    const a=pos[b], z=pos[t.id];
+    const x1=a.x+NW, y1=a.y+NH/2, x2=z.x, y2=z.y+NH/2, mid=(x1+x2)/2;
+    edges += `<path d="M${x1} ${y1} C${mid} ${y1} ${mid} ${y2} ${x2} ${y2}"
+      fill="none" stroke="${isDone(byId[b])?"var(--green-dim)":"var(--line-2)"}"
+      stroke-width="1.3" ${isDone(byId[b])?"":'stroke-dasharray="3 3"'} marker-end="url(#a)"/>`;
+  }));
+  const nodes = T.map(t=>{
+    const p=pos[t.id];
+    const short = t.t.length>30 ? t.t.slice(0,29)+"…" : t.t;
+    return `<g class="node"><rect x="${p.x}" y="${p.y}" width="${NW}" height="${NH}" rx="5"
+      fill="${fill(t)}" stroke="${stroke(t)}"/>
+      <text x="${p.x+10}" y="${p.y+17}">${t.id} · ${esc(short)}</text>
+      <text class="sub" x="${p.x+10}" y="${p.y+31}">${t.type}${isDone(t)?" · resolved":t.state==="claimed"?" · claimed":unblocked(t)?" · takeable":" · waiting"}</text></g>`;
+  }).join("");
+  return `<div class="graphbox"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="var(--line-2)"/></marker></defs>
+    ${edges}${nodes}</svg></div>
+  <div class="legend">
+    <span><i style="background:var(--green-tint);border-color:var(--green-dim)"></i>resolved</span>
+    <span><i style="background:var(--amber-tint);border-color:var(--amber-dim)"></i>claimed</span>
+    <span><i style="background:var(--bg-raised);border-color:var(--line-2)"></i>takeable now</span>
+    <span><i style="background:var(--bg-overlay);border-color:var(--line-1)"></i>waiting</span>
+    <span>${layers.length} layers, ${T.length} nodes, ${T.reduce((n,t)=>n+t.blk.length,0)} edges</span>
+  </div>
+  <details style="margin-top:14px"><summary>Not yet specified <span class="dim">${FOG.length}</span>, out of scope <span class="dim">${OOS.length}</span></summary>
+    <ul class="plain">${FOG.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></details>`;
+}
+
+// ---------- C: route, destination on the right ----------
+function routeView(){
+  const pill = t => `<span class="pill">${badge(t)} <span class="id">${t.id}</span> ${esc(t.t)}</span>`;
+  return `<div class="route">
+    <div class="stage done"><h3>Walked · ${done.length}</h3>${done.map(pill).join("")}</div>
+    <div class="stage now"><h3>Here · ${frontier.length} takeable, ${inflight.length} in flight</h3>
+      ${inflight.map(pill).join("")}${frontier.map(pill).join("")}</div>
+    <div class="stage ahead"><h3>Ahead · ${blocked.length}</h3>${blocked.map(pill).join("")}</div>
+    <div class="goal">destination</div>
+  </div>
+  <div class="fogband"><b>Not yet specified · ${FOG.length}</b>
+    <ul class="plain">${FOG.slice(0,4).map(f=>`<li>${esc(f)}</li>`).join("")}
+    <li class="dim">and ${FOG.length-4} more</li></ul></div>
+  <div class="oos"><b>Out of scope · ${OOS.length}</b>, closed and never graduating.
+    ${esc(OOS[0])} <span class="dim">and ${OOS.length-1} more.</span></div>`;
+}
+
+const VIEWS = {
+  frontier:{fn:frontierView, title:"A · frontier-first",
+    note:"Answers 'what do I do next' with no reading. The research on ticket 05 recommended building this one first. It shows no edges at all, so it cannot show why something is blocked beyond naming the numbers, and it gives no sense of distance to the destination."},
+  graph:{fn:graphView, title:"B · layered dependency graph",
+    note:"Layout is computed here in about 30 lines because the graph is a shallow DAG, far under the 350 to 550 lines the research estimated for the general case. It shows structure at a glance and it is the only view that makes the shape of the effort legible. It will not survive forty tickets, and fog and out-of-scope have nowhere natural to sit."},
+  route:{fn:routeView, title:"C · route to the destination",
+    note:"The only take that puts the destination on screen and shows progress toward it. Fog gets a real home as a band you have not reached yet, and out of scope reads as a gutter rather than a column. It flattens the edges, so within a stage the order is arbitrary."},
+};
+function render(v){
+  const view = VIEWS[v] || VIEWS.frontier;
+  document.getElementById("title").textContent = "PROTOTYPE: " + view.title;
+  document.getElementById("destination").textContent = DEST;
+  document.getElementById("view").innerHTML = view.fn();
+  document.getElementById("note").textContent = view.note;
+  document.querySelectorAll(".bar button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===v));
+  const u=new URL(location); u.searchParams.set("v",v); history.replaceState({},"",u);
+}
+document.querySelectorAll(".bar button").forEach(b=>b.onclick=()=>render(b.dataset.v));
+render(new URL(location).searchParams.get("v") || "frontier");
+</script>
+</body>
+</html>
