@@ -75,13 +75,16 @@ Standing constraints already settled with the user:
   the tier-2 diagnostic and falls back to ordinary tickets.
 
 - [Research: what mermaid rendering costs, and whether bake time avoids it](./issues/13-research-mermaid-rendering-cost.md):
-  keep the incumbent escaped `<pre><code>`. Mermaid is 3.57 MB minified against a 438 KB board,
-  8.2 times its size, and no supported subset exists. Bake-time SVG genuinely works browser-free
-  through `svgdom`, but every path there declares Node 22 and the floor is 18. The harder blocker
-  is security: seven advisories fire under the default `securityLevel: strict`, there is no render
-  timeout against three infinite-loop CVEs so the warnings rule needs a subprocess and a wall
-  clock, and the unsanitized flowchart `img:` sink beacons from the bake machine and from every
-  published board. The `npx` pin does not pin the security-sensitive package.
+  keep the incumbent escaped `<pre><code>`. Mermaid is 3.57 MB minified against a 438 KB board, so
+  it adds 8.2 boards of payload and takes the board to 9.2 times its size, and no supported subset
+  exists. Bake-time SVG genuinely works browser-free through `svgdom`, but every path there
+  declares Node 22 and the floor is 18. The harder blocker is security, as a record rather than a
+  live exposure: `11.17.0` is outside every affected range, and what the sixteen advisories show
+  is rate and reach, nine in 2026 and four fixed inside two weeks. Two properties are structural,
+  no render timeout as a guarantee, so the warnings rule would need a subprocess and a wall clock,
+  and an unsanitized flowchart `img:` sink that a future renderer would let beacon from the bake
+  machine and from every published board. The `npx` pin does not reach transitive `mermaid`, so
+  reproducibility needs a committed lockfile.
 
 ## Not yet specified
 

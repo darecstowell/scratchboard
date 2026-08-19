@@ -6,17 +6,25 @@ tarball](https://registry.npmjs.org/mermaid), 2026-08-19), and a scratchboard bo
 437,856 bytes for a one-ticket board and 558,972 for this repo's own 41-ticket board (measured by
 running `bin/cli.mjs --out`). Nothing in `serve.mjs` sets `Content-Encoding`, and the default path
 opens the file over `file://`, so the raw number is the real number: shipping a runtime renderer
-makes every board a user produces **8.2 times its current size**. Tree-shaking cannot cut that,
+adds **8.2 one-ticket boards** of payload, taking a 437,856 byte board to 4,010,152 bytes, which
+is **9.2 times its current size**. The two numbers answer different questions, so both are given:
+8.2 is what the bundle costs, 9.2 is what the board becomes. Tree-shaking cannot cut that,
 and mermaid's maintainers have said so since 2022. The only supported lever, `@mermaid-js/tiny`,
 still costs 2,554,781 bytes, which is 5.8 boards. Baking to static SVG in Node does avoid the
 payload entirely, and it genuinely works without a browser through `svgdom`, but that path drops
 Node 18, which is scratchboard's declared floor. The path that keeps Node 18,
 `@mermaid-js/mermaid-cli`, requires Puppeteer and roughly 1 GB of Chromium. Separately from size,
-the security record is the harder blocker: seven mermaid advisories published in the last year fire
-under the **default** `securityLevel: strict` from diagram text alone, mermaid ships **no render
-timeout** against three shipped infinite-loop CVEs, and the flowchart `img:` shape is unsanitized,
-so a stranger's ticket becomes an outbound request from the bake machine and a permanent beacon in
-every published board. My recommendation is in section 8: keep the existing fenced-code fallback,
+the security record is the harder blocker, and it is a record rather than a live exposure.
+`mermaid@11.17.0` sits outside every affected range in section 6: the 2025 advisories are fixed in
+11.10.0, CVE-2026-41148, CVE-2026-41149 and CVE-2026-41159 in 11.15.0, and CVE-2026-50159 and
+CVE-2026-71437 in 11.16.1. Nothing listed fires in a current pin. What the table shows instead is
+rate and reach: sixteen advisories, nine of them in 2026, four fixed inside two weeks, and seven
+of them reachable from diagram text alone under the **default** `securityLevel: strict` at the
+time they shipped. Mermaid also ships no render timeout as a general guarantee, which is why three
+separate infinite-loop CVEs were possible, and the flowchart `img:` shape is unsanitized, so a
+future renderer would turn a stranger's ticket into an outbound request from the bake machine and
+a permanent beacon in every published board. Those last two are properties of adopting a renderer,
+not of the escaped fence shipping today. My recommendation is in section 8: keep the existing fenced-code fallback,
 which already renders `` ```mermaid `` blocks safely at zero bytes, and treat diagram rendering as
 opt-in bake-time work behind a flag if it is wanted at all.
 
@@ -44,7 +52,10 @@ Second, the current fenced-code path at `board.js` lines 193 to 200 discards the
 entirely (`FENCE_RE` matches `\s*\S*\s*` without capturing it) and emits
 `"<pre><code>" + esc(code.join("\n")) + "</code></pre>"`. There is no raw-HTML sink anywhere in
 `renderInline` or `renderBlocks`: everything is escaped and then a fixed allowlist of inline tags
-is spliced back in. Rendering a diagram means creating the board's first raw-HTML sink.
+is spliced back in. `board.js` line 821 does assign that escaped output to
+`el.detailBody.innerHTML`, so the sink itself already exists. What a diagram renderer would add is
+the first path where markup scratchboard did not build itself, and did not escape, reaches that
+sink.
 
 ## 2. What mermaid costs bundled, and what a subset saves
 
@@ -714,8 +725,11 @@ often enough. It is also the correct fallback for every other option, so it is w
 product answer rather than the absence of one.
 
 If diagram rendering is wanted anyway, the shape the evidence supports is narrow: bake-time only,
-opt-in behind an explicit config flag and off by default, `@mermaid-js/mermaid-cli` pinned at
-11.16.1 or later, run in a subprocess with a hard wall-clock kill, `suppressErrorRendering: true`
+opt-in behind an explicit config flag and off by default, `@mermaid-js/mermaid-cli` and `mermaid`
+both pinned by a committed lockfile with integrity hashes rather than a version range, since
+section 5 measured that an `npx` CLI pin does not reach transitive `mermaid` and its cache
+lockfile is never committed, with the bake failing when a post-resolution audit finds a different
+graph, run in a subprocess with a hard wall-clock kill, `suppressErrorRendering: true`
 with the exception caught into `warnings` alongside the ticket path, `htmlLabels: false`, `secure`
 extended to include `htmlLabels` and `dompurifyConfig`, `<image>` and `<img>` stripped or
 allowlisted out of the output SVG by scratchboard's own code rather than mermaid's, the inlined

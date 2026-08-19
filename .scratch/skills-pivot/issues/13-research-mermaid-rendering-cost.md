@@ -39,7 +39,9 @@ costs zero bytes, cannot execute, cannot beacon, and cannot hang.
 `mermaid@11.17.0` ships 3,572,296 bytes minified, 976,004 gzipped. A board today is 437,856 bytes
 for one ticket and 558,972 for this repo's own 41-ticket board. `serve.mjs` sets no
 `Content-Encoding` and the default path opens over `file://`, so raw is the real number: a
-runtime renderer makes every board a user produces 8.2 times its current size.
+runtime renderer adds 8.2 one-ticket boards of payload, taking a 437,856 byte board to 4,010,152
+bytes, which is 9.2 times its current size. Both numbers are given because they answer different
+questions. 8.2 is what the bundle costs, 9.2 is what the board becomes.
 
 Tree-shaking cannot cut it. `diagram-orchestration.ts` statically imports all 42 diagram types
 into one registration call, `sideEffects` is undeclared, and the pull request adding it was closed
@@ -60,19 +62,27 @@ this path is closed until that floor moves.
 jsdom alone is worse than useless here. It does not implement `getBBox`, and when the method is
 stubbed mermaid does not fail, it emits two different flowcharts sharing one viewBox.
 
-### The security position is the harder blocker
+### The security position is the harder blocker, and it is a record rather than a live exposure
 
-Seven advisories fire under mermaid's own default `securityLevel: strict`, from diagram text
-alone: CVE-2025-54880, CVE-2025-54881, CVE-2026-41148, CVE-2026-41149, CVE-2026-41159,
-CVE-2026-50159, and CVE-2026-71437.
+`mermaid@11.17.0` sits outside every affected range. The 2025 advisories are fixed in 11.10.0,
+CVE-2026-41148, CVE-2026-41149 and CVE-2026-41159 in 11.15.0, and CVE-2026-50159 and
+CVE-2026-71437 in 11.16.1. Nothing in the findings fires in a current pin, and saying otherwise
+would be wrong.
 
-Mermaid ships no render timeout against three shipped infinite-loop CVEs. The house rule that
-every failure a scan survives lands in `warnings` with its path and its reason therefore cannot
-be honored with a `try/catch`. It needs a subprocess and a wall clock.
+What the record shows is rate and reach. Sixteen advisories, nine of them in 2026, four fixed
+inside two weeks, and seven reachable from diagram text alone under the default
+`securityLevel: strict` at the time they shipped. Adopting this is adopting that release cadence.
 
-The flowchart `img:` shape is unsanitized, with no `formatUrl` call, unlike `setLink`. A
-stranger's ticket beacons from the bake machine and leaves a permanent tracker in every published
-board, invisible to the `SAFE_HREF` allowlist. GHSA-m4gq-x24j-jpmf hit exactly the prebuilt-bundle
+Two properties are structural rather than historical. Mermaid offers no render timeout as a
+guarantee, which is why three separate infinite-loop CVEs were possible, so the house rule that
+every survivable failure lands in `warnings` with its path and its reason cannot be honored with
+a `try/catch`. It needs a subprocess and a wall clock. And the flowchart `img:` shape is
+unsanitized, with no `formatUrl` call unlike `setLink`, so a future renderer would turn a
+stranger's ticket into an outbound request from the bake machine and a permanent beacon in every
+published board, invisible to the `SAFE_HREF` allowlist.
+
+Neither applies to what ships today. The escaped fence cannot execute, beacon, or hang.
+GHSA-m4gq-x24j-jpmf is worth noting anyway, because it hit exactly the prebuilt-bundle
 consumption mode a baked board would use, while source-importing consumers were unaffected.
 
 ### The `npx` hatch is weaker than assumed
@@ -86,8 +96,10 @@ for lint and type tooling, so it is worth knowing beyond mermaid.
 
 ### If rendering is wanted anyway
 
-The findings name seven permanent obligations: pin to 11.16.1 or newer, run in a subprocess with
-a kill timer, set `suppressErrorRendering`, set `htmlLabels: false`, extend the `secure` array,
+The findings name seven permanent obligations: pin `mermaid` and the CLI by a committed lockfile
+with integrity hashes rather than a version range, since an `npx` CLI pin does not reach
+transitive `mermaid` and its cache lockfile is never committed, run in a subprocess with a kill
+timer, set `suppressErrorRendering`, set `htmlLabels: false`, extend the `secure` array,
 strip `<image>` elements independently, and wrap output in an only-child `<div>`. The
 zero-dependency rule is not the expensive part. The maintenance is.
 
