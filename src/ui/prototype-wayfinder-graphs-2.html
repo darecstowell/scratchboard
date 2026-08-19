@@ -136,8 +136,12 @@ function liveView(){
   let e="";
   liveEdges.forEach(([b,c])=>{
     const p=pos[b],q=pos[c];if(!p||!q)return;
-    const x1=p.x+NW,y1=p.y+NH/2,x2=q.x,y2=q.y+NH/2,m=(x1+x2)/2;
-    e+=`<path d="M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}" fill="none" stroke="var(--amber)" stroke-width="2" marker-end="url(#a)"/>`;
+    const y1=p.y+NH/2,y2=q.y+NH/2;
+    // same column: leave and re-enter on the right, so the line never crosses a card
+    const d=p.x===q.x
+      ? (()=>{const x=p.x+NW,bb=x+34;return `M${x} ${y1} C${bb} ${y1} ${bb} ${y2} ${x} ${y2}`})()
+      : (()=>{const x1=p.x+NW,x2=q.x,m=(x1+x2)/2;return `M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}`})();
+    e+=`<path d="${d}" fill="none" stroke="var(--amber)" stroke-width="2" marker-end="url(#a)"/>`;
   });
   const heads=`<text class="ns" x="${PAD}" y="10">behind us</text>
     <text class="ns" x="${PAD+NW+GX}" y="10">takeable now</text>

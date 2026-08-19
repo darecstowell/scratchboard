@@ -104,9 +104,9 @@ function layout(items, opts){
     for(let L=from+1;L<to;L++){
       const key=`d:${b}>${t.id}@${L}`;
       layers[L].push({key,dummy:true});
-      segs.push([prev,key]); prev=key;
+      segs.push([prev,key,b]); prev=key;
     }
-    segs.push([prev,t.id]);
+    segs.push([prev,t.id,b]);
   }));
 
   // barycenter sweeps: put a node near the average position of what it connects to
@@ -139,9 +139,10 @@ function draw(cfg){
   const H=PAD*2+(vertical?nlayers*NH+(nlayers-1)*GY:rows*NH+(rows-1)*GY);
 
   let edges="";
-  segs.forEach(([a,b])=>{
+  segs.forEach(([a,b,origin])=>{
     const p=xy(a),q=xy(b);
-    const src=byId[a], resolved=src&&isDone(src);
+    // colour by the edge's real blocker, not by the segment start, which may be a placeholder
+    const resolved=isDone(byId[origin]);
     let x1,y1,x2,y2,dpath;
     if(vertical){
       x1=p.x+NW/2; y1=p.y+NH; x2=q.x+NW/2; y2=q.y; const m=(y1+y2)/2;

@@ -88,11 +88,13 @@ Standing constraints already settled with the user:
 - [Prototype the wayfinder view](./issues/04-prototype-the-wayfinder-view.md): three columns by
   state, `behind us`, `takeable now`, `still blocked`, not by dependency depth. Only live edges
   are drawn, since an edge from a resolved blocker is history and drawing it is what made every
-  layered pass unreadable, 12 edges down to 5 on this map. Hover shows what a ticket unblocks,
+  layered pass unreadable, 12 edges down to 4 on this map. Hover shows what a ticket unblocks,
   and restores that ticket's satisfied edges in green so history is hidden rather than deleted.
   Click pins it, which is what survives a screenshot. The reach: columns by state need no
   layering, no dummy nodes, and no crossing reduction, so the dag-layout estimate does not apply
-  to this design. Prototypes on branch `prototype/wayfinder-view`.
+  to this design. The cost is that both ends of an edge can share a column, so an intra-column
+  edge leaves and re-enters on the right rather than running backwards across the cards.
+  Prototypes on branch `prototype/wayfinder-view`.
 
 ## Not yet specified
 

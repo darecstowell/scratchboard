@@ -107,7 +107,11 @@ const rows=Math.max(...cols.map(c=>c.length));
 const W=PAD*2+3*NW+2*GX,H=TOP+rows*NH+(rows-1)*GY+PAD;
 const clip=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
 
-const path=(p,q)=>{const x1=p.x+NW,y1=p.y+NH/2,x2=q.x,y2=q.y+NH/2,m=(x1+x2)/2;
+const path=(p,q)=>{
+  const y1=p.y+NH/2,y2=q.y+NH/2;
+  // same column: leave and re-enter on the right, so the line never crosses a card
+  if(p.x===q.x){const x=p.x+NW,b=x+34;return `M${x} ${y1} C${b} ${y1} ${b} ${y2} ${x} ${y2}`}
+  const x1=p.x+NW,x2=q.x,m=(x1+x2)/2;
   return `M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}`};
 
 document.getElementById("view").innerHTML=`<svg id="g" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">

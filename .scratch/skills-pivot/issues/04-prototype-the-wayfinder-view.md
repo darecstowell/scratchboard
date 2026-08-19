@@ -42,7 +42,7 @@ Rows inside a column are ticket order. Nothing else.
 
 An edge whose blocker is already resolved is satisfied. It is history, not structure, and drawing
 it at the same weight as a live blocker is what made every earlier pass unreadable. On this map
-it takes 12 edges down to 5.
+it takes 12 edges down to 4.
 
 The first three passes all tried to fix the tangle with better layout, through dummy nodes for
 layer-skipping edges and barycenter crossing reduction. Those worked and the result was still
@@ -86,6 +86,17 @@ edges, and coordinate refinement, none of which was written.
   distorts, because a short chain is not less important.
 - Hover reveal over a full layered graph. Calm at rest and it does not exist in a screenshot.
   The mechanic survived; the layout under it did not.
+
+### The gap this design carries
+
+Columns are state, so both ends of an edge can land in the same column. Two do today, `01` to
+`02` and `01` to `03`, all three being resolved. A straight left-to-right path would run backwards
+across the cards, so an intra-column edge leaves and re-enters on the right instead. The same case
+will arise in `still blocked` as soon as one blocked ticket blocks another.
+
+This is the price of choosing state over depth. A layered graph cannot produce the case, because
+a blocker is always in an earlier layer. It is worth stating plainly rather than discovering it
+in the implementation.
 
 ### What this does not decide
 
