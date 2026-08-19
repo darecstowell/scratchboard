@@ -113,9 +113,14 @@ users to disobey the skill they installed is not a coupling this project wants.
 ### Disjointness is a rule
 
 The two enums share no value: `claimed`, `resolved`, `out-of-scope` against the six triage roles.
-So a file's dialect is readable from its value alone, with no directory shape needed. The spec
-states this as a rule, and the drift test that ticket 01 puts between the doc and the dialect
-module holds it.
+So a recognized value is readable as its dialect on its own, with no directory shape needed. The
+spec states this as a rule, and the drift test that ticket 01 puts between the doc and the
+dialect module holds it.
+
+The rule reaches recognized values only. A value in neither enum, such as this repo's `deferred`,
+and a file with no `status` at all, say nothing about which convention wrote them. Those fall
+back to the group the file sits in, which
+[How does the board recognize an effort folder](./03-recognize-an-effort-folder.md) settles.
 
 This is the reason `resolved` was rejected as the sixth state and `wontfix` was rejected for
 out-of-scope. Either choice would have broken the invariant.

@@ -52,9 +52,14 @@ config. A recognized folder leaves the ticket list for a collection of its own.
 Both places, which is the shape ticket 01 already settled: "Detection keeps guessing at any repo.
 The dialect is one recognized shape beside that, not a replacement for it."
 
-The dialect module reads directory shape. A lead document beside an `issues/` folder marks a
-group, and the lead document names the kind: `map.md` for a wayfinder effort, `spec.md` for a
+The dialect module reads directory shape. Exactly one lead document beside an `issues/` folder
+marks a group, and that document names the kind: `map.md` for a wayfinder effort, `spec.md` for a
 `to-tickets` feature. `looksLikeTicket()` in `detect.mjs` is the existing per-file hook.
+
+A folder holding both lead documents is ambiguous, not a group. It takes the same tier-2
+diagnostic a half-recognized folder takes, naming the two markers it found, and its files stay
+ordinary tickets. Picking a winner by precedence or by filesystem order would make the board's
+reading depend on something no one wrote down.
 
 Heuristic alone gives a repo no way to correct a wrong guess. Config alone means a stranger who
 clones the wayfinder convention gets junk on the board until they read the docs, which is the
@@ -88,8 +93,10 @@ silence where junk used to be.
 
 ### Roles by position
 
-The collection holds every file under the group root, and each carries a role taken from where it
-sits: `map` for the lead document, `issue` for a file under `issues/`, `other` for anything else.
+The collection holds every file the `tickets` glob discovered under the group root, and each
+carries a role taken from where it sits: `map` for the lead document, `issue` for a file under
+`issues/`, `other` for anything else. Discovery stays the glob's job, so a file the glob never
+matched is no more visible inside a group than outside one.
 
 This ticket names the roles. How a `role: other` file renders is ticket 06's. Recognizing only
 the lead document and `issues/` would leave this effort's two research files in `Unmapped`, which

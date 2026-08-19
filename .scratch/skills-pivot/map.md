@@ -58,16 +58,17 @@ Standing constraints already settled with the user:
   `skills/scratchboard/SKILL.md`, which now owns the vocabulary upstream is silent about. `done`
   and `wontfix` each get their own collapsed lane. `shipped` becomes `done`, `deferred` stays a
   local value outside the spec, and the wayfinder dialect gains `out-of-scope` beside `claimed`
-  and `resolved`. The two enums must never share a value, so a file's dialect is readable from
-  its value alone. A ticket with no `status` stays in `Unmapped`, because a default would be the
-  board inventing state.
+  and `resolved`. The two enums must never share a value, so a recognized value is readable as
+  its dialect on its own. An unrecognized or missing value falls back to the group the file sits
+  in. A ticket with no `status` stays in `Unmapped`, because a default would be the board
+  inventing state.
 
 - [How does the board recognize an effort folder and tell one shape from another?](./issues/03-recognize-an-effort-folder.md):
   a live heuristic in the dialect module reads directory shape, and a lead document beside an
-  `issues/` folder marks a group, with `map.md` and `spec.md` naming the kind. One mechanism
-  serves both shapes and carries a `kind`. A recognized group leaves the ticket list for a
-  collection of its own, holding every file under the root with a role of `map`, `issue`, or
-  `other`. The cross-repo id collision fixes itself, and the uniqueness check scopes to the
+  `issues/` folder marks a group, with `map.md` and `spec.md` naming the kind, and a folder
+  holding both is ambiguous rather than a group. One mechanism serves both shapes and carries a
+  `kind`. A recognized group leaves the ticket list for a collection of its own, holding every
+  file the glob discovered under the root with a role of `map`, `issue`, or `other`. The cross-repo id collision fixes itself, and the uniqueness check scopes to the
   group. A new kind-neutral `groups` key corrects a wrong guess, with `kind: "none"` as the
   opt-out. It reclassifies and never extends the walk, `init` never writes it, and groups sit
   outside `counts.total`, which takes this repo from 41 to 23. A half-recognized folder raises
