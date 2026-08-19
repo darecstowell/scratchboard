@@ -1,0 +1,186 @@
+<!doctype html>
+<!-- PROTOTYPE, throwaway. Ticket 04, fourth pass. C1 (live edges only) plus hover reveal. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE: C1 plus hover</title>
+<style>
+:root{
+  --bg-deep:#dce0e8;--bg-root:#eff1f5;--bg-surface:#f5f7fa;--bg-raised:#fbfcfe;--bg-overlay:#e3e7ef;
+  --line-1:#dde1ea;--line-2:#7d8bac;
+  --fg-1:#363851;--fg-2:#454762;--fg-3:#51546e;--fg-4:#5d617c;
+  --green:#2e7526;--amber:#8c5c0e;--red:#c01742;--cyan:#167083;
+  --green-dim:#6fac66;--amber-dim:#cda05c;--red-dim:#d06f88;--cyan-dim:#5fa9bb;
+  --green-tint:#dcedd5;--amber-tint:#f5e5c2;--red-tint:#f7d8de;--cyan-tint:#d8ebf1;
+  --font-mono:"Spline Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-root);color:var(--fg-1);font-family:var(--font-mono);font-size:13px;line-height:1.5;padding-bottom:78px}
+.wrap{max-width:1300px;margin:0 auto;padding:18px 18px 0}
+.flag{background:var(--amber-tint);border:1px solid var(--amber-dim);color:var(--amber);padding:6px 10px;border-radius:6px;font-size:11px;margin-bottom:14px}
+h1{font-size:15px;margin:0 0 4px}
+.sub{color:var(--fg-4);font-size:11.5px;margin:0 0 12px}
+.box{background:var(--bg-surface);border:1px solid var(--line-1);border-radius:6px;padding:16px;overflow:auto}
+svg{display:block}
+text{font-family:var(--font-mono);fill:var(--fg-1)}
+.nt{font-size:11px}.ns{font-size:9px;fill:var(--fg-4)}
+.colhead{font-size:9.5px;fill:var(--fg-4);letter-spacing:.11em}
+.note{color:var(--fg-4);font-size:11.5px;margin:12px 0 0;max-width:88ch}
+.note b{color:var(--fg-2)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--fg-3);align-items:center}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;border:1px solid}
+.legend s{display:inline-block;width:16px;height:0;border-top:2px solid;margin-right:5px;vertical-align:3px;text-decoration:none}
+
+/* interaction */
+.node{cursor:pointer}
+.node rect,.node text{transition:opacity .14s ease}
+.edge{transition:opacity .14s ease,stroke-width .14s ease}
+.hist{opacity:0}                      /* satisfied edges hidden until a hover asks for them */
+svg.focus .node.dim rect,svg.focus .node.dim text{opacity:.22}
+svg.focus .edge.livewire{opacity:.12}
+svg.focus .edge.on{opacity:1}
+svg.focus .hist.on{opacity:.85}
+.pinned{outline:none}
+.bar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;display:flex;gap:3px;background:var(--bg-raised);border:1px solid var(--line-2);border-radius:24px;padding:4px;box-shadow:0 4px 18px rgba(54,56,81,.16);z-index:10}
+.bar button{font-family:var(--font-mono);font-size:11.5px;border:0;background:transparent;color:var(--fg-3);padding:6px 12px;border-radius:20px;cursor:pointer;white-space:nowrap}
+.bar button[aria-pressed=true]{background:var(--fg-1);color:var(--bg-raised)}
+.status{margin-top:10px;min-height:38px;background:var(--bg-raised);border:1px solid var(--line-1);border-radius:6px;padding:8px 12px;font-size:11.5px;color:var(--fg-3)}
+.status b{color:var(--fg-1)}
+.status .none{color:var(--fg-4)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="flag">PROTOTYPE, throwaway. Ticket 04, fourth pass. Hover a ticket. Click to pin it, click again or press Escape to release.</div>
+  <h1>PROTOTYPE: live edges, with the history on demand</h1>
+  <p class="sub" id="sub"></p>
+  <div class="box" id="view"></div>
+  <div class="status" id="status"></div>
+  <div class="legend">
+    <span><i style="background:var(--green-tint);border-color:var(--green-dim)"></i>resolved</span>
+    <span><i style="background:var(--amber-tint);border-color:var(--amber-dim)"></i>claimed</span>
+    <span><i style="background:var(--bg-raised);border-color:var(--line-2)"></i>takeable</span>
+    <span><i style="background:var(--bg-overlay);border-color:var(--line-1)"></i>waiting</span>
+    <span><s style="border-color:var(--amber)"></s>live blocker</span>
+    <span><s style="border-color:var(--green-dim)"></s>satisfied, shown on hover</span>
+  </div>
+  <p class="note" id="note"></p>
+</div>
+<div class="bar">
+  <button data-m="chain">chain, both ways</button>
+  <button data-m="down">what it unblocks</button>
+  <button data-m="up">what it waits on</button>
+</div>
+<script>
+const T=[
+ {id:"01",type:"grilling", state:"resolved",blk:[],          t:"Does scratchboard publish the tracker spec?"},
+ {id:"02",type:"grilling", state:"resolved",blk:["01"],      t:"Name the sixth lifecycle state"},
+ {id:"03",type:"grilling", state:"resolved",blk:["01"],      t:"How does the board recognize an effort folder?"},
+ {id:"04",type:"prototype",state:"claimed", blk:[],          t:"Prototype the wayfinder view"},
+ {id:"05",type:"research", state:"resolved",blk:[],          t:"Laying out a dependency graph, zero deps"},
+ {id:"06",type:"grilling", state:"open",    blk:["03","04"], t:"What non-ticket documents enter the payload?"},
+ {id:"07",type:"grilling", state:"open",    blk:[],          t:"Which skills does the launcher offer?"},
+ {id:"08",type:"grilling", state:"open",    blk:["07"],      t:"Should the bake read installed skills?"},
+ {id:"09",type:"task",     state:"open",    blk:["02"],      t:"Migrate this repo to triage-role lanes"},
+ {id:"10",type:"grilling", state:"open",    blk:["01"],      t:"What does the README claim?"},
+ {id:"11",type:"grilling", state:"open",    blk:["01"],      t:"What does a non-Matt repo still get?"},
+ {id:"12",type:"grilling", state:"open",    blk:["13"],      t:"Lift the zero-dependency rule?"},
+ {id:"13",type:"research", state:"resolved",blk:[],          t:"What mermaid rendering costs"},
+ {id:"14",type:"grilling", state:"open",    blk:["04"],      t:"One wayfinder view or several?"},
+ {id:"15",type:"grilling", state:"open",    blk:["03","07"], t:"How does the board offer its repair skill?"},
+];
+const byId=Object.fromEntries(T.map(t=>[t.id,t]));
+const done=t=>t.state==="resolved";
+const free=t=>t.blk.every(b=>done(byId[b]));
+const st=t=>done(t)?"resolved":t.state==="claimed"?"claimed":free(t)?"takeable":"waiting";
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const fill=t=>({resolved:"var(--green-tint)",claimed:"var(--amber-tint)",takeable:"var(--bg-raised)",waiting:"var(--bg-overlay)"})[st(t)];
+const strk=t=>({resolved:"var(--green-dim)",claimed:"var(--amber-dim)",takeable:"var(--line-2)",waiting:"var(--line-1)"})[st(t)];
+
+const edges=[];T.forEach(t=>t.blk.forEach(b=>edges.push({a:b,b:t.id,live:!done(byId[b])})));
+const nLive=edges.filter(e=>e.live).length;
+const cols=[T.filter(done),T.filter(t=>!done(t)&&free(t)),T.filter(t=>!done(t)&&!free(t))];
+const NW=232,NH=44,GX=104,GY=13,PAD=18,TOP=26;
+const pos={};cols.forEach((c,ci)=>c.forEach((t,ri)=>pos[t.id]={x:PAD+ci*(NW+GX),y:TOP+ri*(NH+GY)}));
+const rows=Math.max(...cols.map(c=>c.length));
+const W=PAD*2+3*NW+2*GX,H=TOP+rows*NH+(rows-1)*GY+PAD;
+const clip=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
+
+const path=(p,q)=>{const x1=p.x+NW,y1=p.y+NH/2,x2=q.x,y2=q.y+NH/2,m=(x1+x2)/2;
+  return `M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}`};
+
+document.getElementById("view").innerHTML=`<svg id="g" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+ <defs>
+  <marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--amber)"/></marker>
+  <marker id="gm" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--green-dim)"/></marker>
+ </defs>
+ <text class="colhead" x="${PAD}" y="12">BEHIND US · ${cols[0].length}</text>
+ <text class="colhead" x="${PAD+NW+GX}" y="12">TAKEABLE NOW · ${cols[1].length}</text>
+ <text class="colhead" x="${PAD+2*(NW+GX)}" y="12">STILL BLOCKED · ${cols[2].length}</text>
+ ${edges.map(e=>`<path class="edge ${e.live?"livewire":"hist"}" data-a="${e.a}" data-b="${e.b}"
+    d="${path(pos[e.a],pos[e.b])}" fill="none"
+    stroke="${e.live?"var(--amber)":"var(--green-dim)"}" stroke-width="${e.live?2:1.4}"
+    marker-end="url(#${e.live?"am":"gm"})"/>`).join("")}
+ ${T.map(t=>{const p=pos[t.id];return `<g class="node" data-id="${t.id}"><title>${esc(t.t)}</title>
+   <rect x="${p.x}" y="${p.y}" width="${NW}" height="${NH}" rx="5" fill="${fill(t)}" stroke="${strk(t)}" stroke-width="1.5"/>
+   <text class="nt" x="${p.x+10}" y="${p.y+18}">${t.id} · ${esc(clip(t.t,32))}</text>
+   <text class="ns" x="${p.x+10}" y="${p.y+32}">${t.type} · ${st(t)}</text></g>`}).join("")}
+</svg>`;
+document.getElementById("sub").textContent=`15 tickets, ${edges.length} dependencies, of which ${nLive} are still live. The other ${edges.length-nLive} are satisfied and stay hidden until you ask.`;
+
+const svg=document.getElementById("g");
+const eEls=[...svg.querySelectorAll(".edge")],nEls=[...svg.querySelectorAll(".node")];
+let mode="chain",pinned=null;
+
+function reach(id){
+  const keep=new Set([id]);let grew=true;
+  while(grew){grew=false;edges.forEach(e=>{
+    if((mode==="chain"||mode==="down")&&keep.has(e.a)&&!keep.has(e.b)){keep.add(e.b);grew=true}
+    if((mode==="chain"||mode==="up")&&keep.has(e.b)&&!keep.has(e.a)){keep.add(e.a);grew=true}
+  })}
+  return keep;
+}
+function focus(id){
+  const keep=reach(id);
+  svg.classList.add("focus");
+  eEls.forEach(e=>e.classList.toggle("on",keep.has(e.dataset.a)&&keep.has(e.dataset.b)));
+  nEls.forEach(n=>n.classList.toggle("dim",!keep.has(n.dataset.id)));
+  const t=byId[id],others=[...keep].filter(k=>k!==id).sort();
+  const label={chain:"in its chain",down:"it unblocks",up:"it waits on"}[mode];
+  document.getElementById("status").innerHTML=
+    `<b>${t.id} · ${esc(t.t)}</b> — ${t.type}, ${st(t)}. `+
+    (others.length?`${others.length} ${label}: ${others.join(", ")}.`:`<span class="none">Nothing ${label}.</span>`)+
+    (pinned?` <span class="none">pinned, click again or press Escape</span>`:"");
+}
+function blur(){
+  if(pinned)return;
+  svg.classList.remove("focus");
+  eEls.forEach(e=>e.classList.remove("on"));nEls.forEach(n=>n.classList.remove("dim"));
+  document.getElementById("status").innerHTML=
+    `<span class="none">Hover a ticket to light up its chain. The ${edges.length-nLive} satisfied dependencies reappear only for the ticket you are looking at.</span>`;
+}
+nEls.forEach(n=>{
+  n.addEventListener("mouseenter",()=>{if(!pinned)focus(n.dataset.id)});
+  n.addEventListener("mouseleave",blur);
+  n.addEventListener("click",ev=>{ev.stopPropagation();
+    const id=n.dataset.id;
+    if(pinned===id){pinned=null;blur()}else{pinned=id;focus(id)}});
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){pinned=null;blur()}});
+svg.addEventListener("click",()=>{pinned=null;blur()});
+document.querySelectorAll(".bar button").forEach(b=>b.onclick=()=>{
+  mode=b.dataset.m;
+  document.querySelectorAll(".bar button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.m===mode));
+  if(pinned)focus(pinned);else blur();
+});
+document.querySelector('.bar button[data-m="chain"]').setAttribute("aria-pressed","true");
+document.getElementById("note").innerHTML=
+ "<b>What to feel for.</b> The resting state is the calm C1: three columns and only the "+nLive+" blockers that still bite. "+
+ "Hovering brings back that ticket's satisfied history in green, so the past is hidden rather than deleted. "+
+ "The bar switches what a hover means, because 'what does this unblock' and 'what is this waiting on' are different questions and the chain answers neither on its own. "+
+ "Click pins a selection, which is the part that decides whether this survives a screenshot.";
+blur();
+</script>
+</body>
+</html>
