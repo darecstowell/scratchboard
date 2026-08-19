@@ -74,6 +74,15 @@ Standing constraints already settled with the user:
   outside `counts.total`, which takes this repo from 41 to 23. A half-recognized folder raises
   the tier-2 diagnostic and falls back to ordinary tickets.
 
+- [Research: what mermaid rendering costs, and whether bake time avoids it](./issues/13-research-mermaid-rendering-cost.md):
+  keep the incumbent escaped `<pre><code>`. Mermaid is 3.57 MB minified against a 438 KB board,
+  8.2 times its size, and no supported subset exists. Bake-time SVG genuinely works browser-free
+  through `svgdom`, but every path there declares Node 22 and the floor is 18. The harder blocker
+  is security: seven advisories fire under the default `securityLevel: strict`, there is no render
+  timeout against three infinite-loop CVEs so the warnings rule needs a subprocess and a wall
+  clock, and the unsanitized flowchart `img:` sink beacons from the bake machine and from every
+  published board. The `npx` pin does not pin the security-sensitive package.
+
 ## Not yet specified
 
 - Dependency edges. Two incompatible `Blocked by:` formats exist, structured in wayfinder and
@@ -97,7 +106,11 @@ Standing constraints already settled with the user:
   decides whether the bake reads it at all, so this waits on that ticket.
 - How a baked board handles an effort with forty tickets.
 - Whether mermaid rendering, if it lands at all, applies to ticket bodies only or to every
-  document the board renders.
+  document the board renders. Now unlikely to arise, since the research recommends keeping the
+  escaped fence.
+- What the `npx` fetch-at-a-pinned-version pattern actually guarantees. The mermaid research
+  measured that the pin does not reach transitive dependencies and that npx is not offline with a
+  warm cache, which touches the lint and type tooling this repo already fetches that way.
 - What else a dependency budget would buy, if the rule is lifted. The question has only been
   asked of mermaid and of graph layout so far.
 - Whether the two values scratchboard names, `done` and `out-of-scope`, are offered upstream as a
