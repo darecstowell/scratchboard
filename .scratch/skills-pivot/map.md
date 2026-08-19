@@ -30,6 +30,8 @@ Standing constraints already settled with the user:
 - Read-only holds.
 - Lanes become triage roles. The folder stops being the lane.
 - A sixth terminal state, scratchboard's own, completes the lifecycle his five roles lack.
+  Settled as `done`. See
+  [Name the sixth lifecycle state, and decide what writes it](./issues/02-name-the-sixth-state.md).
 - Efforts stay at `.scratch/<effort>/`, his stock convention, so this repo feels the
   out-of-the-box experience.
 - Both a first-class wayfinder view and document rendering are wanted. The effort folder is the
@@ -49,6 +51,16 @@ Standing constraints already settled with the user:
   doc and the dialect module together. A `supports mattpocock/skills v1.2.x` badge is defended
   by fixtures. Tolerance runs in three tiers, and the new middle one, recognized but half-read,
   raises a diagnostic that names the fix.
+
+- [Name the sixth lifecycle state, and decide what writes it](./issues/02-name-the-sixth-state.md):
+  the state is `done`, a sixth value in the existing `status` field rather than a second axis,
+  because a value costs less to invent than a field name. An agent writes it, taught by
+  `skills/scratchboard/SKILL.md`, which now owns the vocabulary upstream is silent about. `done`
+  and `wontfix` each get their own collapsed lane. `shipped` becomes `done`, `deferred` stays a
+  local value outside the spec, and the wayfinder dialect gains `out-of-scope` beside `claimed`
+  and `resolved`. The two enums must never share a value, so a file's dialect is readable from
+  its value alone. A ticket with no `status` stays in `Unmapped`, because a default would be the
+  board inventing state.
 
 ## Not yet specified
 
@@ -72,6 +84,9 @@ Standing constraints already settled with the user:
   document the board renders.
 - What else a dependency budget would buy, if the rule is lifted. The question has only been
   asked of mermaid and of graph layout so far.
+- Whether the two values scratchboard names, `done` and `out-of-scope`, are offered upstream as a
+  contribution rather than held as this project's dialect. Ticket 01 settled that the board
+  follows upstream additively, and said nothing about pushing back the other way.
 
 ## Out of scope
 
