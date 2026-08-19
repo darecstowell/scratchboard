@@ -30,6 +30,8 @@ Standing constraints already settled with the user:
 - Read-only holds.
 - Lanes become triage roles. The folder stops being the lane.
 - A sixth terminal state, scratchboard's own, completes the lifecycle his five roles lack.
+  Settled as `done`. See
+  [Name the sixth lifecycle state, and decide what writes it](./issues/02-name-the-sixth-state.md).
 - Efforts stay at `.scratch/<effort>/`, his stock convention, so this repo feels the
   out-of-the-box experience.
 - Both a first-class wayfinder view and document rendering are wanted. The effort folder is the
@@ -50,6 +52,28 @@ Standing constraints already settled with the user:
   by fixtures. Tolerance runs in three tiers, and the new middle one, recognized but half-read,
   raises a diagnostic that names the fix.
 
+- [Name the sixth lifecycle state, and decide what writes it](./issues/02-name-the-sixth-state.md):
+  the state is `done`, a sixth value in the existing `status` field rather than a second axis,
+  because a value costs less to invent than a field name. An agent writes it, taught by
+  `skills/scratchboard/SKILL.md`, which now owns the vocabulary upstream is silent about. `done`
+  and `wontfix` each get their own collapsed lane. `shipped` becomes `done`, `deferred` stays a
+  local value outside the spec, and the wayfinder dialect gains `out-of-scope` beside `claimed`
+  and `resolved`. The two enums must never share a value, so a recognized value is readable as
+  its dialect on its own. An unrecognized or missing value falls back to the group the file sits
+  in. A ticket with no `status` stays in `Unmapped`, because a default would be the board
+  inventing state.
+
+- [How does the board recognize an effort folder and tell one shape from another?](./issues/03-recognize-an-effort-folder.md):
+  a live heuristic in the dialect module reads directory shape, and a lead document beside an
+  `issues/` folder marks a group, with `map.md` and `spec.md` naming the kind, and a folder
+  holding both is ambiguous rather than a group. One mechanism serves both shapes and carries a
+  `kind`. A recognized group leaves the ticket list for a collection of its own, holding every
+  file the glob discovered under the root with a role of `map`, `issue`, or `other`. The cross-repo id collision fixes itself, and the uniqueness check scopes to the
+  group. A new kind-neutral `groups` key corrects a wrong guess, with `kind: "none"` as the
+  opt-out. It reclassifies and never extends the walk, `init` never writes it, and groups sit
+  outside `counts.total`, which takes this repo from 41 to 23. A half-recognized folder raises
+  the tier-2 diagnostic and falls back to ordinary tickets.
+
 ## Not yet specified
 
 - Dependency edges. Two incompatible `Blocked by:` formats exist, structured in wayfinder and
@@ -62,7 +86,11 @@ Standing constraints already settled with the user:
 - Lane icons and single-word priority labels, from the original toolbar request. Blocked on
   seeing the toolbar after the lane change lands.
 - Whether a `to-tickets` feature folder earns a view of its own, distinct from a wayfinder
-  effort.
+  effort. Recognition now carries a `kind` that says which is which, so the question is purely
+  visual and waits on the view tickets.
+- Whether `groups` is the right name for the config key. It is kind-neutral, which recognition
+  required, and it is a generic word this codebase has not used before. Cheaper to change before
+  [Documents in the payload](./issues/06-documents-in-the-payload.md) encodes it.
 - Whether the board reads the installed version of the skills. A plugin install puts that
   version on disk, where a bake could read it. A `find-skills` install does not.
   [Should the bake read the machine's installed skills](./issues/08-bake-reads-the-machine.md)
@@ -72,6 +100,9 @@ Standing constraints already settled with the user:
   document the board renders.
 - What else a dependency budget would buy, if the rule is lifted. The question has only been
   asked of mermaid and of graph layout so far.
+- Whether the two values scratchboard names, `done` and `out-of-scope`, are offered upstream as a
+  contribution rather than held as this project's dialect. Ticket 01 settled that the board
+  follows upstream additively, and said nothing about pushing back the other way.
 
 ## Out of scope
 
