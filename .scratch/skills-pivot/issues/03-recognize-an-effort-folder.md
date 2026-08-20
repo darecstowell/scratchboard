@@ -75,7 +75,7 @@ Recognizing wayfinder alone would leave the identical bug standing for anyone us
 records the difference without spending it. Whether the two kinds earn different views stays fog,
 where the map put it, and belongs to
 [Prototype the wayfinder view](./04-prototype-the-wayfinder-view.md) and
-[One wayfinder view or several](./14-one-wayfinder-view-or-several.md).
+[What the wayfinder surface shows](./17-what-the-wayfinder-surface-shows.md).
 
 ### A group is not a ticket
 
@@ -85,7 +85,7 @@ excluded, and it is not one card sitting in a lane.
 `AGENTS.md` now states that efforts are not tickets and are planning rather than backlog. A card
 in a lane contradicts that vocabulary. Exclusion loses the effort completely, which fights the
 standing note that a first-class wayfinder view is wanted. A collection is the thing a view
-reads, and [Documents in the payload](./06-documents-in-the-payload.md) is already blocked on
+reads, and [What the wayfinder surface shows](./17-what-the-wayfinder-surface-shows.md) is already blocked on
 this ticket, so it does the encoding.
 
 The cost is a payload field on both sides, and until a view exists a user with an effort sees
@@ -164,7 +164,7 @@ tickets.
 
 Excluding them instead would break the older rule that a board quietly dropping tickets is worse
 than a board showing an error. Where that diagnostic surfaces belongs to
-[How does the board offer its own repair skill](./15-offer-the-repair-skill-from-the-board.md).
+[What the board does with skills](./16-what-the-board-does-with-skills.md).
 
 ### The weak point
 
@@ -176,5 +176,5 @@ the payload.
 
 What a recognized group looks like on screen. That is
 [Prototype the wayfinder view](./04-prototype-the-wayfinder-view.md),
-[One wayfinder view or several](./14-one-wayfinder-view-or-several.md), and
-[Documents in the payload](./06-documents-in-the-payload.md).
+[What the wayfinder surface shows](./17-what-the-wayfinder-surface-shows.md), and
+[What the wayfinder surface shows](./17-what-the-wayfinder-surface-shows.md).

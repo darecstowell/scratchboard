@@ -25,7 +25,7 @@ no version on disk, only a folder hash. See
 Standing constraints already settled with the user:
 
 - Zero dependencies is now itself under question. See
-  [Should the zero-dependency rule be lifted?](./issues/12-lift-the-zero-dependency-rule.md).
+  [What scratchboard promises](./issues/18-what-scratchboard-promises.md).
   Assume it holds until that resolves.
 - Read-only holds.
 - Lanes become triage roles. The folder stops being the lane.
@@ -112,10 +112,10 @@ Standing constraints already settled with the user:
   visual and waits on the view tickets.
 - Whether `groups` is the right name for the config key. It is kind-neutral, which recognition
   required, and it is a generic word this codebase has not used before. Cheaper to change before
-  [Documents in the payload](./issues/06-documents-in-the-payload.md) encodes it.
+  [What the wayfinder surface shows](./issues/17-what-the-wayfinder-surface-shows.md) encodes it.
 - Whether the board reads the installed version of the skills. A plugin install puts that
   version on disk, where a bake could read it. A `find-skills` install does not.
-  [Should the bake read the machine's installed skills](./issues/08-bake-reads-the-machine.md)
+  [What the board does with skills](./issues/16-what-the-board-does-with-skills.md)
   decides whether the bake reads it at all, so this waits on that ticket.
 - How a baked board handles an effort with forty tickets. The three-column view holds in
   principle, and `behind us` grows without bound. Nothing has been drawn at that size.
