@@ -1,6 +1,6 @@
 ---
 title: Publish 0.1.0 from a tag with provenance
-status: shipped
+status: done
 priority: p1
 labels: [release, ci]
 ---

@@ -1,6 +1,6 @@
 ---
 title: Retire the stacked pull requests left open after the first merge
-status: shipped
+status: done
 priority: p3
 labels: [ci, maintenance]
 ---

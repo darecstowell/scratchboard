@@ -1,6 +1,6 @@
 ---
 title: Cut the README to a tour and move reference into docs
-status: shipped
+status: done
 priority: p2
 labels: [docs]
 ---

@@ -1,6 +1,6 @@
 ---
 title: Add lint, type checking, and a house-rules guard to CI
-status: shipped
+status: done
 priority: p2
 labels: [ci, tooling]
 ---
