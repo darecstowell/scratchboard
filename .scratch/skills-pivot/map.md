@@ -25,7 +25,7 @@ no version on disk, only a folder hash. See
 Standing constraints already settled with the user:
 
 - Zero dependencies is now itself under question. See
-  [Should the zero-dependency rule be lifted?](./issues/12-lift-the-zero-dependency-rule.md).
+  [What scratchboard promises](./issues/18-what-scratchboard-promises.md).
   Assume it holds until that resolves.
 - Read-only holds.
 - Lanes become triage roles. The folder stops being the lane.
@@ -96,6 +96,18 @@ Standing constraints already settled with the user:
   edge leaves and re-enters on the right rather than running backwards across the cards.
   Prototypes on branch `prototype/wayfinder-view`.
 
+- [Migrate this repo's own board to triage-role lanes](./issues/09-migrate-this-repo-to-status-lanes.md):
+  done, and the folders are gone. Upstream turned out to have no backlog folder at all, only
+  `.scratch/<feature>/spec.md` beside `issues/`, and taking that literally would have emptied the
+  board, because ticket 03 already made a spec-led folder a group that leaves the ticket list. So
+  the rule was taken and not the shape: every folder under `.scratch/` is a piece of work and
+  never a state, so a ticket belonging to no feature sits flat at the root. Seven lanes match on
+  `status`, one per value, with `done` and `wontfix` collapsed and `wontfix` empty. All 23 tickets
+  place and none fall to `Unmapped`. No source changed, because `match.field` already worked. The
+  toolbar drops to two facet groups, `priority` at 4 chips and `labels` at 28, and the `status`
+  facet dropped itself, verified rather than assumed. The migration lost "in progress", which
+  lived only in the folder name.
+
 ## Not yet specified
 
 - Dependency edges. Two incompatible `Blocked by:` formats exist, structured in wayfinder and
@@ -105,17 +117,24 @@ Standing constraints already settled with the user:
   directory colocation. Whether to invent a field is downstream of who owns the spec.
 - Where `CONTEXT.md` and ADRs sit in the interface. They are the most stable artifacts in the
   ecosystem, but no view exists for a document that is not a ticket.
-- Lane icons and single-word priority labels, from the original toolbar request. Blocked on
-  seeing the toolbar after the lane change lands.
+- Lane icons and single-word priority labels, from the original toolbar request. The toolbar is
+  now visible: two facet groups, `priority` at 4 chips and `labels` at 28, of which 17 sit on one
+  ticket each. Seven lane rails plus `Unmapped`. The label tail and the rail count are what any
+  cleanup is looking at.
+- Whether the triage roles need a way to say a ticket is started. The migration deleted
+  `in-progress/`, and the six values cannot express it, because they say what a ticket needs
+  rather than whether anyone picked it up. Wayfinder's dialect has `claimed` for exactly this.
+  Adding a seventh value, or a second field, cuts against ticket 02's one-field decision, so this
+  is a spec question rather than a config one.
 - Whether a `to-tickets` feature folder earns a view of its own, distinct from a wayfinder
   effort. Recognition now carries a `kind` that says which is which, so the question is purely
   visual and waits on the view tickets.
 - Whether `groups` is the right name for the config key. It is kind-neutral, which recognition
   required, and it is a generic word this codebase has not used before. Cheaper to change before
-  [Documents in the payload](./issues/06-documents-in-the-payload.md) encodes it.
+  [What the wayfinder surface shows](./issues/17-what-the-wayfinder-surface-shows.md) encodes it.
 - Whether the board reads the installed version of the skills. A plugin install puts that
   version on disk, where a bake could read it. A `find-skills` install does not.
-  [Should the bake read the machine's installed skills](./issues/08-bake-reads-the-machine.md)
+  [What the board does with skills](./issues/16-what-the-board-does-with-skills.md)
   decides whether the bake reads it at all, so this waits on that ticket.
 - How a baked board handles an effort with forty tickets. The three-column view holds in
   principle, and `behind us` grows without bound. Nothing has been drawn at that size.
@@ -127,6 +146,11 @@ Standing constraints already settled with the user:
   warm cache, which touches the lint and type tooling this repo already fetches that way.
 - What else a dependency budget would buy, if the rule is lifted. The question has only been
   asked of mermaid and of graph layout so far.
+- Whether this repo's tickets should move from YAML frontmatter to upstream's `Status:` body line.
+  Upstream records triage state as a line near the top of the body, and this repo deliberately
+  chose frontmatter. The same "organize the way upstream does" rule that settled the folders
+  points here too, and ticket 01 settled that the repo owns the layout after setup, so the two
+  are in tension.
 - Whether the two values scratchboard names, `done` and `out-of-scope`, are offered upstream as a
   contribution rather than held as this project's dialect. Ticket 01 settled that the board
   follows upstream additively, and said nothing about pushing back the other way.

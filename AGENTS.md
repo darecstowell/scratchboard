@@ -70,15 +70,17 @@ zero-config run and a hand-written config produce the same lanes. Run both for a
 `.scratch/` holds this project's real backlog, and every push bakes it to the Pages demo with
 scratchboard itself. Those tickets are public copy.
 
-Three lanes, and the folder is the lane: `todo/`, `in-progress/`, `done/`. A ticket lives where
-its work actually is, so moving a card means moving the file. Nothing sits in `in-progress/`
-that nobody has started, and nothing reaches `done/` that is not shipped and verifiable in the
-history. A ticket in the wrong lane is a lie the demo tells on every page load.
+The `status` field is the lane, and the folder carries nothing. A backlog ticket is a file at
+`.scratch/<n>-<slug>.md`, and changing a lane means editing one line rather than moving a file.
+`status` holds the five triage roles plus `done`, this project's own terminal state, and
+`deferred`, this project's own value outside the spec. `docs/agents/triage-labels.md` holds the
+strings. A ticket whose `status` is a lie is a lie the demo tells on every page load.
 
-Wayfinder efforts are the one exception, and they are not tickets. An effort is a map and its
-decision tickets at `.scratch/<effort>/`, outside the three lanes, and it is planning rather
-than backlog. `docs/agents/issue-tracker.md` holds the conventions. The scanner cannot yet tell
-an effort from a ticket, so effort files currently land in `Unmapped` on the demo, which
+Every folder under `.scratch/` is a piece of work, never a state. That is the upstream rule, and
+it is why the backlog sits flat at the root. Wayfinder efforts are the one folder shape here: an
+effort is a map and its decision tickets at `.scratch/<effort>/`, and it is planning rather than
+backlog. `docs/agents/issue-tracker.md` holds the conventions. The scanner cannot yet tell an
+effort from a ticket, so effort files currently land in `Unmapped` on the demo, which
 [ticket 3 in the skills pivot](.scratch/skills-pivot/issues/03-recognize-an-effort-folder.md)
 carries.
 
@@ -103,12 +105,12 @@ Branch `<type>/<slug>`. Imperative subject, 72 characters.
 
 ### Issue tracker
 
-Tickets are markdown files in `.scratch/`, and the folder is the lane. See
+Tickets are markdown files in `.scratch/`, and the `status` field is the lane. See
 [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
 
 ### Triage labels
 
-The five canonical roles, unchanged, read from each ticket's `status` field. See
+The five canonical roles plus `done`, read from each ticket's `status` field. See
 [docs/agents/triage-labels.md](docs/agents/triage-labels.md).
 
 ### Domain docs

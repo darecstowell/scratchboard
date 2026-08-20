@@ -114,5 +114,5 @@ with no wasm at all.
 ### What this does not decide
 
 Whether the dependency rule moves. That is
-[Should the zero-dependency rule be lifted](./12-lift-the-zero-dependency-rule.md), which this
+[What scratchboard promises](./18-what-scratchboard-promises.md), which this
 research unblocks. These findings say what mermaid would cost, not what the budget should be.

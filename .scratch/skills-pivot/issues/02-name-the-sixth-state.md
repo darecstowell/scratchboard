@@ -67,9 +67,9 @@ The board never writes it. Read-only holds, and deriving the state was dead anyw
 folder stops being the lane, because no signal is left to derive from.
 
 The interface that points a stuck user at the skill is not decided here. It is the same surface
-[How does the board offer its own repair skill](./15-offer-the-repair-skill-from-the-board.md)
+[What the board does with skills](./16-what-the-board-does-with-skills.md)
 owns, sharing the copyable-string machinery with
-[Which skills does the launcher offer](./07-skill-launcher-argument-templates.md).
+[What the board does with skills](./16-what-the-board-does-with-skills.md).
 
 ### `wontfix` keeps its own lane
 
@@ -136,4 +136,4 @@ to be discovered. It is also exactly the half-read shape the diagnostic in ticke
 
 How a resolved or out-of-scope effort ticket renders. That waits on
 [How does the board recognize an effort folder](./03-recognize-an-effort-folder.md) and
-[One wayfinder view or several](./14-one-wayfinder-view-or-several.md).
+[What the wayfinder surface shows](./17-what-the-wayfinder-surface-shows.md).

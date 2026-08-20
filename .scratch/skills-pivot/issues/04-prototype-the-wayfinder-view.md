@@ -104,6 +104,6 @@ Forty tickets. The three columns hold, but `behind us` grows without bound and n
 been tried at that size. That stays fog.
 
 Whether this is one view or several is
-[One wayfinder view or several](./14-one-wayfinder-view-or-several.md). What the payload has to
-carry for it is [Documents in the payload](./06-documents-in-the-payload.md). Both are unblocked
+[What the wayfinder surface shows](./17-what-the-wayfinder-surface-shows.md). What the payload has to
+carry for it is [What the wayfinder surface shows](./17-what-the-wayfinder-surface-shows.md). Both are unblocked
 by this.
