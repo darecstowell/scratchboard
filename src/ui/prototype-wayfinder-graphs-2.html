@@ -1,0 +1,324 @@
+<!doctype html>
+<!-- PROTOTYPE, throwaway. Ticket 04, third pass. Six takes, most abandoning node-link.
+     Zero dependencies, hand-drawn, one file. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE: wayfinder graphs, third pass</title>
+<style>
+:root{
+  --bg-deep:#dce0e8;--bg-root:#eff1f5;--bg-surface:#f5f7fa;--bg-raised:#fbfcfe;--bg-overlay:#e3e7ef;
+  --line-1:#dde1ea;--line-2:#7d8bac;
+  --fg-1:#363851;--fg-2:#454762;--fg-3:#51546e;--fg-4:#5d617c;
+  --green:#2e7526;--amber:#8c5c0e;--red:#c01742;--cyan:#167083;
+  --green-dim:#6fac66;--amber-dim:#cda05c;--red-dim:#d06f88;--cyan-dim:#5fa9bb;
+  --green-tint:#dcedd5;--amber-tint:#f5e5c2;--red-tint:#f7d8de;--cyan-tint:#d8ebf1;
+  --font-mono:"Spline Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-root);color:var(--fg-1);font-family:var(--font-mono);font-size:13px;line-height:1.5;padding-bottom:78px}
+.wrap{max-width:1240px;margin:0 auto;padding:18px 18px 0}
+.flag{background:var(--amber-tint);border:1px solid var(--amber-dim);color:var(--amber);padding:6px 10px;border-radius:6px;font-size:11px;margin-bottom:14px}
+h1{font-size:15px;margin:0 0 10px}
+.box{background:var(--bg-surface);border:1px solid var(--line-1);border-radius:6px;padding:14px;overflow:auto;max-height:70vh}
+svg{display:block}
+text{font-family:var(--font-mono);fill:var(--fg-1)}
+.nt{font-size:11px}.ns{font-size:9px;fill:var(--fg-4)}
+.note{color:var(--fg-4);font-size:11.5px;margin:10px 0 0;max-width:86ch}
+.note b{color:var(--fg-2)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--fg-3)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;border:1px solid}
+.bar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;display:flex;gap:3px;background:var(--bg-raised);border:1px solid var(--line-2);border-radius:24px;padding:4px;box-shadow:0 4px 18px rgba(54,56,81,.16);z-index:10;flex-wrap:wrap;justify-content:center;max-width:94vw}
+.bar button{font-family:var(--font-mono);font-size:11.5px;border:0;background:transparent;color:var(--fg-3);padding:6px 11px;border-radius:20px;cursor:pointer;white-space:nowrap}
+.bar button[aria-pressed=true]{background:var(--fg-1);color:var(--bg-raised)}
+
+/* matrix */
+table.mx{border-collapse:collapse;font-size:11px}
+table.mx th{font-weight:400;color:var(--fg-3);padding:2px 5px;font-variant-numeric:tabular-nums}
+table.mx th.rh{text-align:right;white-space:nowrap;padding-right:8px}
+table.mx td{width:24px;height:24px;border:1px solid var(--line-1);text-align:center;background:var(--bg-raised)}
+table.mx td.diag{background:var(--bg-overlay);border-color:var(--bg-overlay)}
+table.mx td.hit{background:var(--fg-1)}
+table.mx td.hit.sat{background:var(--green-tint);border-color:var(--green-dim)}
+table.mx td.hit::after{content:"";display:block;width:8px;height:8px;border-radius:50%;background:var(--bg-raised);margin:auto}
+table.mx td.hit.sat::after{background:var(--green)}
+table.mx tr:hover td{background:var(--bg-overlay)}
+table.mx tr:hover td.hit{background:var(--fg-1)}
+
+/* outline */
+.tree{font-size:12.5px;line-height:1.85}
+.tree .row{white-space:pre;color:var(--fg-2)}
+.tree .g{color:var(--fg-4)}
+.tree .id{font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:9.5px;padding:0 5px;border-radius:9px;border:1px solid;margin-left:6px;letter-spacing:.03em}
+.s-resolved{background:var(--green-tint);border-color:var(--green-dim);color:var(--green)}
+.s-claimed{background:var(--amber-tint);border-color:var(--amber-dim);color:var(--amber)}
+.s-takeable{background:var(--bg-raised);border-color:var(--line-2);color:var(--fg-2)}
+.s-waiting{background:var(--bg-overlay);border-color:var(--line-1);color:var(--fg-4)}
+
+/* hover reveal */
+.hv .edge{opacity:.1;transition:opacity .12s}
+.hv .node{cursor:pointer}
+.hv.lit .edge{opacity:.1}
+.hv .edge.on{opacity:1}
+.hv .node.off rect{opacity:.35}
+.hv .node.off text{opacity:.35}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="flag">PROTOTYPE, throwaway. Ticket 04, third pass. Same 15 tickets. Four of these are not node-link diagrams at all.</div>
+  <h1 id="title"></h1>
+  <div class="box" id="view"></div>
+  <div id="extra"></div>
+  <p class="note" id="note"></p>
+</div>
+<div class="bar">
+  <button data-v="live">C1 · live edges only</button>
+  <button data-v="matrix">C2 · matrix</button>
+  <button data-v="outline">C3 · outline</button>
+  <button data-v="ortho">C4 · orthogonal</button>
+  <button data-v="hover">C5 · hover reveal</button>
+  <button data-v="spine">C6 · spine</button>
+</div>
+<script>
+const T=[
+ {id:"01",type:"grilling", state:"resolved",blk:[],          t:"Does scratchboard publish the tracker spec?"},
+ {id:"02",type:"grilling", state:"resolved",blk:["01"],      t:"Name the sixth lifecycle state"},
+ {id:"03",type:"grilling", state:"resolved",blk:["01"],      t:"How does the board recognize an effort folder?"},
+ {id:"04",type:"prototype",state:"claimed", blk:[],          t:"Prototype the wayfinder view"},
+ {id:"05",type:"research", state:"resolved",blk:[],          t:"Laying out a dependency graph, zero deps"},
+ {id:"06",type:"grilling", state:"open",    blk:["03","04"], t:"What non-ticket documents enter the payload?"},
+ {id:"07",type:"grilling", state:"open",    blk:[],          t:"Which skills does the launcher offer?"},
+ {id:"08",type:"grilling", state:"open",    blk:["07"],      t:"Should the bake read installed skills?"},
+ {id:"09",type:"task",     state:"open",    blk:["02"],      t:"Migrate this repo to triage-role lanes"},
+ {id:"10",type:"grilling", state:"open",    blk:["01"],      t:"What does the README claim?"},
+ {id:"11",type:"grilling", state:"open",    blk:["01"],      t:"What does a non-Matt repo still get?"},
+ {id:"12",type:"grilling", state:"open",    blk:["13"],      t:"Lift the zero-dependency rule?"},
+ {id:"13",type:"research", state:"resolved",blk:[],          t:"What mermaid rendering costs"},
+ {id:"14",type:"grilling", state:"open",    blk:["04"],      t:"One wayfinder view or several?"},
+ {id:"15",type:"grilling", state:"open",    blk:["03","07"], t:"How does the board offer its repair skill?"},
+];
+const byId=Object.fromEntries(T.map(t=>[t.id,t]));
+const done=t=>t.state==="resolved";
+const free=t=>t.blk.every(b=>done(byId[b]));
+const st=t=>done(t)?"resolved":t.state==="claimed"?"claimed":free(t)?"takeable":"waiting";
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const fill=t=>({resolved:"var(--green-tint)",claimed:"var(--amber-tint)",takeable:"var(--bg-raised)",waiting:"var(--bg-overlay)"})[st(t)];
+const strk=t=>({resolved:"var(--green-dim)",claimed:"var(--amber-dim)",takeable:"var(--line-2)",waiting:"var(--line-1)"})[st(t)];
+// a live edge is one whose blocker is not resolved. everything else is history.
+const live=(b,t)=>!done(byId[b]);
+const allEdges=[];T.forEach(t=>t.blk.forEach(b=>allEdges.push([b,t.id])));
+const liveEdges=allEdges.filter(([b,c])=>live(b,byId[c]));
+
+const depth={},seen={};
+const d=t=>seen[t.id]!==undefined?seen[t.id]:(seen[t.id]=t.blk.length?1+Math.max(...t.blk.map(b=>d(byId[b]))):0);
+T.forEach(t=>depth[t.id]=d(t));
+
+const clip=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
+function nodeBox(t,x,y,w,h,extra=""){
+  return `<g class="node" data-id="${t.id}"${extra}><title>${esc(t.t)}</title>
+   <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="${fill(t)}" stroke="${strk(t)}" stroke-width="1.5"/>
+   <text class="nt" x="${x+10}" y="${y+17}">${t.id} · ${esc(clip(t.t,Math.floor((w-20)/6.6)))}</text>
+   <text class="ns" x="${x+10}" y="${y+31}">${t.type} · ${st(t)}</text></g>`;
+}
+
+// ---------- C1: live edges only ----------
+function liveView(){
+  // rank purely by whether anything still blocks you, not by history
+  const cols=[T.filter(t=>done(t)),T.filter(t=>!done(t)&&free(t)),T.filter(t=>!done(t)&&!free(t))];
+  const NW=224,NH=44,GX=96,GY=14,PAD=16;
+  const pos={};
+  cols.forEach((c,ci)=>c.forEach((t,ri)=>pos[t.id]={x:PAD+ci*(NW+GX),y:PAD+ri*(NH+GY)}));
+  const rows=Math.max(...cols.map(c=>c.length));
+  const W=PAD*2+3*NW+2*GX,H=PAD*2+rows*NH+(rows-1)*GY;
+  let e="";
+  liveEdges.forEach(([b,c])=>{
+    const p=pos[b],q=pos[c];if(!p||!q)return;
+    const y1=p.y+NH/2,y2=q.y+NH/2;
+    // same column: leave and re-enter on the right, so the line never crosses a card
+    const d=p.x===q.x
+      ? (()=>{const x=p.x+NW,bb=x+34;return `M${x} ${y1} C${bb} ${y1} ${bb} ${y2} ${x} ${y2}`})()
+      : (()=>{const x1=p.x+NW,x2=q.x,m=(x1+x2)/2;return `M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}`})();
+    e+=`<path d="${d}" fill="none" stroke="var(--amber)" stroke-width="2" marker-end="url(#a)"/>`;
+  });
+  const heads=`<text class="ns" x="${PAD}" y="10">behind us</text>
+    <text class="ns" x="${PAD+NW+GX}" y="10">takeable now</text>
+    <text class="ns" x="${PAD+2*(NW+GX)}" y="10">still blocked</text>`;
+  return `<svg width="${W}" height="${H+8}" viewBox="0 -12 ${W} ${H+14}">
+   <defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+   <path d="M0 0 L8 4 L0 8 z" fill="var(--amber)"/></marker></defs>
+   ${heads}${e}${T.map(t=>nodeBox(t,pos[t.id].x,pos[t.id].y,NW,NH)).join("")}</svg>`;
+}
+
+// ---------- C2: adjacency matrix ----------
+function matrixView(){
+  const ord=[...T].sort((a,b)=>depth[a.id]-depth[b.id]||a.id.localeCompare(b.id));
+  const head=`<tr><th></th>${ord.map(t=>`<th>${t.id}</th>`).join("")}</tr>`;
+  const rows=ord.map(r=>`<tr><th class="rh">${r.id} <span class="tag s-${st(r)}">${st(r)}</span></th>${
+    ord.map(c=>{
+      if(r.id===c.id)return `<td class="diag"></td>`;
+      const hit=c.blk.includes(r.id);
+      return hit?`<td class="hit ${done(r)?"sat":""}" title="${r.id} blocks ${c.id}"></td>`:`<td></td>`;
+    }).join("")}</tr>`).join("");
+  return `<table class="mx">${head}${rows}</table>`;
+}
+
+// ---------- C3: indented outline ----------
+function outlineView(){
+  const kids={};T.forEach(t=>t.blk.forEach(b=>(kids[b] ||= []).push(t.id)));
+  const roots=T.filter(t=>!t.blk.length).map(t=>t.id);
+  const out=[];const drawn={};
+  function walk(id,pre,last){
+    const t=byId[id];
+    const seenBefore=drawn[id];drawn[id]=true;
+    out.push(`<div class="row"><span class="g">${pre}${last?"└─ ":"├─ "}</span><span class="id">${t.id}</span> ${esc(t.t)}<span class="tag s-${st(t)}">${st(t)}</span>${seenBefore?' <span class="g">(again)</span>':""}</div>`);
+    if(seenBefore)return;
+    const ks=kids[id]||[];
+    ks.forEach((k,i)=>walk(k,pre+(last?"   ":"│  "),i===ks.length-1));
+  }
+  roots.forEach((r,i)=>{
+    const t=byId[r];
+    out.push(`<div class="row"><span class="id">${t.id}</span> ${esc(t.t)}<span class="tag s-${st(t)}">${st(t)}</span></div>`);
+    drawn[r]=true;
+    const ks=kids[r]||[];ks.forEach((k,j)=>walk(k,"",j===ks.length-1));
+    if(i<roots.length-1)out.push(`<div class="row">&nbsp;</div>`);
+  });
+  return `<div class="tree">${out.join("")}</div>`;
+}
+
+// ---------- C4: orthogonal channels ----------
+function orthoView(){
+  const layers=[];T.forEach(t=>(layers[depth[t.id]] ||= []).push(t));
+  const NW=212,NH=40,GX=92,GY=12,PAD=16;
+  const pos={};layers.forEach((l,li)=>l.forEach((t,ri)=>pos[t.id]={x:PAD+li*(NW+GX),y:PAD+ri*(NH+GY)}));
+  const rows=Math.max(...layers.map(l=>l.length));
+  const W=PAD*2+layers.length*NW+(layers.length-1)*GX,H=PAD*2+rows*NH+(rows-1)*GY;
+  let e="";
+  allEdges.forEach(([b,c],i)=>{
+    const p=pos[b],q=pos[c];
+    const x1=p.x+NW,y1=p.y+NH/2,x2=q.x,y2=q.y+NH/2;
+    const ch=x1+18+(i%6)*11;            // each edge gets its own vertical channel in the gutter
+    const on=live(b,byId[c]);
+    e+=`<path d="M${x1} ${y1} H${ch} V${y2} H${x2}" fill="none"
+      stroke="${on?"var(--amber)":"var(--green-dim)"}" stroke-width="${on?2:1}"
+      ${on?"":'opacity=".5"'} marker-end="url(#b)"/>`;
+  });
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+   <defs><marker id="b" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+   <path d="M0 0 L8 4 L0 8 z" fill="var(--line-2)"/></marker></defs>
+   ${e}${T.map(t=>nodeBox(t,pos[t.id].x,pos[t.id].y,NW,NH)).join("")}</svg>`;
+}
+
+// ---------- C5: hover reveal ----------
+function hoverView(){
+  const layers=[];T.forEach(t=>(layers[depth[t.id]] ||= []).push(t));
+  const NW=212,NH=40,GX=88,GY=12,PAD=16;
+  const pos={};layers.forEach((l,li)=>l.forEach((t,ri)=>pos[t.id]={x:PAD+li*(NW+GX),y:PAD+ri*(NH+GY)}));
+  const rows=Math.max(...layers.map(l=>l.length));
+  const W=PAD*2+layers.length*NW+(layers.length-1)*GX,H=PAD*2+rows*NH+(rows-1)*GY;
+  let e="";
+  allEdges.forEach(([b,c])=>{
+    const p=pos[b],q=pos[c];
+    const x1=p.x+NW,y1=p.y+NH/2,x2=q.x,y2=q.y+NH/2,m=(x1+x2)/2;
+    e+=`<path class="edge" data-a="${b}" data-b="${c}" d="M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}"
+     fill="none" stroke="var(--fg-1)" stroke-width="1.8"/>`;
+  });
+  return `<svg class="hv" id="hv" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+   ${e}${T.map(t=>nodeBox(t,pos[t.id].x,pos[t.id].y,NW,NH)).join("")}</svg>`;
+}
+
+// ---------- C6: spine, the longest chain ----------
+function spineView(){
+  // longest path through the DAG, drawn straight. everything else hangs off it.
+  const kids={};T.forEach(t=>t.blk.forEach(b=>(kids[b] ||= []).push(t.id)));
+  let best=[];
+  const walk=(id,path)=>{const p=[...path,id];if(p.length>best.length)best=p;(kids[id]||[]).forEach(k=>walk(k,p))};
+  T.filter(t=>!t.blk.length).forEach(t=>walk(t.id,[]));
+  const spine=new Set(best);
+  const NW=200,NH=40,GX=70,PAD=18,SY=PAD+70;
+  const pos={};
+  best.forEach((id,i)=>pos[id]={x:PAD+i*(NW+GX),y:SY});
+  const rest=T.filter(t=>!spine.has(t.id));
+  rest.forEach((t,i)=>{
+    const col=Math.min(depth[t.id],best.length-1);
+    const above=i%2===0;
+    const slot=Math.floor(i/2);
+    pos[t.id]={x:PAD+col*(NW+GX),y:above?SY-62-slot*50:SY+62+slot*50};
+  });
+  const ys=Object.values(pos).map(p=>p.y);
+  const minY=Math.min(...ys),maxY=Math.max(...ys);
+  const W=PAD*2+best.length*NW+(best.length-1)*GX,H=maxY-minY+NH+PAD*2;
+  const off=minY-PAD;
+  let e="";
+  allEdges.forEach(([b,c])=>{
+    const p=pos[b],q=pos[c];if(!p||!q)return;
+    const onSpine=spine.has(b)&&spine.has(c);
+    const x1=p.x+NW,y1=p.y-off+NH/2,x2=q.x,y2=q.y-off+NH/2,m=(x1+x2)/2;
+    e+=`<path d="M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}" fill="none"
+      stroke="${onSpine?"var(--fg-1)":"var(--line-2)"}" stroke-width="${onSpine?2.4:1}"
+      ${onSpine?"":'opacity=".45" stroke-dasharray="3 3"'}/>`;
+  });
+  const nodes=T.map(t=>{
+    const p=pos[t.id];
+    return `<g opacity="${spine.has(t.id)?1:.72}">${nodeBox(t,p.x,p.y-off,NW,NH)}</g>`;
+  }).join("");
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${e}${nodes}</svg>`
+    +`<div class="legend"><span>spine is the longest chain: ${best.join(" → ")}</span></div>`;
+}
+
+const V={
+ live:{t:"C1 · live edges only",f:liveView,
+  n:"<b>The idea I should have had first.</b> An edge from a resolved ticket is satisfied, so it is history, not structure. Dropping them takes 12 edges to 5. The columns stop being dependency depth and become the only three states that matter: behind us, takeable now, still blocked. Almost all the chaos was drawing the past at the same weight as the future."},
+ matrix:{t:"C2 · adjacency matrix",f:matrixView,
+  n:"<b>What the research actually recommended.</b> Ghoniem, Fekete and Castagliola found matrices beat node-link past roughly 20 nodes on every task except tracing a path. There is no layout, no crossings, and it cannot get messy at any size. Sorting by depth makes it lower-triangular, which is a visual proof there are no cycles. It is bad at exactly the thing a wayfinder map needs most, following a chain."},
+ outline:{t:"C3 · indented outline",f:outlineView,
+  n:"<b>Zero crossings by construction.</b> A tree cannot tangle. The cost is that a ticket with two blockers appears twice, marked 'again', because an outline has one parent per row and this is a graph. It reads instantly and needs no SVG at all."},
+ ortho:{t:"C4 · orthogonal channels",f:orthoView,
+  n:"<b>Right angles instead of curves.</b> Every edge gets its own vertical channel in the gutter, so lines never overlap even when they run together. Live edges are heavy amber, satisfied ones thin and faded. Circuit-board rather than spaghetti, and the channel trick is about six lines."},
+ hover:{t:"C5 · hover reveal",f:hoverView,
+  n:"<b>Draw nothing until asked.</b> Every edge sits at 10 percent until you hover a node, then its chain lights up and unrelated tickets fade. The resting state is calm at any node count, and the graph stops competing with itself. It hides structure from anyone who never hovers, and it does not exist on a printed or screenshotted board."},
+ spine:{t:"C6 · spine, the longest chain",f:spineView,
+  n:"<b>One thing is emphasized, not everything.</b> The longest chain is the real length of the effort, so it is drawn straight and heavy, and everything else hangs off it faintly. This answers 'how far is left' which no other take does. It distorts, since a short chain is not less important, only shorter."},
+};
+function render(v){
+  const view=V[v]||V.live;
+  document.getElementById("title").textContent="PROTOTYPE: "+view.t;
+  document.getElementById("view").innerHTML=view.f();
+  document.getElementById("extra").innerHTML=`<div class="legend">
+   <span><i style="background:var(--green-tint);border-color:var(--green-dim)"></i>resolved</span>
+   <span><i style="background:var(--amber-tint);border-color:var(--amber-dim)"></i>claimed</span>
+   <span><i style="background:var(--bg-raised);border-color:var(--line-2)"></i>takeable</span>
+   <span><i style="background:var(--bg-overlay);border-color:var(--line-1)"></i>waiting</span>
+   <span>15 tickets · ${allEdges.length} edges, of which <b>${liveEdges.length} are live</b></span></div>`;
+  document.getElementById("note").innerHTML=view.n;
+  document.querySelectorAll(".bar button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===v));
+  if(v==="hover")wireHover();
+  const u=new URL(location);u.searchParams.set("v",v);history.replaceState({},"",u);
+}
+function wireHover(){
+  const svg=document.getElementById("hv");if(!svg)return;
+  const edges=[...svg.querySelectorAll(".edge")],nodes=[...svg.querySelectorAll(".node")];
+  nodes.forEach(n=>{
+    n.addEventListener("mouseenter",()=>{
+      const id=n.dataset.id,keep=new Set([id]);
+      let grew=true;
+      while(grew){grew=false;edges.forEach(e=>{
+        const a=e.dataset.a,b=e.dataset.b;
+        if(keep.has(a)&&!keep.has(b)){keep.add(b);grew=true}
+        if(keep.has(b)&&!keep.has(a)){keep.add(a);grew=true}
+      })}
+      edges.forEach(e=>e.classList.toggle("on",keep.has(e.dataset.a)&&keep.has(e.dataset.b)));
+      nodes.forEach(m=>m.classList.toggle("off",!keep.has(m.dataset.id)));
+    });
+    n.addEventListener("mouseleave",()=>{
+      edges.forEach(e=>e.classList.remove("on"));nodes.forEach(m=>m.classList.remove("off"));
+    });
+  });
+}
+document.querySelectorAll(".bar button").forEach(b=>b.onclick=()=>render(b.dataset.v));
+render(new URL(location).searchParams.get("v")||"live");
+</script>
+</body>
+</html>

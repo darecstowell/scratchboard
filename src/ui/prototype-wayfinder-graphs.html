@@ -1,0 +1,220 @@
+<!doctype html>
+<!-- PROTOTYPE, throwaway. Ticket 04 of the skills-pivot effort, second pass.
+     Four takes on the dependency graph alone. Zero dependencies, hand-drawn, one file. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE: wayfinder graphs</title>
+<style>
+:root{
+  --bg-deep:#dce0e8; --bg-root:#eff1f5; --bg-surface:#f5f7fa; --bg-raised:#fbfcfe; --bg-overlay:#e3e7ef;
+  --line-1:#dde1ea; --line-2:#7d8bac;
+  --fg-1:#363851; --fg-2:#454762; --fg-3:#51546e; --fg-4:#5d617c;
+  --green:#2e7526; --amber:#8c5c0e; --red:#c01742; --cyan:#167083;
+  --green-dim:#6fac66; --amber-dim:#cda05c; --red-dim:#d06f88; --cyan-dim:#5fa9bb;
+  --green-tint:#dcedd5; --amber-tint:#f5e5c2; --red-tint:#f7d8de; --cyan-tint:#d8ebf1;
+  --font-mono:"Spline Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-root);color:var(--fg-1);font-family:var(--font-mono);font-size:13px;line-height:1.5;padding-bottom:76px}
+.wrap{max-width:1240px;margin:0 auto;padding:18px 18px 0}
+.proto-flag{background:var(--amber-tint);border:1px solid var(--amber-dim);color:var(--amber);padding:6px 10px;border-radius:6px;font-size:11px;margin-bottom:14px}
+h1{font-size:15px;margin:0 0 10px;letter-spacing:.02em}
+.graphbox{background:var(--bg-surface);border:1px solid var(--line-1);border-radius:6px;padding:14px;overflow:auto;max-height:74vh}
+svg{display:block}
+.node text{font-family:var(--font-mono);fill:var(--fg-1)}
+.nt{font-size:11px}
+.ns{font-size:9px;fill:var(--fg-4)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--fg-3);align-items:center}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;border:1px solid}
+.note{color:var(--fg-4);font-size:11.5px;margin:10px 0 0;max-width:84ch}
+.note b{color:var(--fg-2)}
+.bar{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;display:flex;gap:4px;background:var(--bg-raised);border:1px solid var(--line-2);border-radius:24px;padding:4px;box-shadow:0 4px 18px rgba(54,56,81,.16);z-index:10}
+.bar button{font-family:var(--font-mono);font-size:12px;border:0;background:transparent;color:var(--fg-3);padding:6px 13px;border-radius:20px;cursor:pointer}
+.bar button[aria-pressed=true]{background:var(--fg-1);color:var(--bg-raised)}
+.chip{cursor:default}
+.chip:hover rect{stroke:var(--fg-1);stroke-width:2}
+.rail{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:4px 16px;font-size:11.5px;color:var(--fg-3)}
+.rail span b{color:var(--fg-2);font-variant-numeric:tabular-nums}
+.scaleknob{margin-top:10px;font-size:11.5px;color:var(--fg-3);display:flex;gap:8px;align-items:center}
+.scaleknob input{accent-color:var(--fg-1)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="proto-flag">PROTOTYPE, throwaway. Ticket 04, second pass. Same 15 tickets, four layouts. The first take is kept for comparison.</div>
+  <h1 id="title"></h1>
+  <div class="graphbox" id="view"></div>
+  <div id="extra"></div>
+  <p class="note" id="note"></p>
+</div>
+
+<div class="bar">
+  <button data-v="first">B0 · first take</button>
+  <button data-v="lr">B1 · routed</button>
+  <button data-v="tb">B2 · top down</button>
+  <button data-v="chip">B3 · compact</button>
+</div>
+
+<script>
+// ---------- fixture ----------
+const T = [
+  {id:"01",type:"grilling", state:"resolved",blk:[],          t:"Does scratchboard publish the tracker spec?"},
+  {id:"02",type:"grilling", state:"resolved",blk:["01"],      t:"Name the sixth lifecycle state"},
+  {id:"03",type:"grilling", state:"resolved",blk:["01"],      t:"How does the board recognize an effort folder?"},
+  {id:"04",type:"prototype",state:"claimed", blk:[],          t:"Prototype the wayfinder view"},
+  {id:"05",type:"research", state:"resolved",blk:[],          t:"Laying out a dependency graph, zero deps"},
+  {id:"06",type:"grilling", state:"open",    blk:["03","04"], t:"What non-ticket documents enter the payload?"},
+  {id:"07",type:"grilling", state:"open",    blk:[],          t:"Which skills does the launcher offer?"},
+  {id:"08",type:"grilling", state:"open",    blk:["07"],      t:"Should the bake read installed skills?"},
+  {id:"09",type:"task",     state:"open",    blk:["02"],      t:"Migrate this repo to triage-role lanes"},
+  {id:"10",type:"grilling", state:"open",    blk:["01"],      t:"What does the README claim?"},
+  {id:"11",type:"grilling", state:"open",    blk:["01"],      t:"What does a non-Matt repo still get?"},
+  {id:"12",type:"grilling", state:"open",    blk:["13"],      t:"Lift the zero-dependency rule?"},
+  {id:"13",type:"research", state:"claimed", blk:[],          t:"What mermaid rendering costs"},
+  {id:"14",type:"grilling", state:"open",    blk:["04"],      t:"One wayfinder view or several?"},
+  {id:"15",type:"grilling", state:"open",    blk:["03","07"], t:"How does the board offer its repair skill?"},
+];
+const byId=Object.fromEntries(T.map(t=>[t.id,t]));
+const isDone=t=>t.state==="resolved";
+const free=t=>t.blk.every(b=>isDone(byId[b]));
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const fill=t=>isDone(t)?"var(--green-tint)":t.state==="claimed"?"var(--amber-tint)":free(t)?"var(--bg-raised)":"var(--bg-overlay)";
+const strk=t=>isDone(t)?"var(--green-dim)":t.state==="claimed"?"var(--amber-dim)":free(t)?"var(--line-2)":"var(--line-1)";
+const state=t=>isDone(t)?"resolved":t.state==="claimed"?"claimed":free(t)?"takeable":"waiting";
+
+// ---------- layout engine: layer, add dummies, reduce crossings ----------
+// Dummy nodes are the whole trick. An edge that skips a layer gets a placeholder in every
+// layer it crosses, so the gap is reserved and the edge routes around nodes instead of over them.
+function layout(items, opts){
+  const {order=true} = opts||{};
+  const depth={}, seen={};
+  const d=t=>seen[t.id]!==undefined?seen[t.id]:(seen[t.id]=t.blk.length?1+Math.max(...t.blk.map(b=>d(byId[b]))):0);
+  items.forEach(t=>depth[t.id]=d(t));
+  const nlayers=Math.max(...Object.values(depth))+1;
+  const layers=Array.from({length:nlayers},()=>[]);
+  items.forEach(t=>layers[depth[t.id]].push({key:t.id,real:t}));
+
+  // split long edges with dummies
+  const segs=[];
+  items.forEach(t=>t.blk.forEach(b=>{
+    const from=depth[b], to=depth[t.id];
+    let prev=b;
+    for(let L=from+1;L<to;L++){
+      const key=`d:${b}>${t.id}@${L}`;
+      layers[L].push({key,dummy:true});
+      segs.push([prev,key,b]); prev=key;
+    }
+    segs.push([prev,t.id,b]);
+  }));
+
+  // barycenter sweeps: put a node near the average position of what it connects to
+  const pos={}; layers.forEach(l=>l.forEach((n,i)=>pos[n.key]=i));
+  const up={},dn={};
+  segs.forEach(([a,b])=>{(dn[a] ||= []).push(b);(up[b] ||= []).push(a)});
+  if(order) for(let pass=0;pass<6;pass++){
+    const dir=pass%2?up:dn;
+    const start=pass%2?nlayers-1:0, step=pass%2?-1:1;
+    for(let L=start+step;L>=0&&L<nlayers;L+=step){
+      layers[L].sort((x,y)=>bary(x,dir)-bary(y,dir));
+      layers[L].forEach((n,i)=>pos[n.key]=i);
+    }
+    function bary(n,rel){const ns=rel[n.key]||[];return ns.length?ns.reduce((s,k)=>s+(pos[k]??0),0)/ns.length:pos[n.key]??0;}
+  }
+  layers.forEach(l=>l.forEach((n,i)=>pos[n.key]=i));
+  return {layers,segs,pos,depth,nlayers};
+}
+
+function draw(cfg){
+  const {NW,NH,GX,GY,vertical=false,label,order=true}=cfg;
+  const {layers,segs,pos,depth,nlayers}=layout(T,{order});
+  const rows=Math.max(...layers.map(l=>l.length));
+  const PAD=16;
+  const xy=k=>{
+    const L=layers.findIndex(l=>l.some(n=>n.key===k)), i=pos[k];
+    return vertical?{x:PAD+i*(NW+GX),y:PAD+L*(NH+GY)}:{x:PAD+L*(NW+GX),y:PAD+i*(NH+GY)};
+  };
+  const W=PAD*2+(vertical?rows*NW+(rows-1)*GX:nlayers*NW+(nlayers-1)*GX);
+  const H=PAD*2+(vertical?nlayers*NH+(nlayers-1)*GY:rows*NH+(rows-1)*GY);
+
+  let edges="";
+  segs.forEach(([a,b,origin])=>{
+    const p=xy(a),q=xy(b);
+    // colour by the edge's real blocker, not by the segment start, which may be a placeholder
+    const resolved=isDone(byId[origin]);
+    let x1,y1,x2,y2,dpath;
+    if(vertical){
+      x1=p.x+NW/2; y1=p.y+NH; x2=q.x+NW/2; y2=q.y; const m=(y1+y2)/2;
+      dpath=`M${x1} ${y1} C${x1} ${m} ${x2} ${m} ${x2} ${y2}`;
+    }else{
+      x1=p.x+NW; y1=p.y+NH/2; x2=q.x; y2=q.y+NH/2; const m=(x1+x2)/2;
+      dpath=`M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}`;
+    }
+    const endsAtReal = !b.startsWith("d:");
+    edges+=`<path d="${dpath}" fill="none" stroke="${resolved?"var(--green-dim)":"var(--line-2)"}"
+      stroke-width="1.3" ${resolved?"":'stroke-dasharray="3 3"'} ${endsAtReal?'marker-end="url(#a)"':""}/>`;
+  });
+
+  const nodes=layers.flat().filter(n=>!n.dummy).map(n=>{
+    const t=n.real,p=xy(n.key);
+    return label(t,p,NW,NH);
+  }).join("");
+
+  const dummies=layers.flat().filter(n=>n.dummy).length;
+  return {svg:`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="var(--line-2)"/></marker></defs>
+    ${edges}${nodes}</svg>`, dummies, nlayers, segs:segs.length};
+}
+
+const clip=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
+const boxLabel=(wrapText)=>(t,p,NW,NH)=>{
+  const chars=Math.floor((NW-20)/6.6);
+  return `<g class="node"><title>${esc(t.t)}</title>
+    <rect x="${p.x}" y="${p.y}" width="${NW}" height="${NH}" rx="5" fill="${fill(t)}" stroke="${strk(t)}" stroke-width="1.5"/>
+    <text class="nt" x="${p.x+10}" y="${p.y+17}">${t.id} · ${esc(clip(t.t,chars))}</text>
+    <text class="ns" x="${p.x+10}" y="${p.y+31}">${t.type} · ${state(t)}</text></g>`;
+};
+
+const VIEWS={
+  first:{title:"B0 · first take, kept for comparison",
+    build:()=>draw({NW:196,NH:42,GX:54,GY:30,order:false,label:boxLabel()}),
+    note:"<b>The problem.</b> Nodes sit in file order and long edges fly straight over whatever is in the way. Ticket 04 to 06 and ticket 07 to 15 each skip a layer, and those are the two lines cutting through the middle column."},
+  lr:{title:"B1 · left to right, dummies and crossing reduction",
+    build:()=>draw({NW:210,NH:44,GX:64,GY:20,label:boxLabel()}),
+    note:"<b>Two standard fixes.</b> An edge that skips a layer gets a placeholder node in the layer it crosses, so the gap is reserved and the edge routes around rather than over. Then six barycenter sweeps pull each node toward the average position of what it connects to, which lines children up under their parents. Nothing else changed."},
+  tb:{title:"B2 · top down, layers as rows",
+    build:()=>draw({NW:190,NH:44,GX:16,GY:52,vertical:true,label:boxLabel()}),
+    note:"<b>Same engine, rotated.</b> Reading down matches how a map is written, and depth becomes distance from the start. The cost is width: the widest layer sets the page width, so this one scrolls sideways at nine slots and gets worse fast."},
+  chip:{title:"B3 · compact, id only, titles in a rail",
+    build:()=>draw({NW:52,NH:34,GX:30,GY:14,label:(t,p,NW,NH)=>
+      `<g class="node chip"><title>${esc(t.id+" "+t.t)}</title>
+       <rect x="${p.x}" y="${p.y}" width="${NW}" height="${NH}" rx="5" fill="${fill(t)}" stroke="${strk(t)}" stroke-width="1.5"/>
+       <text class="nt" x="${p.x+NW/2}" y="${p.y+21}" text-anchor="middle">${t.id}</text></g>`}),
+    note:"<b>The one that survives forty tickets.</b> The graph answers shape and order, and the title answers what a ticket is, so this take stops asking one control to do both. The whole graph fits with no scrolling, and the fog item about a forty-ticket effort stops being frightening. It is useless without the rail beneath it."},
+};
+
+function render(v){
+  const view=VIEWS[v]||VIEWS.lr;
+  const r=view.build();
+  document.getElementById("title").textContent="PROTOTYPE: "+view.title;
+  document.getElementById("view").innerHTML=r.svg;
+  document.getElementById("extra").innerHTML=`
+    <div class="legend">
+      <span><i style="background:var(--green-tint);border-color:var(--green-dim)"></i>resolved</span>
+      <span><i style="background:var(--amber-tint);border-color:var(--amber-dim)"></i>claimed</span>
+      <span><i style="background:var(--bg-raised);border-color:var(--line-2)"></i>takeable now</span>
+      <span><i style="background:var(--bg-overlay);border-color:var(--line-1)"></i>waiting</span>
+      <span>${r.nlayers} layers · 15 nodes · ${r.segs} segments · ${r.dummies} placeholder${r.dummies===1?"":"s"}</span>
+    </div>
+    ${v==="chip"?`<div class="rail">${T.map(t=>`<span><b>${t.id}</b> ${esc(t.t)}</span>`).join("")}</div>`:""}`;
+  document.getElementById("note").innerHTML=view.note;
+  document.querySelectorAll(".bar button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===v));
+  const u=new URL(location);u.searchParams.set("v",v);history.replaceState({},"",u);
+}
+document.querySelectorAll(".bar button").forEach(b=>b.onclick=()=>render(b.dataset.v));
+render(new URL(location).searchParams.get("v")||"lr");
+</script>
+</body>
+</html>

@@ -85,6 +85,16 @@ Standing constraints already settled with the user:
   and an unsanitized flowchart `img:` sink that a future renderer would let beacon from the bake
   machine and from every published board. The `npx` pin does not reach transitive `mermaid`, so
   reproducibility needs a committed lockfile.
+- [Prototype the wayfinder view](./issues/04-prototype-the-wayfinder-view.md): three columns by
+  state, `behind us`, `takeable now`, `still blocked`, not by dependency depth. Only live edges
+  are drawn, since an edge from a resolved blocker is history and drawing it is what made every
+  layered pass unreadable, 12 edges down to 4 on this map. Hover shows what a ticket unblocks,
+  and restores that ticket's satisfied edges in green so history is hidden rather than deleted.
+  Click pins it, which is what survives a screenshot. The reach: columns by state need no
+  layering, no dummy nodes, and no crossing reduction, so the dag-layout estimate does not apply
+  to this design. The cost is that both ends of an edge can share a column, so an intra-column
+  edge leaves and re-enters on the right rather than running backwards across the cards.
+  Prototypes on branch `prototype/wayfinder-view`.
 
 ## Not yet specified
 
@@ -107,7 +117,8 @@ Standing constraints already settled with the user:
   version on disk, where a bake could read it. A `find-skills` install does not.
   [Should the bake read the machine's installed skills](./issues/08-bake-reads-the-machine.md)
   decides whether the bake reads it at all, so this waits on that ticket.
-- How a baked board handles an effort with forty tickets.
+- How a baked board handles an effort with forty tickets. The three-column view holds in
+  principle, and `behind us` grows without bound. Nothing has been drawn at that size.
 - Whether mermaid rendering, if it lands at all, applies to ticket bodies only or to every
   document the board renders. Now unlikely to arise, since the research recommends keeping the
   escaped fence.
