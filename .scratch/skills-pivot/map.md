@@ -12,7 +12,8 @@ Domain: scratchboard is a zero-dependency CLI that bakes the markdown tickets in
 self-contained HTML kanban board. Read-only by choice, because tickets are agent-driven, so the
 agent moves the card. `AGENTS.md` holds the rules that bite.
 
-Skills every session should consult: `/grilling` and `/domain-modeling`.
+Skills every session should consult: `/grilling` and `/domain-modeling`. Any session that
+writes shipped copy, the README above all, also consults `/copywriting`.
 
 Survey of the skill ecosystem, gathered while charting:
 [Skill ecosystem survey](./research/skills-survey.md). Read it before any ticket that touches
@@ -139,41 +140,30 @@ Standing constraints already settled with the user:
   Ticket 03's lead role is renamed from `map` to `lead`. Type shows as a word, not an icon, so the
   icon budget stays closed. Relative links that match a payload path become in-board navigation.
 
+- [What does scratchboard promise, and to whom?](./issues/18-what-scratchboard-promises.md):
+  scratchboard stays a general markdown board and names the ecosystem as its best fit. The tagline
+  stays generic and the name goes in the paragraph below it, because ticket 01 already puts a
+  version badge at the top and a badge that names a version while the prose hides the name does not
+  agree with itself. Two positions ride at the top, read-only and the one the README already had
+  buried, that it owns no directory and no file format. Nothing is renamed. npm says the name and
+  `--help` does not. The board says out loud that a tracker-backed repo gets an empty board. The
+  config rule keeps its shape and gains one named exception, the dialect, while `groups` and
+  `invocations` were always inside it. The dependency rule is about the install, so a bake-time-only
+  dependency still breaks it, and `guard.mjs` already checks the install graph. The `npx` lint and
+  type hole is written down rather than patched, and the lockfile is backlog. The demo opens on the
+  board with the effort tab visible. The README rewrite is a copywriting pass against this decision
+  and not part of it.
+
 ## Not yet specified
 
-- Spec-to-ticket linkage. Local markdown stores no parent pointer in either direction, only
-  directory colocation. Whether to invent a field is downstream of who owns the spec.
-- Lane icons and single-word priority labels, from the original toolbar request. The toolbar is
-  now visible: two facet groups, `priority` at 4 chips and `labels` at 28, of which 17 sit on one
-  ticket each. Seven lane rails plus `Unmapped`. The label tail and the rail count are what any
-  cleanup is looking at.
-- Whether the triage roles need a way to say a ticket is started. The migration deleted
-  `in-progress/`, and the six values cannot express it, because they say what a ticket needs
-  rather than whether anyone picked it up. Wayfinder's dialect has `claimed` for exactly this.
-  Adding a seventh value, or a second field, cuts against ticket 02's one-field decision, so this
-  is a spec question rather than a config one.
-- Whether `groups` is the right name for the config key. It is kind-neutral, which recognition
-  required, and it is a generic word this codebase has not used before. Cheaper to change before
-  [What the wayfinder surface shows](./issues/17-what-the-wayfinder-surface-shows.md) encodes it.
-  `invocations`, the key that declares prepared invocations, arrived with the same problem and is
-  the same decision.
-- Whether mermaid rendering, if it lands at all, applies to ticket bodies only or to every
-  document the board renders. Now unlikely to arise, since the research recommends keeping the
-  escaped fence, but the board now renders glossaries and ADRs as well as tickets, so the surface
-  it would cover is wider than it was.
-- What the `npx` fetch-at-a-pinned-version pattern actually guarantees. The mermaid research
-  measured that the pin does not reach transitive dependencies and that npx is not offline with a
-  warm cache, which touches the lint and type tooling this repo already fetches that way.
-- What else a dependency budget would buy, if the rule is lifted. The question has only been
-  asked of mermaid and of graph layout so far.
-- Whether this repo's tickets should move from YAML frontmatter to upstream's `Status:` body line.
-  Upstream records triage state as a line near the top of the body, and this repo deliberately
-  chose frontmatter. The same "organize the way upstream does" rule that settled the folders
-  points here too, and ticket 01 settled that the repo owns the layout after setup, so the two
-  are in tension.
-- Whether the two values scratchboard names, `done` and `out-of-scope`, are offered upstream as a
-  contribution rather than held as this project's dialect. Ticket 01 settled that the board
-  follows upstream additively, and said nothing about pushing back the other way.
+Empty. The map reached its destination with
+[What does scratchboard promise, and to whom?](./issues/18-what-scratchboard-promises.md), so the
+nine entries that stood here were sorted rather than left. Six are backlog tickets at
+`.scratch/25-*.md` through `.scratch/30-*.md`: spec-to-ticket linkage, the lane icons and priority
+labels, a way to say a ticket is started, a committed lockfile for the `npx` tooling, frontmatter
+against upstream's `Status:` body line, and offering `done` and `out-of-scope` upstream. One was
+already decided, since `groups` and `invocations` are defined terms in `CONTEXT.md`. Two moved to
+Out of scope below.
 
 ## Out of scope
 
@@ -186,3 +176,9 @@ Standing constraints already settled with the user:
   prototypes take a second shape as UI variants inside a live route, which is not a file.
 - A read-write board. Moving a card from the interface contradicts the reason this is read-only.
 - Talking to the GitHub, GitLab, or Jira APIs to read tracker-native state.
+- How wide mermaid rendering would reach, ticket bodies alone or every document the board renders.
+  It cannot arise while [the research](./issues/13-research-mermaid-rendering-cost.md) recommends
+  the plain escaped fence.
+- What else a dependency budget would buy.
+  [What scratchboard promises](./issues/18-what-scratchboard-promises.md) kept the rule and fixed it
+  to the install, so reopening the budget is a different effort with a different destination.
