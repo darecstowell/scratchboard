@@ -12,7 +12,8 @@ Domain: scratchboard is a zero-dependency CLI that bakes the markdown tickets in
 self-contained HTML kanban board. Read-only by choice, because tickets are agent-driven, so the
 agent moves the card. `AGENTS.md` holds the rules that bite.
 
-Skills every session should consult: `/grilling` and `/domain-modeling`.
+Skills every session should consult: `/grilling` and `/domain-modeling`. Any session that
+writes shipped copy, the README above all, also consults `/copywriting`.
 
 Survey of the skill ecosystem, gathered while charting:
 [Skill ecosystem survey](./research/skills-survey.md). Read it before any ticket that touches
@@ -24,9 +25,9 @@ no version on disk, only a folder hash. See
 
 Standing constraints already settled with the user:
 
-- Zero dependencies is now itself under question. See
+- Zero dependencies holds, and it is a rule about the install graph of `npx scratchboard`, so a
+  dependency that runs only during a bake still breaks it. Settled by
   [What scratchboard promises](./issues/18-what-scratchboard-promises.md).
-  Assume it holds until that resolves.
 - Read-only holds.
 - Lanes become triage roles. The folder stops being the lane.
 - A sixth terminal state, scratchboard's own, completes the lifecycle his five roles lack.
@@ -68,7 +69,7 @@ Standing constraints already settled with the user:
   `issues/` folder marks a group, with `map.md` and `spec.md` naming the kind, and a folder
   holding both is ambiguous rather than a group. One mechanism serves both shapes and carries a
   `kind`. A recognized group leaves the ticket list for a collection of its own, holding every
-  file the glob discovered under the root with a role of `map`, `issue`, or `other`. The cross-repo id collision fixes itself, and the uniqueness check scopes to the
+  file the glob discovered under the root with a role of `lead`, `issue`, or `other`. The cross-repo id collision fixes itself, and the uniqueness check scopes to the
   group. A new kind-neutral `groups` key corrects a wrong guess, with `kind: "none"` as the
   opt-out. It reclassifies and never extends the walk, `init` never writes it, and groups sit
   outside `counts.total`, which takes this repo from 41 to 23. A half-recognized folder raises
@@ -108,52 +109,61 @@ Standing constraints already settled with the user:
   facet dropped itself, verified rather than assumed. The migration lost "in progress", which
   lived only in the folder name.
 
+- [What does the board do with skills?](./issues/16-what-the-board-does-with-skills.md): the
+  board ships no skill catalogue, only one copy affordance, and a repo declares what goes in it. A
+  skill does not act on a ticket, so this is a copy affordance rather than a launcher and an entry
+  is a prepared invocation: a skill name plus the path of the thing on screen. The existing
+  `copy path` button is the whole mechanism, and it grows a caret only when config declares
+  entries, so a stock board is unchanged. Config is additive with override-by-name and an opt-out,
+  the affordance keys on the open detail view's path, a template substitutes `{path}` alone, and
+  the browser substitutes on click so the payload carries the list once rather than a string per
+  ticket. Machine reading is refused as a rule: the board describes the repo, never the machine, no
+  flag and no serve-only carve-out, so the board can never know whether a skill is installed. The
+  tier-2 diagnostic rides the existing warnings surface rather than the copy menu, names the shape
+  it half read, and hands over the `/scratchboard` invocation plus one plain sentence, never `init`
+  directly. It stays in a published board unconditionally. `skills/scratchboard/SKILL.md` stays one
+  skill with a widened description. The only skill name in board source is scratchboard's own.
+
+- [What does the wayfinder surface show, and what does the payload carry for it?](./issues/17-what-the-wayfinder-surface-shows.md):
+  an effort gets a tab beside the board and the payload gains one key, `groups`. The board itself
+  does not change, and a repo with no group and no `CONTEXT.md` gets no tab bar at all. One view
+  per kind at every size, since columns by state cannot tangle and the node-link degradation
+  research does not apply. `behind us` is always collapsed with its count, the same rule the
+  terminal lanes already use, which closes the forty-ticket question. The map body is the header
+  with Destination open and the rest folded, and Decisions-so-far is discarded because the column
+  is that list. A claimed ticket greys inside `takeable now` and an out-of-scope ticket renders in
+  the header, never in a column. `blockedBy` exists only on an effort's issues, read only from the
+  structured line, forward only. State and the section split are computed at bake time so the UI
+  never learns upstream vocabulary. `CONTEXT.md` and the ADRs do enter the payload, as a third
+  `kind: "context"` group: discovery is three fixed reads rather than a second glob, so the walk is
+  untouched, and `CONTEXT-MAP.md` is followed with every resolved path fenced to the repo root.
+  Ticket 03's lead role is renamed from `map` to `lead`. Type shows as a word, not an icon, so the
+  icon budget stays closed. Relative links that match a payload path become in-board navigation.
+
+- [What does scratchboard promise, and to whom?](./issues/18-what-scratchboard-promises.md):
+  scratchboard stays a general markdown board and names the ecosystem as its best fit. The tagline
+  stays generic and the name goes in the paragraph below it, because ticket 01 already puts a
+  version badge at the top and a badge that names a version while the prose hides the name does not
+  agree with itself. Two positions ride at the top, read-only and the one the README already had
+  buried, that it owns no directory and no file format. Nothing is renamed. npm says the name and
+  `--help` does not. The board says out loud that a tracker-backed repo gets an empty board. The
+  config rule keeps its shape and gains one named exception, the dialect, while `groups` and
+  `invocations` were always inside it. The dependency rule is about the install, so a bake-time-only
+  dependency still breaks it, and `guard.mjs` already checks the install graph. The `npx` lint and
+  type hole is written down rather than patched, and the lockfile is backlog. The demo opens on the
+  board with the effort tab visible. The README rewrite is a copywriting pass against this decision
+  and not part of it.
+
 ## Not yet specified
 
-- Dependency edges. Two incompatible `Blocked by:` formats exist, structured in wayfinder and
-  freeform in `to-tickets`. Whether the board reads either, and whether edges render outside the
-  map view, waits on the payload decision.
-- Spec-to-ticket linkage. Local markdown stores no parent pointer in either direction, only
-  directory colocation. Whether to invent a field is downstream of who owns the spec.
-- Where `CONTEXT.md` and ADRs sit in the interface. They are the most stable artifacts in the
-  ecosystem, but no view exists for a document that is not a ticket.
-- Lane icons and single-word priority labels, from the original toolbar request. The toolbar is
-  now visible: two facet groups, `priority` at 4 chips and `labels` at 28, of which 17 sit on one
-  ticket each. Seven lane rails plus `Unmapped`. The label tail and the rail count are what any
-  cleanup is looking at.
-- Whether the triage roles need a way to say a ticket is started. The migration deleted
-  `in-progress/`, and the six values cannot express it, because they say what a ticket needs
-  rather than whether anyone picked it up. Wayfinder's dialect has `claimed` for exactly this.
-  Adding a seventh value, or a second field, cuts against ticket 02's one-field decision, so this
-  is a spec question rather than a config one.
-- Whether a `to-tickets` feature folder earns a view of its own, distinct from a wayfinder
-  effort. Recognition now carries a `kind` that says which is which, so the question is purely
-  visual and waits on the view tickets.
-- Whether `groups` is the right name for the config key. It is kind-neutral, which recognition
-  required, and it is a generic word this codebase has not used before. Cheaper to change before
-  [What the wayfinder surface shows](./issues/17-what-the-wayfinder-surface-shows.md) encodes it.
-- Whether the board reads the installed version of the skills. A plugin install puts that
-  version on disk, where a bake could read it. A `find-skills` install does not.
-  [What the board does with skills](./issues/16-what-the-board-does-with-skills.md)
-  decides whether the bake reads it at all, so this waits on that ticket.
-- How a baked board handles an effort with forty tickets. The three-column view holds in
-  principle, and `behind us` grows without bound. Nothing has been drawn at that size.
-- Whether mermaid rendering, if it lands at all, applies to ticket bodies only or to every
-  document the board renders. Now unlikely to arise, since the research recommends keeping the
-  escaped fence.
-- What the `npx` fetch-at-a-pinned-version pattern actually guarantees. The mermaid research
-  measured that the pin does not reach transitive dependencies and that npx is not offline with a
-  warm cache, which touches the lint and type tooling this repo already fetches that way.
-- What else a dependency budget would buy, if the rule is lifted. The question has only been
-  asked of mermaid and of graph layout so far.
-- Whether this repo's tickets should move from YAML frontmatter to upstream's `Status:` body line.
-  Upstream records triage state as a line near the top of the body, and this repo deliberately
-  chose frontmatter. The same "organize the way upstream does" rule that settled the folders
-  points here too, and ticket 01 settled that the repo owns the layout after setup, so the two
-  are in tension.
-- Whether the two values scratchboard names, `done` and `out-of-scope`, are offered upstream as a
-  contribution rather than held as this project's dialect. Ticket 01 settled that the board
-  follows upstream additively, and said nothing about pushing back the other way.
+Empty. The map reached its destination with
+[What does scratchboard promise, and to whom?](./issues/18-what-scratchboard-promises.md), so the
+nine entries that stood here were sorted rather than left. Six are backlog tickets at
+`.scratch/25-*.md` through `.scratch/30-*.md`: spec-to-ticket linkage, the lane icons and priority
+labels, a way to say a ticket is started, a committed lockfile for the `npx` tooling, frontmatter
+against upstream's `Status:` body line, and offering `done` and `out-of-scope` upstream. One was
+already decided, since `groups` and `invocations` are defined terms in `CONTEXT.md`. Two moved to
+Out of scope below.
 
 ## Out of scope
 
@@ -166,3 +176,9 @@ Standing constraints already settled with the user:
   prototypes take a second shape as UI variants inside a live route, which is not a file.
 - A read-write board. Moving a card from the interface contradicts the reason this is read-only.
 - Talking to the GitHub, GitLab, or Jira APIs to read tracker-native state.
+- How wide mermaid rendering would reach, ticket bodies alone or every document the board renders.
+  It cannot arise while [the research](./issues/13-research-mermaid-rendering-cost.md) recommends
+  the plain escaped fence.
+- What else a dependency budget would buy.
+  [What scratchboard promises](./issues/18-what-scratchboard-promises.md) kept the rule and fixed it
+  to the install, so reopening the budget is a different effort with a different destination.
