@@ -10,9 +10,12 @@ labels: [docs, config]
 The migration to status lanes deleted `in-progress/`, and nothing replaced it. "In progress" lived
 only in the folder name, so it is now unsayable.
 
-The six values cannot express it, and that is by design: they say what a ticket needs, not whether
-anyone picked it up. `ready-for-agent` still reads `ready-for-agent` while an agent is halfway
-through it.
+The six values in the published spec, the five triage roles plus `done`, cannot express it, and
+that is by design: they say what a ticket needs, not whether anyone picked it up.
+`ready-for-agent` still reads `ready-for-agent` while an agent is halfway through it. This repo
+also declares a seventh lane, `deferred`, which is outside the spec and means "someone looked and
+chose later". It is a readiness answer like the rest, so it is not a candidate here and this ticket
+leaves it alone.
 
 Wayfinder's dialect already solved the same problem with `claimed`, which is a different axis from
 readiness and lives beside `resolved` and `out-of-scope`.

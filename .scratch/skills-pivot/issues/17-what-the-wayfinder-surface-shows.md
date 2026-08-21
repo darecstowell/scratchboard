@@ -18,6 +18,7 @@ warnings, and it has no concept of a document.
 
 [How does the board recognize an effort folder](./03-recognize-an-effort-folder.md) settled that a
 recognized group holds every file the glob discovered under its root, each with a role of `map`,
+since renamed to `lead` by the amendment below,
 `issue`, or `other`. This decides what a `role: other` file becomes.
 
 Candidates, by how reliably they sit in the working tree:
@@ -247,9 +248,15 @@ disagreeing.
 
 ### The payload
 
-One new top-level key. `tickets` is unchanged.
+One new top-level key from this ticket. `tickets` is unchanged.
 
-```
+The payload gains two top-level keys in total across the effort.
+[What the board does with skills](./16-what-the-board-does-with-skills.md) adds the other, the list
+of prepared invocations a repo declares in config, carried once at the top so the browser can
+substitute `{path}` on click. That key is that ticket's to specify, not this one's, and it is
+present whether or not a group exists.
+
+```text
 groups: [
   { kind: "effort" | "feature" | "context",
     path, title,

@@ -94,7 +94,8 @@ silence where junk used to be.
 ### Roles by position
 
 The collection holds every file the `tickets` glob discovered under the group root, and each
-carries a role taken from where it sits: `map` for the lead document, `issue` for a file under
+carries a role taken from where it sits: `map` for the lead document, since renamed to `lead` by
+the amendment below, `issue` for a file under
 `issues/`, `other` for anything else. Discovery stays the glob's job, so a file the glob never
 matched is no more visible inside a group than outside one.
 

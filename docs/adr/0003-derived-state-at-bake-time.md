@@ -4,6 +4,10 @@ The wayfinder view sorts tickets into `behind us`, `takeable now`, and `still bl
 derived from each ticket's `Status:` and from every blocker it names. The scan computes it and the
 payload carries the answer, so the browser sorts cards it is already told about.
 
+"Bake time" here means the scan rather than the bake step alone. `src/board.mjs` runs `scan()` once
+and hands the same payload to `--serve` and to `bakeToFile`, so a served board carries the derived
+state too. The contrast that matters is scan against browser, not bake against serve.
+
 ## Considered options
 
 Shipping the raw `Status:` values and deriving the columns in the browser was rejected. It teaches

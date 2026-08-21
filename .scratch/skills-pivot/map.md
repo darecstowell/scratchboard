@@ -25,9 +25,9 @@ no version on disk, only a folder hash. See
 
 Standing constraints already settled with the user:
 
-- Zero dependencies is now itself under question. See
+- Zero dependencies holds, and it is a rule about the install graph of `npx scratchboard`, so a
+  dependency that runs only during a bake still breaks it. Settled by
   [What scratchboard promises](./issues/18-what-scratchboard-promises.md).
-  Assume it holds until that resolves.
 - Read-only holds.
 - Lanes become triage roles. The folder stops being the lane.
 - A sixth terminal state, scratchboard's own, completes the lifecycle his five roles lack.
@@ -69,7 +69,7 @@ Standing constraints already settled with the user:
   `issues/` folder marks a group, with `map.md` and `spec.md` naming the kind, and a folder
   holding both is ambiguous rather than a group. One mechanism serves both shapes and carries a
   `kind`. A recognized group leaves the ticket list for a collection of its own, holding every
-  file the glob discovered under the root with a role of `map`, `issue`, or `other`. The cross-repo id collision fixes itself, and the uniqueness check scopes to the
+  file the glob discovered under the root with a role of `lead`, `issue`, or `other`. The cross-repo id collision fixes itself, and the uniqueness check scopes to the
   group. A new kind-neutral `groups` key corrects a wrong guess, with `kind: "none"` as the
   opt-out. It reclassifies and never extends the walk, `init` never writes it, and groups sit
   outside `counts.total`, which takes this repo from 41 to 23. A half-recognized folder raises

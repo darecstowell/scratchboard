@@ -7,8 +7,9 @@ project's word do not drift apart.
 ## Language
 
 **Prepared invocation**:
-A skill name paired with the path of the thing on screen, ready to put on the clipboard. Declared
-by a repo in config, never shipped by the board.
+A skill name paired with the path of the thing on screen, ready to put on the clipboard. A repo
+declares it in config and the payload carries the list. Scratchboard ships no catalogue of its own,
+so the only skill name in board source is scratchboard's.
 _Avoid_: command, shortcut, launcher entry
 
 **Copy affordance**:
