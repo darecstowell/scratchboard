@@ -108,6 +108,21 @@ Standing constraints already settled with the user:
   facet dropped itself, verified rather than assumed. The migration lost "in progress", which
   lived only in the folder name.
 
+- [What does the board do with skills?](./issues/16-what-the-board-does-with-skills.md): the
+  board ships no skill catalogue, only one copy affordance, and a repo declares what goes in it. A
+  skill does not act on a ticket, so this is a copy affordance rather than a launcher and an entry
+  is a prepared invocation: a skill name plus the path of the thing on screen. The existing
+  `copy path` button is the whole mechanism, and it grows a caret only when config declares
+  entries, so a stock board is unchanged. Config is additive with override-by-name and an opt-out,
+  the affordance keys on the open detail view's path, a template substitutes `{path}` alone, and
+  the browser substitutes on click so the payload carries the list once rather than a string per
+  ticket. Machine reading is refused as a rule: the board describes the repo, never the machine, no
+  flag and no serve-only carve-out, so the board can never know whether a skill is installed. The
+  tier-2 diagnostic rides the existing warnings surface rather than the copy menu, names the shape
+  it half read, and hands over the `/scratchboard` invocation plus one plain sentence, never `init`
+  directly. It stays in a published board unconditionally. `skills/scratchboard/SKILL.md` stays one
+  skill with a widened description. The only skill name in board source is scratchboard's own.
+
 ## Not yet specified
 
 - Dependency edges. Two incompatible `Blocked by:` formats exist, structured in wayfinder and
@@ -132,10 +147,8 @@ Standing constraints already settled with the user:
 - Whether `groups` is the right name for the config key. It is kind-neutral, which recognition
   required, and it is a generic word this codebase has not used before. Cheaper to change before
   [What the wayfinder surface shows](./issues/17-what-the-wayfinder-surface-shows.md) encodes it.
-- Whether the board reads the installed version of the skills. A plugin install puts that
-  version on disk, where a bake could read it. A `find-skills` install does not.
-  [What the board does with skills](./issues/16-what-the-board-does-with-skills.md)
-  decides whether the bake reads it at all, so this waits on that ticket.
+  `invocations`, the key that declares prepared invocations, arrived with the same problem and is
+  the same decision.
 - How a baked board handles an effort with forty tickets. The three-column view holds in
   principle, and `behind us` grows without bound. Nothing has been drawn at that size.
 - Whether mermaid rendering, if it lands at all, applies to ticket bodies only or to every
