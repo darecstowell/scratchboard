@@ -178,3 +178,11 @@ What a recognized group looks like on screen. That is
 [Prototype the wayfinder view](./04-prototype-the-wayfinder-view.md),
 [What the wayfinder surface shows](./17-what-the-wayfinder-surface-shows.md), and
 [What the wayfinder surface shows](./17-what-the-wayfinder-surface-shows.md).
+
+## Comments
+
+Amended by
+[What does the wayfinder surface show](./17-what-the-wayfinder-surface-shows.md). The lead role
+above is named `map`, which fits one kind of group only. It is renamed to `lead`, so the roles are
+`lead`, `issue`, and `other`. A third kind, `context`, joins `effort` and `feature`, and its lead
+document is `CONTEXT.md`. Nothing else in this answer changes.

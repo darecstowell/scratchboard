@@ -123,15 +123,26 @@ Standing constraints already settled with the user:
   directly. It stays in a published board unconditionally. `skills/scratchboard/SKILL.md` stays one
   skill with a widened description. The only skill name in board source is scratchboard's own.
 
+- [What does the wayfinder surface show, and what does the payload carry for it?](./issues/17-what-the-wayfinder-surface-shows.md):
+  an effort gets a tab beside the board and the payload gains one key, `groups`. The board itself
+  does not change, and a repo with no group and no `CONTEXT.md` gets no tab bar at all. One view
+  per kind at every size, since columns by state cannot tangle and the node-link degradation
+  research does not apply. `behind us` is always collapsed with its count, the same rule the
+  terminal lanes already use, which closes the forty-ticket question. The map body is the header
+  with Destination open and the rest folded, and Decisions-so-far is discarded because the column
+  is that list. A claimed ticket greys inside `takeable now` and an out-of-scope ticket renders in
+  the header, never in a column. `blockedBy` exists only on an effort's issues, read only from the
+  structured line, forward only. State and the section split are computed at bake time so the UI
+  never learns upstream vocabulary. `CONTEXT.md` and the ADRs do enter the payload, as a third
+  `kind: "context"` group: discovery is three fixed reads rather than a second glob, so the walk is
+  untouched, and `CONTEXT-MAP.md` is followed with every resolved path fenced to the repo root.
+  Ticket 03's lead role is renamed from `map` to `lead`. Type shows as a word, not an icon, so the
+  icon budget stays closed. Relative links that match a payload path become in-board navigation.
+
 ## Not yet specified
 
-- Dependency edges. Two incompatible `Blocked by:` formats exist, structured in wayfinder and
-  freeform in `to-tickets`. Whether the board reads either, and whether edges render outside the
-  map view, waits on the payload decision.
 - Spec-to-ticket linkage. Local markdown stores no parent pointer in either direction, only
   directory colocation. Whether to invent a field is downstream of who owns the spec.
-- Where `CONTEXT.md` and ADRs sit in the interface. They are the most stable artifacts in the
-  ecosystem, but no view exists for a document that is not a ticket.
 - Lane icons and single-word priority labels, from the original toolbar request. The toolbar is
   now visible: two facet groups, `priority` at 4 chips and `labels` at 28, of which 17 sit on one
   ticket each. Seven lane rails plus `Unmapped`. The label tail and the rail count are what any
@@ -141,19 +152,15 @@ Standing constraints already settled with the user:
   rather than whether anyone picked it up. Wayfinder's dialect has `claimed` for exactly this.
   Adding a seventh value, or a second field, cuts against ticket 02's one-field decision, so this
   is a spec question rather than a config one.
-- Whether a `to-tickets` feature folder earns a view of its own, distinct from a wayfinder
-  effort. Recognition now carries a `kind` that says which is which, so the question is purely
-  visual and waits on the view tickets.
 - Whether `groups` is the right name for the config key. It is kind-neutral, which recognition
   required, and it is a generic word this codebase has not used before. Cheaper to change before
   [What the wayfinder surface shows](./issues/17-what-the-wayfinder-surface-shows.md) encodes it.
   `invocations`, the key that declares prepared invocations, arrived with the same problem and is
   the same decision.
-- How a baked board handles an effort with forty tickets. The three-column view holds in
-  principle, and `behind us` grows without bound. Nothing has been drawn at that size.
 - Whether mermaid rendering, if it lands at all, applies to ticket bodies only or to every
   document the board renders. Now unlikely to arise, since the research recommends keeping the
-  escaped fence.
+  escaped fence, but the board now renders glossaries and ADRs as well as tickets, so the surface
+  it would cover is wider than it was.
 - What the `npx` fetch-at-a-pinned-version pattern actually guarantees. The mermaid research
   measured that the pin does not reach transitive dependencies and that npx is not offline with a
   warm cache, which touches the lint and type tooling this repo already fetches that way.
