@@ -217,18 +217,24 @@ for (const path of codeFiles.filter((entry) => entry.startsWith("src/"))) {
 const SHIPPED_DIRS = ["src/", "bin/", "licenses/"];
 const NEVER_SHIP = ["test/", "tools/", ".scratch/", ".github/", "skills/", "assets/directions/"];
 const MUST_SHIP = ["assets/favicon.svg", "LICENSE", "README.md"];
+// The runtime never reads these, so they are the one carve-out in "everything under src ships".
+const SHIPPED_NEVER = [/^src\/ui\/prototype-[^/]*\.html$/];
 
 try {
   const out = execFileSync("npm", ["pack", "--dry-run", "--json"], { cwd: ROOT, encoding: "utf8" });
   const packed = JSON.parse(out.slice(out.indexOf("[")));
   const shipped = new Set(packed[0].files.map((entry) => entry.path));
 
+  const carved = (path) => SHIPPED_NEVER.some((pattern) => pattern.test(path));
   const required = [
     ...MUST_SHIP,
-    ...files.filter((path) => SHIPPED_DIRS.some((dir) => path.startsWith(dir))),
+    ...files.filter((path) => SHIPPED_DIRS.some((dir) => path.startsWith(dir)) && !carved(path)),
   ];
   for (const path of required) {
     if (!shipped.has(path)) fail("pack", path, "the runtime reads it and the tarball omits it");
+  }
+  for (const path of [...shipped].filter(carved)) {
+    fail("pack", path, "the runtime never reads it and the tarball ships it");
   }
   for (const dir of NEVER_SHIP) {
     const stray = [...shipped].filter((path) => path.startsWith(dir));

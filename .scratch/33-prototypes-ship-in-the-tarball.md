@@ -1,6 +1,6 @@
 ---
 title: Keep the wayfinder prototypes out of the published package
-status: needs-triage
+status: done
 priority: p2
 labels: [release, distribution, maintenance]
 ---
@@ -44,3 +44,19 @@ That conflict is the reason this is a decision rather than a one-line fix.
 - No file under `src/ui/` that the runtime never reads appears in `npm pack --dry-run`.
 - `tools/guard.mjs` fails if one comes back, so this cannot regress the way it arrived.
 - Any decision record citing a prototype path still resolves.
+
+## Shipped
+
+Excluded, and the exclusion is guarded both ways so it cannot come back the way it arrived.
+
+`package.json` carries a negation, `!src/ui/prototype-*.html`, beside the `src/` entry.
+`tools/guard.mjs` gains one named carve-out in the everything-under-src-ships rule, and a second
+check that fails when a carved file does appear in the tarball. Removing the negation now breaks
+the build with four named failures, which was verified rather than assumed.
+
+Nothing moved, so the paths
+[Prototype the wayfinder view](./skills-pivot/issues/04-prototype-the-wayfinder-view.md) cites
+still resolve.
+
+The tarball goes from 37 files and 418 KB unpacked to 33 files and 358 KB. Caught before 0.3.0,
+so no published version ever carried them.
