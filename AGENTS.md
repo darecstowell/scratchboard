@@ -6,11 +6,19 @@ the card.
 
 ## The rules that bite
 
-**Zero dependencies, and it covers the test setup.** `node:test` and `node:assert` only. The rule
-is the product, because an `npx` run that installs nothing is why anyone tries this. `npm test`
-needs nothing installed, and a line under `dependencies` or `devDependencies` in `package.json`
-is the tell that the rule broke. Lint and type tooling is fetched for the run by `npx` at a
-pinned version, in CI and locally alike, and is never declared. `tools/guard.mjs` holds the line.
+**Zero dependencies, and the rule is the install graph of `npx scratchboard`.** `node:test` and
+`node:assert` only. The rule is the product, because an `npx` run that installs nothing is why
+anyone tries this. A dependency that runs only during a bake breaks it too, because `npx`
+installs it either way. `npm test` needs nothing installed, and a line under `dependencies` or
+`devDependencies` in `package.json` is the tell that the rule broke. `tools/guard.mjs` holds the
+line.
+
+**The lint and type tooling is the one hole, and it is written down rather than patched.** `npx`
+fetches those tools for the run at a pinned version, in CI and locally alike, and they are never
+declared. The pin does not reach their own transitive dependencies, so the tooling runs unpinned
+code in CI. It never reaches a user's install or a published board, which is why it is stated
+here instead of fixed here.
+[The lockfile ticket](.scratch/28-lockfile-for-the-npx-tooling.md) owns the fix.
 
 **Node 18 is the floor.** A version check failing on first contact is a bad first impression, so
 run the suite on 18 as well as current before calling a change done.
@@ -18,9 +26,13 @@ run the suite on 18 as well as current before calling a change done.
 **The payload is the contract.** `scan.mjs` emits it, the browser renders it, and `src/ui/` reads
 nothing else. Adding a field is a change to both sides.
 
-**Config names every lane and every field.** No lane name, status value, or metadata key belongs
-in the source. A stranger's `severity` field has to work with no code change, which is the reason
-this was extracted from the board it grew in.
+**Config names every lane and every field, except the dialect.** No lane name, status value, or
+metadata key belongs in the source. A stranger's `severity` field has to work with no code
+change, which is the reason this was extracted from the board it grew in. The dialect is the one
+named exception: it is a single file layout the board reads by name, and it sits beside detection
+rather than replacing it. The `groups` and `invocations` config keys are not part of the
+exception. They declare structure rather than anyone's vocabulary, so they were always inside the
+rule.
 
 **Ids are strings, everywhere.** A ticket is allowed to have no id at all, so DOM lookups key on
 `path`.
@@ -79,18 +91,22 @@ strings. A ticket whose `status` is a lie is a lie the demo tells on every page 
 Every folder under `.scratch/` is a piece of work, never a state. That is the upstream rule, and
 it is why the backlog sits flat at the root. Wayfinder efforts are the one folder shape here: an
 effort is a map and its decision tickets at `.scratch/<effort>/`, and it is planning rather than
-backlog. `docs/agents/issue-tracker.md` holds the conventions. The scanner cannot yet tell an
-effort from a ticket, so effort files currently land in `Unmapped` on the demo, which
-[ticket 3 in the skills pivot](.scratch/skills-pivot/issues/03-recognize-an-effort-folder.md)
-carries.
+backlog. `docs/agents/issue-tracker.md` holds the conventions. The scanner reads that shape now:
+the demo scans with no warnings, 31 tickets on the lanes, no `Unmapped` lane, and two groups, this
+repo's own context and the skills-pivot effort. A group's files leave the lanes and get a surface
+of their own, so the effort is planning on the demo and the backlog stays the board.
+[docs/local-markdown-spec.md](docs/local-markdown-spec.md) publishes what the scanner reads, and
+`test/dialect.test.mjs` fails when the document and `src/dialect.mjs` disagree.
 
 ## Shipped copy
 
 The README, `--help`, CLI output, and the skill are all read by users. Plain and specific, with
 no em dashes, no exclamation marks, and no emoji.
 
-Read-only is a position. State it with its reason in the same breath and it reads as a decision:
-tickets are agent-driven, so the agent moves the card.
+Two positions ride at the top of the README, and each is stated with its reason in the same
+breath, which is what makes a position read as a decision rather than an apology. Read-only:
+tickets are agent-driven, so the agent moves the card. And it owns no directory and no file
+format: it reads the layout the repo already has.
 
 ## Comments
 
