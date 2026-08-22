@@ -252,6 +252,8 @@ for (const path of files.filter((entry) => entry.endsWith(".mjs"))) {
 // ---------------------------------------------------------------- workflows
 
 const PINNED = /^[^\s@]+@[0-9a-f]{40}$/;
+// An unquoted delimiter expands the body, so third party text in a run step becomes script.
+const HEREDOC = /<<-?\s*(["']?)([A-Za-z_][A-Za-z0-9_]*)\1/;
 
 for (const path of files.filter((entry) => entry.startsWith(".github/workflows/"))) {
   const source = read(path);
@@ -259,6 +261,11 @@ for (const path of files.filter((entry) => entry.startsWith(".github/workflows/"
   if (!/^permissions:/m.test(source)) fail("workflows", path, "no top-level permissions block");
 
   lines.forEach((line, index) => {
+    const heredoc = HEREDOC.exec(line);
+    if (heredoc && !heredoc[1]) {
+      fail("workflows", `${path}:${index + 1}`, `heredoc ${heredoc[2]} expands the body it holds`);
+    }
+
     const uses = /^\s*-?\s*uses:\s*(\S+)/.exec(line);
     if (!uses || uses[1].startsWith("./")) return;
     if (!PINNED.test(uses[1])) {

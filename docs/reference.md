@@ -8,6 +8,7 @@ Everything scratchboard reads and every option it takes. The [README](../README.
 - [Globs](#globs)
 - [Lanes](#lanes)
 - [Facets](#facets)
+- [Groups](#groups)
 - [Icons](#icons)
 - [Detection](#detection)
 - [Ticket identity and dates](#ticket-identity-and-dates)
@@ -81,6 +82,9 @@ board is already open. Answering no writes nothing.
 | `parser` | path | A local module that reads a format neither preset covers. Replaces `format`. |
 | `lanes` | array | Lane name, match rule, and whether it starts collapsed. |
 | `facets` | array | Which metadata fields become filter chips, their colours, their value order, and their icon. |
+| `groups` | array | Which folders are groups and which kind each one takes, when the shape on disk is not enough. |
+| `documents` | object | Which fixed-path documents the board looks for. |
+| `invocations` | array | The commands the board offers to copy, by name and template. |
 
 Config wins key by key, and detection fills the rest. Detection is skipped entirely when
 `tickets`, `lanes`, and one of `format` or `parser` are all set, which is what makes a committed
@@ -164,6 +168,65 @@ value order, and an optional icon.
   in behind by count, and a name no ticket carries is skipped rather than drawn empty.
 - A facet may be written as a bare string, so `"facets": ["labels"]` is the same as
   `[{ "field": "labels" }]`.
+
+## Groups
+
+A group is one lead document beside an `issues/` folder, and the lead document names the kind:
+`map.md` is an `effort`, `spec.md` is a `feature`, and `CONTEXT.md` is a `context`. A group's files
+leave the ticket lanes and get a surface of their own, so no file is on the board twice. A context
+is found by fixed path instead: `CONTEXT-MAP.md` and `CONTEXT.md` at the root, and one `docs/adr/`
+directory per context.
+
+[The local markdown spec](local-markdown-spec.md) is the full reader contract: the names, the
+fields, the values, and what happens to input none of them cover. The three keys below are what
+that spec leaves to config.
+
+Recognition works with no config at all, and detection never writes any of these three keys.
+Lanes are stable, so detection materializes them and they stay correct. Groups are created and
+finished constantly, so writing each one to config would mean a config edit before the board
+reads a new folder right.
+
+**`groups`.** An array. Each entry names a path relative to the root and the kind it takes.
+
+```json
+"groups": [
+  { "path": ".scratch/an-effort", "kind": "effort" },
+  { "path": "notes/archive", "kind": "none" }
+]
+```
+
+`effort`, `feature`, and `context` force the kind on a folder whose shape does not say it.
+`kind: "none"` opts a folder out of being a group whatever its shape, which is also the repair
+the half-read diagnostics offer. A path that is absolute, or that climbs out of the root with
+`..`, warns and is ignored. A path the ticket glob reaches no file under warns and is ignored, so
+a stale entry says so rather than doing nothing quietly.
+
+**`documents`.** An object. One key today.
+
+```json
+"documents": { "context": false }
+```
+
+`"context": false` turns context discovery off, so `CONTEXT.md`, `CONTEXT-MAP.md`, and
+`docs/adr/` are left alone. A repository using those names for something else sets this. Any
+value that is not `true` or `false` warns and is ignored.
+
+**`invocations`.** An array of commands the board offers to copy, each with a `name` and a
+`template`.
+
+```json
+"invocations": [
+  { "name": "Open", "template": "code {path}" },
+  { "name": "Claim", "template": null }
+]
+```
+
+`{path}` is the only token substituted, and a template holding any other `{token}` warns and is
+dropped rather than being copied out with a placeholder in it. A `template` of `null` suppresses
+the entry with that name, so a repository can drop one entry without restating the rest.
+
+Nothing ships declared, so a repository that declares no invocations carries an empty list and
+the board offers none.
 
 ## Icons
 
@@ -336,7 +399,22 @@ scanner and the interface.
 | `facets` | Per field, the values with their counts |
 | `facetConfig` | The facets as configured, minus any field used by a lane |
 | `tickets` | ID, slug, title, path, lane, fields, excerpt, body, refs, dates |
+| `groups` | Per group, its `kind`, `path`, `title`, `sections`, and `files` |
+| `invocations` | The commands to offer, each a `name` and a `template` |
 | `warnings` | Path and reason for everything the scan survived |
+
+A group's `files` carry a `role` of `lead`, `issue`, or `other`, taken from where the file sits,
+plus its `path`, `title`, `id`, and `body`. On an `effort` group only, an issue also carries
+`type`, `state`, `claimed`, and `blockedBy`, because only an effort's issues write the structured
+lines those are read from. On a `context` group only, every file carries `status`, read from its
+own frontmatter and `null` when it carries none. `sections` holds `destination`, `notes`, `fog`,
+and `outOfScope`, read from the lead document's own headings and empty when it carries none.
+
+`groups` and `invocations` are always present. A repository with no group and no declared
+invocation carries two empty arrays rather than two missing keys.
+
+A warning may also carry a `fix`, which is one plain sentence naming the repair for a shape the
+board recognized but only half read.
 
 `counts.byLane` and `warnings` are the report to read when a board looks wrong. A lane far short
 of the count you expect, or an `Unmapped` entry, means the config and the tickets disagree.
