@@ -28,3 +28,12 @@ Still needed:
 
 The live reload capture sits under the `--serve` section, and it shows a file changing on one
 side and the board answering on the other.
+
+## Comments
+
+The shipped-copy rewrite added a fourth image slot, `IMAGE SLOT 4` in the README, reserving
+`assets/screenshot-effort.png` at 1600x1000: a wide still of the effort view, three columns by
+state, with the takeable tickets in the middle. It is a comment rather than a link, so nothing is
+broken while it is missing.
+
+That view now exists and this repo's own board renders it, so the capture is takeable.

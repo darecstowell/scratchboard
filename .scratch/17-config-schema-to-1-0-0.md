@@ -29,3 +29,15 @@ cheap, and it must survive to 1.0.0.
 
 Real configs from repos nobody here wrote have run for long enough that the last schema
 change is behind us, and the reason for 1.0.0 is written down.
+
+## Comments
+
+The schema just grew three optional top-level keys: `groups`, `documents`, and `invocations`. Each
+one warns and degrades on bad input rather than throwing, and the unknown-key rule still holds
+around them, so a config written against a newer build still renders on an older one.
+
+That is a schema change, so the clock on "the last change is behind us" restarts here.
+
+The keys are documented in [the reader spec](../docs/local-markdown-spec.md) and in
+`docs/reference.md`. Whether `groups` and `invocations` are the right names was raised and closed
+during the map: both are defined terms in `CONTEXT.md` now.

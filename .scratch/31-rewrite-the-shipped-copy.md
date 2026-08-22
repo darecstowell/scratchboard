@@ -43,3 +43,18 @@ The badge and the reader spec are
 - `AGENTS.md` carries the restated dependency rule and the restated config rule.
 - No em dash, no exclamation mark, no emoji. `tools/guard.mjs` checks this.
 - Written with `/copywriting`.
+
+## Comments
+
+Written, and it sits in the working tree rather than in the history, so this stays
+`ready-for-human` until it lands.
+
+Every line above holds. Two things came up that the brief did not anticipate.
+
+The old second paragraph repeated the read-only reason word for word three lines under the new
+two-position block, so the repeat was cut. Each position is now stated once.
+
+Two sentences went false the moment the skill took the vocabulary job. `SKILL.md` said tickets
+stay as they are and the README said the skill never touches a ticket. Both are now scoped to the
+three repair jobs, and the value list lives in
+[the reader spec](../docs/local-markdown-spec.md) rather than being restated.

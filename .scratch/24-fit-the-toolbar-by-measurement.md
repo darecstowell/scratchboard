@@ -34,3 +34,16 @@ budget should have handled.
 - Resizing the window re-fits without a reload.
 - No layout thrash: one read per fit, not one per chip.
 - `CHIP_BUDGET` is gone, or is reduced to a ceiling rather than the deciding rule.
+
+## Comments
+
+The tab row now owes the same answer.
+[What the wayfinder surface shows](./skills-pivot/issues/17-what-the-wayfinder-surface-shows.md)
+handed the question here deliberately, on the reasoning that solving it twice, differently, is how
+two toolbars end up disagreeing.
+
+The row ships with `overflow-x: auto` and no wrap, so it scrolls sideways rather than pushing
+anything onto a second line. That is a holding answer, not a fitted one, and it is the same shape
+of guess the chip budget is.
+
+Whatever measurement lands here should cover both rows.

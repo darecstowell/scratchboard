@@ -31,3 +31,11 @@ tooling is not in it.
 - `tools/guard.mjs` still fails on any line under `dependencies` or `devDependencies`.
 - `npm test` still needs nothing installed.
 - `AGENTS.md` says why a lockfile exists and what it does not cover.
+
+## Comments
+
+Half of the last `Done when` line is met. `AGENTS.md` now describes the carve-out honestly: the
+tooling is fetched by `npx` at a pinned version, that pin does not reach the tools' own transitive
+dependencies, so CI runs unpinned code, and it never reaches a user's install or a published board.
+
+The lockfile itself is still the work.
