@@ -171,6 +171,10 @@ value order, and an optional icon.
 
 ## Groups
 
+The surfaces a group renders are experimental, and their shape may change. Recognition, the
+config keys, and the payload below are the contract. A repo with no group renders exactly as it
+did before, with no tab row at all.
+
 A group is one lead document beside an `issues/` folder, and the lead document names the kind:
 `map.md` is an `effort`, `spec.md` is a `feature`, and `CONTEXT.md` is a `context`. A group's files
 leave the ticket lanes and get a surface of their own, so no file is on the board twice. A context
