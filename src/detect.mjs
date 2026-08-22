@@ -4,6 +4,7 @@ import { createInterface } from "node:readline";
 import { join } from "node:path";
 import { matchGlob, walk } from "./walk.mjs";
 import { PRESETS } from "./scan.mjs";
+import { LEAD_DOCUMENTS } from "./dialect.mjs";
 import { CONFIG_NAME, resolveRoot } from "./root.mjs";
 import { readConfig, withUnknown } from "./config.mjs";
 
@@ -145,9 +146,11 @@ function commonRoot(paths) {
   return shared.join("/");
 }
 
-/** A repo doc is not a ticket, so it never carries a directory into the running. */
+/** Neither a repo doc nor a lead document is a ticket, so neither carries a directory into
+ * the running. Detection is otherwise untouched and keeps guessing at any repo. */
 export function looksLikeTicket(path) {
-  return !DOC_NAMES.has(baseName(path).toLowerCase());
+  const name = baseName(path);
+  return !DOC_NAMES.has(name.toLowerCase()) && !LEAD_DOCUMENTS.has(name);
 }
 
 async function parsingCount(root, files, enough) {

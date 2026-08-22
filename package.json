@@ -1,7 +1,7 @@
 {
   "name": "scratchboard",
   "version": "0.2.1",
-  "description": "Render the markdown tickets already in your repo as a kanban board. Read-only by choice, zero config.",
+  "description": "Render the markdown tickets already in your repo as a kanban board. Reads the file layout the mattpocock/skills agent skills write. Read-only by choice, zero config.",
   "type": "module",
   "license": "MIT",
   "author": "Darec Stowell",
@@ -21,7 +21,10 @@
     "issues",
     "cli",
     "agents",
-    "skills"
+    "skills",
+    "agent-skills",
+    "mattpocock",
+    "wayfinder"
   ],
   "bin": {
     "scratchboard": "bin/cli.mjs"

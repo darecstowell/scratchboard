@@ -5,6 +5,7 @@ import { matchGlob, globRoot, walk } from "./walk.mjs";
 import { datesFor } from "./dates.mjs";
 import { makeExcerpt, findRefs } from "./parse/markdown.mjs";
 import { CATCH_ALL, laneFields } from "./config.mjs";
+import * as dialect from "./dialect.mjs";
 import * as yamlFrontmatter from "./parse/yaml-frontmatter.mjs";
 import * as keyValueBlock from "./parse/key-value-block.mjs";
 
@@ -127,6 +128,98 @@ export function backslashGlobs(config) {
   return globs.filter((glob) => typeof glob === "string" && glob.includes("\\"));
 }
 
+/** Nothing ships declared, so a repo that declares nothing carries an empty list. */
+export const BASE_INVOCATIONS = [];
+
+/** Additive, overriding by name, and a null template opts an entry out. */
+export function mergeInvocations(declared) {
+  const merged = new Map(BASE_INVOCATIONS.map((one) => [one.name, { ...one }]));
+  for (const one of declared || []) {
+    if (one.template === null) {
+      merged.delete(one.name);
+      continue;
+    }
+    merged.set(one.name, { name: one.name, template: one.template });
+  }
+  return [...merged.values()];
+}
+
+const ROLE_ORDER = { lead: 0, issue: 1, other: 2 };
+
+function baseNameOf(path) {
+  return path.slice(path.lastIndexOf("/") + 1);
+}
+
+function groupFiles(plan, held, config) {
+  const files = plan.files
+    .filter((path) => held.has(path))
+    .map((path) => {
+      const source = held.get(path);
+      const parsed = source.parsed || {};
+      const named = identify(path, config.idPattern);
+      const title =
+        (typeof parsed.title === "string" && parsed.title.trim() && parsed.title) ||
+        dialect.headingOf(source.text) ||
+        named.slug;
+      const file = {
+        role: dialect.roleOf(path, plan.path, plan.lead),
+        path,
+        title,
+        id: parsed.id !== null && parsed.id !== undefined ? String(parsed.id) : named.id,
+        body: parsed.body || source.text,
+      };
+      if (plan.kind === "context") file.status = dialect.statusOf(source.text);
+      return file;
+    });
+  files.sort(
+    (a, b) =>
+      ROLE_ORDER[a.role] - ROLE_ORDER[b.role] ||
+      plan.files.indexOf(a.path) - plan.files.indexOf(b.path)
+  );
+  return files;
+}
+
+function scopeIds(files, where, warnings) {
+  const byId = new Map();
+  for (const file of files) {
+    if (!file.id) continue;
+    if (!byId.has(file.id)) byId.set(file.id, []);
+    byId.get(file.id).push(file.path);
+  }
+  for (const [id, paths] of byId) {
+    if (paths.length < 2) continue;
+    warnings.push({
+      path: null,
+      reason: `id ${id} is on ${paths.length} files in ${where}: ${paths.join(", ")}`,
+    });
+  }
+}
+
+/** Only an effort carries edges and states, because only its issues write the structured line. */
+function addEffortState(files, held, where, warnings) {
+  const issues = files.filter((file) => file.role === "issue");
+  const fields = issues.map((file) => dialect.readIssueFields(held.get(file.path).text));
+  const states = dialect.deriveStates(
+    issues.map((file, at) => ({
+      id: file.id,
+      status: fields[at].status,
+      blockedBy: fields[at].blockedBy,
+    }))
+  );
+  issues.forEach((file, at) => {
+    file.type = fields[at].type;
+    file.state = states[at].state;
+    file.claimed = fields[at].status === dialect.CLAIMED;
+    file.blockedBy = fields[at].blockedBy;
+    for (const name of states[at].unknown) {
+      warnings.push({
+        path: file.path,
+        reason: `names blocker ${name}, which is no file in ${where}`,
+      });
+    }
+  });
+}
+
 export async function scan(context) {
   const { root, config, version } = context;
   const warnings = [...(context.warnings || [])];
@@ -147,8 +240,70 @@ export async function scan(context) {
     warnings.push({ path: glob, reason: `no file under ${root} matches this ticket glob` });
   }
 
+  const overrides = new Map();
+  for (const one of config.groups || []) {
+    if (!files.some((path) => path === one.path || path.startsWith(`${one.path}/`))) {
+      warnings.push({ path: one.path, reason: "the ticket glob reaches no file under this path" });
+      continue;
+    }
+    overrides.set(one.path, one.kind);
+  }
+  const recognized = dialect.recognize(files, { base: scope, overrides });
+  warnings.push(...recognized.diagnostics);
+
+  const plans = recognized.groups.map((group) => ({
+    ...group,
+    title: null,
+    files: files.filter((path) => path === group.path || path.startsWith(`${group.path}/`)),
+  }));
+  if (!config.documents || config.documents.context !== false) {
+    const found = await dialect.discoverContexts(root);
+    warnings.push(...found.warnings);
+    for (const held of found.contexts) plans.push({ kind: "context", ...held });
+  }
+  plans.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+
+  const held = new Map();
+  const taken = new Set();
+  for (const plan of plans) {
+    for (const path of plan.files) {
+      taken.add(path);
+      if (held.has(path)) continue;
+      let text;
+      try {
+        text = await readFile(join(root, path), "utf8");
+      } catch (error) {
+        warnings.push({ path, reason: `cannot read (${error.message})` });
+        continue;
+      }
+      let parsed = null;
+      try {
+        parsed = parser.parse(path, text);
+      } catch (error) {
+        warnings.push({ path, reason: `parser threw (${error.message})` });
+      }
+      held.set(path, { text, parsed });
+    }
+  }
+
+  const groups = plans.map((plan) => {
+    const inside = groupFiles(plan, held, config);
+    scopeIds(inside, plan.path, warnings);
+    if (plan.kind === "effort") addEffortState(inside, held, plan.path, warnings);
+    const lead = plan.lead && held.has(plan.lead) ? held.get(plan.lead) : null;
+    const named = inside.find((file) => file.role === "lead");
+    return {
+      kind: plan.kind,
+      path: plan.path,
+      title: (named && named.title) || plan.title || baseNameOf(plan.path),
+      sections: lead ? dialect.splitSections(lead.text) : dialect.emptySections(),
+      files: inside,
+    };
+  });
+
   const read = [];
   for (const path of files) {
+    if (taken.has(path)) continue;
     let text;
     try {
       text = await readFile(join(root, path), "utf8");
@@ -280,6 +435,8 @@ export async function scan(context) {
     facets: buildFacets(tickets, config),
     facetConfig: (config.facets || []).filter((facet) => !laneFields(config.lanes).has(facet.field)),
     tickets,
+    groups,
+    invocations: mergeInvocations(config.invocations),
     warnings,
   };
 }

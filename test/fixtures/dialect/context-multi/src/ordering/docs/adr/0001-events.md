@@ -1,0 +1,3 @@
+# Emit events
+
+OrderPlaced.

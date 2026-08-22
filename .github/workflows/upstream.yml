@@ -1,0 +1,70 @@
+name: upstream
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    name: watch mattpocock/skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      # The badge is a claim the fixtures defend, so a new upstream release opens a ticket
+      # rather than aging the claim into a lie.
+      - name: File a ticket when upstream releases past the version the spec names
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          spec=docs/local-markdown-spec.md
+          claimed="$(sed -n 's|^supports mattpocock/skills v\([0-9][0-9]*\.[0-9][0-9]*\)\.x$|\1|p' "$spec" | head -1)"
+          if [ -z "$claimed" ]; then
+            echo "$spec declares no version to compare against"
+            exit 1
+          fi
+
+          latest="$(gh api repos/mattpocock/skills/releases/latest --jq .tag_name)"
+          series="$(printf '%s' "$latest" | sed -n 's|^v\{0,1\}\([0-9][0-9]*\.[0-9][0-9]*\)\..*$|\1|p')"
+          if [ -z "$series" ]; then
+            echo "cannot read a version series from the upstream tag $latest"
+            exit 1
+          fi
+          if [ "$series" = "$claimed" ]; then
+            echo "upstream $latest is inside the v$claimed.x the spec names"
+            exit 0
+          fi
+
+          title="Refresh the mattpocock/skills badge for v$series.x"
+          if gh issue list --state open --limit 100 --json title --jq '.[].title' | grep -Fxq "$title"; then
+            echo "a ticket for v$series.x is already open"
+            exit 0
+          fi
+
+          # The upstream tag is third party text, so every value reaches the body as an
+          # argument and never as script the shell reads.
+          {
+            printf 'Upstream released `%s`. The spec and the README badge name `v%s.x`.\n\n' \
+              "$latest" "$claimed"
+            printf 'Refreshing the claim means, in order:\n\n'
+            printf '1. Read the upstream templates at `%s` and note every file shape that changed.\n' \
+              "$latest"
+            printf '2. Update the fixtures under `test/fixtures/upstream/` to match, and keep them\n'
+            printf '   at zero warnings on a run with no config.\n'
+            printf '3. Update `docs/local-markdown-spec.md` for any name or value that moved, and\n'
+            printf '   change the version it declares to `v%s.x`.\n' "$series"
+            printf '4. Update the README badge to the same version. `test/dialect.test.mjs` fails\n'
+            printf '   until the two agree.\n\n'
+            printf 'Filed by the `upstream` workflow.\n'
+          } > "$RUNNER_TEMP/body.md"
+
+          gh issue create --title "$title" --body-file "$RUNNER_TEMP/body.md"

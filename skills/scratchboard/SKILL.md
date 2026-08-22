@@ -1,9 +1,10 @@
 ---
 name: scratchboard
 description: >
-  Repairs a scratchboard kanban board that reads a repo's markdown tickets wrong. Use when
-  tickets are missing from the board, when the board shows them in the wrong lanes or in
-  Unmapped, or when scratchboard reports it cannot read a ticket format.
+  Repairs a scratchboard kanban board that reads a repo's markdown tickets wrong, and names the
+  field an agent writes to move a card. Use when tickets are missing from the board, when the
+  board shows them in the wrong lanes or in Unmapped, when scratchboard reports it cannot read a
+  ticket format, or when writing a ticket's status field to move it to another lane.
 license: MIT
 metadata:
   version: 0.1.0
@@ -13,7 +14,37 @@ Detection finds the tickets, picks a preset, and proposes lanes and facets on it
 three jobs below are the parts that take judgement or code.
 
 You write two files, `scratchboard.json` and `scratchboard.parser.mjs`, both at the repo root,
-and you ask the user before each. Tickets stay as they are.
+and you ask the user before each. None of the three jobs changes a ticket.
+
+Moving a card is the other job and it needs no config. A lane that matches on a field is moved by
+writing that field in the ticket, one line, in the vocabulary the repo already uses. The board
+never writes it, because the board is read-only.
+
+## The vocabulary a card is moved with
+
+Read the repo's own values first, from its lanes in `scratchboard.json` and from the tickets
+themselves, and write what is already there. The list below is the vocabulary the skills speak
+in, which is what a repo that has none of its own should use.
+
+| Value | Means |
+| --- | --- |
+| `needs-triage` | A maintainer needs to evaluate this ticket |
+| `needs-info` | Waiting on the reporter for information |
+| `ready-for-agent` | Fully specified, ready for an agent working alone |
+| `ready-for-human` | Needs a human to implement it |
+| `wontfix` | Will not be actioned |
+| `done` | Shipped and verifiable in the history |
+
+The first five are the canonical triage roles. `done` is scratchboard's own terminal state,
+because the five are a triage queue rather than a lifecycle. A repo may carry values outside both
+sets, as this one carries `deferred` for work someone looked at and chose later. Those pass
+through untouched, take their lane from local config, and are never rewritten into a value from
+the table.
+
+The reader spec is `docs/local-markdown-spec.md` in the
+[scratchboard repository](https://github.com/darecstowell/scratchboard/blob/main/docs/local-markdown-spec.md).
+It names every value the board recognizes, the file shapes it reads, and what happens to input it
+does not recognize. Read it rather than guessing, and do not restate it in a repo's own docs.
 
 ## 1. Locate the tickets
 

@@ -15,12 +15,12 @@ What is on screen after
 [the migration](./skills-pivot/issues/09-migrate-this-repo-to-status-lanes.md):
 
 - seven lane rails plus `Unmapped`
-- two facet groups, `priority` at 4 chips and `labels` at 28
-- 17 of those 28 labels sit on one ticket each
+- two facet groups, `priority` at 4 chips and `labels` at 29
+- most of those labels sit on one ticket each
 
 The label tail and the rail count are what any cleanup is actually looking at. A label on one
 ticket does filter, to that one ticket, and it costs a permanent chip to do it. Whether that trade
-is worth the toolbar width is the question. Eight rails is also a lot of horizontal budget for a
+is worth the toolbar width is the question. Seven rails is also a lot of horizontal budget for a
 board whose interesting lanes are three or four of them.
 
 [Fit the toolbar chips by measurement](./24-fit-the-toolbar-by-measurement.md) owns how many chips
@@ -32,3 +32,11 @@ fit. This ticket owns whether there should be fewer things to fit.
 - A decision is recorded on the priority labels: one word each, or unchanged.
 - The single-ticket label tail is either accepted with a reason, or reduced.
 - No lane name or label string moves into the source. Config names every lane and every field.
+
+## Comments
+
+The counts above were taken again after the skills pivot landed. The `Unmapped` rail is gone, so
+the board is seven rails rather than eight, and `labels` grew from 28 to 29.
+
+There is now a second row to consider. A group gets a tab, and this repo has two, so a tab row sits
+above the toolbar. That is a rail count of its own and it changes what any cleanup is looking at.

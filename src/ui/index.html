@@ -43,6 +43,12 @@
     </button>
   </header>
 
+  <!-- ======================= tabs ======================= -->
+  <!-- board.js builds one tab per payload group here, with the board pinned
+       first, and removes this row from the page when the payload carries no
+       group at all. It declares no control of its own. -->
+  <nav class="tabs" id="tabs" aria-label="Views"></nav>
+
   <!-- ======================= toolbar ======================= -->
   <!-- board.js inserts one facet control per payload facet between the search
        box and the sort control. -->
@@ -89,6 +95,11 @@
       <p class="board-empty-line">Loosen a filter, or clear them all.</p>
     </div>
   </main>
+
+  <!-- ======================= group view ======================= -->
+  <!-- board.js builds the active group's view here and leaves it hidden
+       while the board tab is the one showing. -->
+  <div class="views" id="views" hidden></div>
 </div>
 
 <!-- ======================= ticket detail ======================= -->
@@ -155,7 +166,22 @@ PAYLOAD
     facetConfig: [ { field, colors: { VALUE: ACCENT } } ],   — optional
     tickets: [ { id, slug, title, path, lane, fields,
                  excerpt, body, refs, created, updated, date_source } ],
-    warnings: [ { path, reason } ] }
+    groups: [ { kind, path, title,
+                sections: { destination, notes, fog, outOfScope },
+                files: [ { role, path, title, id, body,
+                           type, state, claimed, blockedBy, status } ] } ],
+    invocations: [ { name, template } ],
+    warnings: [ { path, reason, fix } ] }
+
+  `groups` and `invocations` are always present, and empty when the repo has
+  neither. kind is "effort", "feature" or "context"; role is "lead", "issue"
+  or "other"; state is "behind-us", "takeable-now", "still-blocked" or
+  "out-of-scope" and is computed by the scan. type, state, claimed and
+  blockedBy ride on an effort's issues and nowhere else. status rides on a
+  context's files and nowhere else, and is null on a file that carries none. An invocation whose template is null is
+  an opt-out and never reaches a menu. A warning may carry a `fix`, one
+  plain sentence naming the repair, which the notes panel renders under the
+  reason; an ordinary warning carries none.
 
   id is a STRING or null. Never coerce it with Number(). A ticket with no id
   still renders; the board keys every DOM lookup on `path`, which is always
@@ -176,7 +202,45 @@ IDS
   #notice              one-line header notice, used by the soft re-render
   #detail              the <dialog>; #detail-close closes it
   #detail-copy         copies the [data-detail-path] text to the clipboard
+  #tabs                the tab row; removed from the page with no group
+  #views               where the active group's view is built
   #payload             the inline JSON payload
+
+TABS
+  board.js writes the whole row and the page declares nothing inside it, so
+  the rebuild clears #tabs with innerHTML and can delete nothing it did not
+  build. With no group in the payload the element leaves the page entirely,
+  which is the compatibility rule: a stock board carries no tab row, not a
+  row holding one tab. The board tab comes first and is the default; groups
+  follow in path order. The row scrolls sideways and never wraps.
+  A group tab hides .bar and .board and unhides #views.
+
+GROUP VIEWS
+  One section per view, built into #views on tab click:
+    section.wf-view[data-group][data-kind]
+      header.wf-head      destination open, the rest folded with counts
+      div.wf-board        effort only; holds svg.wf-edges and div.wf-cols
+      p.wf-status         effort only; what the focused ticket unblocks
+  An effort gets three columns keyed on [data-state]: behind-us starts
+  folded with its count, takeable-now, still-blocked. A card is
+  li.wf-card[data-path][data-state], [data-claimed] when it is taken, and
+  its .wf-card-open button opens the same detail dialog a ticket does. A
+  click on the rest of the card pins the downstream highlight, another click
+  or Escape or a click on the background clears it. A feature renders
+  ol.wf-list, a context renders the glossary plus ol.wf-adrs in payload
+  order, which the scan already sorts highest number first. Edges are svg paths measured from the laid-out boxes after render
+  and on resize; nothing about them is recomputed on hover.
+
+LINKS INSIDE A BODY
+  A relative link whose target resolves to a path the payload holds renders
+  as button.md-link[data-open=PATH] and opens that path in the detail
+  dialog. Everything else keeps the SAFE_HREF anchor behaviour unchanged.
+
+PREPARED INVOCATIONS
+  board.js appends .copy-more beside #detail-copy only when the payload
+  carries at least one invocation with a template, so a board that declares
+  none is unchanged. An entry copies its template with {path} replaced by
+  the open path, and nothing else substituted.
 
 LANES
   board.js builds one section per payload lane, in payload order, and never
@@ -234,10 +298,12 @@ CARD FACET RENDERING
   by <span class="tkt-more">+N</span>.
 
 FILTER STATE IN THE URL
-  #q=<search>&f.<field>=<v1>,<v2>&sort=<key>&open=<lane>,<lane>
+  #q=<search>&f.<field>=<v1>,<v2>&sort=<key>&open=<lane>,<lane>&view=<path>
   Every part is optional and every value is percent-encoded. "f." keys are
   facet field names. "sort" is omitted while it is "updated". "open" lists
-  the lanes the payload marks collapsed that the user has expanded. Written
+  the lanes the payload marks collapsed that the user has expanded. "view"
+  is the path of the group whose tab is showing, omitted on the board tab.
+  Written
   with history.replaceState at the end of every apply(), so it fires no
   hashchange; a real navigation re-reads it and repaints.
 

@@ -35,11 +35,14 @@ const TEXT = 4.5;
 /* every one of these carries text somewhere: bg-deep under the two search boxes,
    bg-overlay under every hover. One named background checks none of the others. */
 const SURFACES = ["bg-deep", "bg-root", "bg-surface", "bg-raised", "bg-overlay"];
+/* a tint is a background too: the wayfinder card carries fg-1 and fg-3 on the green one. */
+const TINTS = ["green-tint", "amber-tint", "red-tint", "cyan-tint"];
+const TONES = ["fg-1", "fg-2", "fg-3", "fg-4"];
 
 for (const [name, theme] of THEMES) {
   test(`${name} carries every text tone at ${TEXT} to 1 or better on every surface`, () => {
-    for (const tone of ["fg-1", "fg-2", "fg-3", "fg-4"]) {
-      for (const surface of SURFACES) {
+    for (const tone of TONES) {
+      for (const surface of [...SURFACES, ...TINTS]) {
         const got = contrast(theme[tone], theme[surface]);
         assert.ok(got >= TEXT, `${tone} ${theme[tone]} is ${got.toFixed(2)} on ${surface}`);
       }
@@ -47,7 +50,7 @@ for (const [name, theme] of THEMES) {
   });
 
   test(`${name} keeps four foreground tones a reader can tell apart`, () => {
-    const steps = ["fg-1", "fg-2", "fg-3", "fg-4"].map((tone) => luminance(theme[tone]));
+    const steps = TONES.map((tone) => luminance(theme[tone]));
     const lstar = steps.map((y) => (y > 0.008856 ? 116 * Math.cbrt(y) - 16 : y * 903.3));
     for (let i = 1; i < lstar.length; i += 1) {
       const gap = Math.abs(lstar[i] - lstar[i - 1]);
@@ -71,6 +74,17 @@ for (const [name, theme] of THEMES) {
     );
   });
 }
+
+/** An alias is what the interface actually names, so a repointed alias must not slip the check. */
+test("every surface alias resolves to a background the contrast check already holds", () => {
+  const covered = new Set([...SURFACES, ...TINTS]);
+  const aliases = [...css.matchAll(/--surface-[\w-]+:\s*var\(--([\w-]+)\)/g)].map((hit) => hit[1]);
+
+  assert.ok(aliases.length, "the stylesheet no longer aliases its surfaces");
+  for (const name of aliases) {
+    assert.ok(covered.has(name), `a surface alias points at --${name}, which no pair covers`);
+  }
+});
 
 test("the default tokens match the latte theme block", () => {
   const root = tokens(":root {");

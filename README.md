@@ -6,7 +6,8 @@
 
 <p><b>Your markdown tickets as a kanban board, for any git repository</b></p>
 
-<p>Tickets are agent-driven, so the agent moves the card. Read-only by choice.</p>
+<p>Read-only by choice: tickets are agent-driven, so the agent moves the card.<br>
+It owns no directory and no file format: it reads the layout your repo already has.</p>
 
 <p>
   <a href="https://www.npmjs.com/package/scratchboard"><img alt="npm" src="https://img.shields.io/npm/v/scratchboard.svg"></a>
@@ -14,6 +15,7 @@
   <a href="https://github.com/darecstowell/scratchboard/actions/workflows/test.yml"><img alt="test" src="https://github.com/darecstowell/scratchboard/actions/workflows/test.yml/badge.svg"></a>
   <a href="./LICENSE"><img alt="license" src="https://img.shields.io/npm/l/scratchboard.svg"></a>
   <img alt="node" src="https://img.shields.io/node/v/scratchboard.svg">
+  <a href="https://github.com/mattpocock/skills"><img alt="supports mattpocock/skills v1.2.x" src="https://img.shields.io/badge/supports-mattpocock%2Fskills%20v1.2.x-blue"></a>
 </p>
 
 <p><code>npx scratchboard</code></p>
@@ -24,10 +26,11 @@
 
 `npx scratchboard` reads the markdown tickets already in your repo, maps them to lanes, and
 opens a board in your browser. One self-contained HTML file in your temp directory. No config,
-no dependencies, nothing written back to your repo.
+no dependencies, nothing written back to your repo. It reads the file layout the
+[mattpocock/skills](https://github.com/mattpocock/skills) agent skills write, so an effort map or
+a feature spec gets a view of its own rather than one more card. That view is experimental.
 
-There is no drag and drop and no write-back. Tickets are agent-driven, so the agent moves the
-card. This keeps your current flow safe.
+There is no drag and drop and no write-back, so your current flow stays safe.
 
 ```bash
 npx scratchboard                            # the board
@@ -41,6 +44,12 @@ Node 18 or later.
 ![The same board in latte](assets/screenshot-latte.png)
 
 One board, two themes. Both are the tickets in this repo, not a fixture.
+
+![An effort in this repo: the destination on top, then three columns by state, with the tickets you can take now in the middle](assets/screenshot-effort.png)
+
+**The effort view is experimental.** A planning folder gets a tab of its own, and this is what an
+effort looks like inside it. The shape of that view may change. The board itself does not: a repo
+with no planning folder renders exactly as it did before, with no tab row at all.
 
 **Live demo:** [darecstowell.github.io/scratchboard](https://darecstowell.github.io/scratchboard/)
 is this repo's own backlog, baked by this repo's own scratchboard on every push to `main`.
@@ -124,9 +133,10 @@ It has three jobs, and none of them is narrating a command you could have run yo
    `Unmapped` lane are the signal.
 3. Write a parser when neither preset reads your format.
 
-It writes only `scratchboard.json` and `scratchboard.parser.mjs`, it asks before each, and it
-never touches a ticket. `SKILL.md` follows the [agentskills.io](https://agentskills.io) format,
-so Claude Code, Codex CLI, Cursor, Windsurf, Copilot, Amp, and Gemini CLI all read it.
+For all three it writes only `scratchboard.json` and `scratchboard.parser.mjs`, it asks before
+each, and it never touches a ticket. `SKILL.md` follows the
+[agentskills.io](https://agentskills.io) format, so Claude Code, Codex CLI, Cursor, Windsurf,
+Copilot, Amp, and Gemini CLI all read it.
 
 ## Custom parsers
 
@@ -148,8 +158,7 @@ works with no code change. See the
 ## What it is not
 
 Scratchboard is not a task manager. It does not create tickets, move them, or edit their front
-matter. It owns no directory and no file format. It reads the layout your repo already has and
-draws a board from it.
+matter.
 
 [Backlog.md](https://github.com/MrLesk/Backlog.md) leads this category and it earns the lead: a
 CLI that creates and edits tasks, a web UI with drag and drop, a terminal board, MCP for agents,
@@ -158,6 +167,10 @@ use Backlog.md.** It will serve you better than this will.
 
 Scratchboard is for the other case. Your tickets already exist, in a shape you picked, and you
 want a window onto them.
+
+Those tickets have to be files. A repo that keeps its tickets behind a tracker API, such as
+GitHub Issues or Jira, has nothing on disk for a file reader to see, so the board comes up
+empty.
 
 - **No write-back, no drag and drop.** Tickets are agent-driven, so the agent moves the card.
 - **One board per config.** A second board means a second config file, on purpose.
