@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { isAbsolute } from "node:path";
 
 const KNOWN_KEYS = new Set([
   "title",
@@ -8,9 +9,18 @@ const KNOWN_KEYS = new Set([
   "parser",
   "lanes",
   "facets",
+  "groups",
+  "documents",
+  "invocations",
 ]);
 const KNOWN_LANE_KEYS = new Set(["name", "match", "collapsed"]);
 const KNOWN_FACET_KEYS = new Set(["field", "colors", "order", "icon"]);
+const KNOWN_GROUP_KEYS = new Set(["path", "kind"]);
+const KNOWN_DOCUMENT_KEYS = new Set(["context"]);
+const KNOWN_INVOCATION_KEYS = new Set(["name", "template"]);
+/** `none` opts a folder out of being a group. The other three are the kinds a group carries. */
+export const GROUP_KINDS = new Set(["effort", "feature", "context", "none"]);
+export const PATH_TOKEN = "{path}";
 /** The Octicons the board inlines. `test/icons.test.mjs` holds this to what the UI actually has. */
 export const ICON_NAMES = new Set([
   "alert",
@@ -66,6 +76,25 @@ export function validate(raw, warnings) {
   if (raw.facets !== undefined) {
     if (!Array.isArray(raw.facets)) warn("facets must be an array, ignored");
     else config.facets = raw.facets.map((f, i) => cleanFacet(f, i, warn)).filter(Boolean);
+  }
+
+  if (raw.groups !== undefined) {
+    if (!Array.isArray(raw.groups)) warn("groups must be an array, ignored");
+    else config.groups = raw.groups.map((g, i) => cleanGroup(g, i, warn)).filter(Boolean);
+  }
+
+  if (raw.documents !== undefined) {
+    const documents = cleanDocuments(raw.documents, warn);
+    if (documents) config.documents = documents;
+  }
+
+  if (raw.invocations !== undefined) {
+    if (!Array.isArray(raw.invocations)) warn("invocations must be an array, ignored");
+    else {
+      config.invocations = raw.invocations
+        .map((one, i) => cleanInvocation(one, i, warn))
+        .filter(Boolean);
+    }
   }
 
   return config;
@@ -144,6 +173,88 @@ function cleanFacet(facet, index, warn) {
   return out;
 }
 
+function cleanGroup(group, index, warn) {
+  const where = `groups[${index}]`;
+  if (!group || typeof group !== "object") {
+    warn(`${where} is not an object, ignored`);
+    return null;
+  }
+  for (const key of Object.keys(group)) {
+    if (!KNOWN_GROUP_KEYS.has(key)) warn(`unknown key "${key}" in ${where}, ignored`);
+  }
+  if (typeof group.path !== "string" || !group.path.trim()) {
+    warn(`${where} names no path, ignored`);
+    return null;
+  }
+  const path = group.path.trim().replace(/\/+$/, "");
+  if (!isInsideRepo(path)) {
+    warn(`${where} path must be relative to the repository root, ignored`);
+    return null;
+  }
+  if (!GROUP_KINDS.has(group.kind)) {
+    warn(`unknown kind "${group.kind}" in ${where}, ignored`);
+    return null;
+  }
+  return { path, kind: group.kind };
+}
+
+function isInsideRepo(path) {
+  if (isAbsolute(path) || /^[A-Za-z]:/.test(path)) return false;
+  return !path.split(/[\\/]/).includes("..");
+}
+
+function cleanDocuments(documents, warn) {
+  if (!documents || typeof documents !== "object" || Array.isArray(documents)) {
+    warn("documents must be an object, ignored");
+    return null;
+  }
+  for (const key of Object.keys(documents)) {
+    if (!KNOWN_DOCUMENT_KEYS.has(key)) warn(`unknown key "${key}" in documents, ignored`);
+  }
+  const out = {};
+  if (documents.context !== undefined) {
+    if (typeof documents.context === "boolean") out.context = documents.context;
+    else warn("context in documents must be true or false, ignored");
+  }
+  return out;
+}
+
+/** A null template opts an entry out by name, so config is additive rather than all or nothing. */
+function cleanInvocation(invocation, index, warn) {
+  const where = `invocations[${index}]`;
+  if (!invocation || typeof invocation !== "object") {
+    warn(`${where} is not an object, ignored`);
+    return null;
+  }
+  for (const key of Object.keys(invocation)) {
+    if (!KNOWN_INVOCATION_KEYS.has(key)) warn(`unknown key "${key}" in ${where}, ignored`);
+  }
+  if (typeof invocation.name !== "string" || !invocation.name.trim()) {
+    warn(`${where} has no name, ignored`);
+    return null;
+  }
+  const name = invocation.name.trim();
+  if (invocation.template === null) return { name, template: null };
+  if (typeof invocation.template !== "string" || !invocation.template.trim()) {
+    warn(`${where} has no template, ignored`);
+    return null;
+  }
+  const unsupported = unsupportedTokens(invocation.template);
+  if (unsupported.length) {
+    warn(`${where} uses ${unsupported.join(", ")}, and only ${PATH_TOKEN} is substituted, ignored`);
+    return null;
+  }
+  return { name, template: invocation.template };
+}
+
+function unsupportedTokens(template) {
+  const found = new Set();
+  for (const match of template.matchAll(/\{[^{}]*\}/g)) {
+    if (match[0] !== PATH_TOKEN) found.add(match[0]);
+  }
+  return [...found];
+}
+
 /** `raw` is the file as written. Only a caller that rewrites the file needs it. */
 export function readConfig(configPath, warnings) {
   const none = { raw: {}, config: {}, readable: true };
@@ -182,8 +293,14 @@ export function withUnknown(raw, config) {
   }
   out.lanes = rejoin(raw.lanes, out.lanes, KNOWN_LANE_KEYS, "name");
   out.facets = rejoin(raw.facets, out.facets, KNOWN_FACET_KEYS, "field");
+  out.groups = rejoin(raw.groups, out.groups, KNOWN_GROUP_KEYS, "path");
+  out.invocations = rejoin(raw.invocations, out.invocations, KNOWN_INVOCATION_KEYS, "name");
+  out.documents = rejoinOne(raw.documents, out.documents, KNOWN_DOCUMENT_KEYS);
   if (!out.lanes) delete out.lanes;
   if (!out.facets) delete out.facets;
+  if (!out.groups) delete out.groups;
+  if (!out.invocations) delete out.invocations;
+  if (!out.documents) delete out.documents;
   return out;
 }
 
@@ -199,6 +316,15 @@ function rejoin(rawList, cleanList, known, key) {
     }
     return { ...clean, ...extra };
   });
+}
+
+function rejoinOne(rawValue, clean, known) {
+  if (!clean || !rawValue || typeof rawValue !== "object" || Array.isArray(rawValue)) return clean;
+  const extra = {};
+  for (const [name, value] of Object.entries(rawValue)) {
+    if (!known.has(name)) extra[name] = value;
+  }
+  return { ...clean, ...extra };
 }
 
 /** A field that places lanes is not also a filter chip, or one control fights the other. */
