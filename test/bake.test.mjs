@@ -385,3 +385,139 @@ test("the interface template lets a search engine index the public demo", async 
   const template = await readFile(new URL("../src/ui/index.html", import.meta.url), "utf8");
   assert.equal(/noindex/.test(template), false);
 });
+
+/** A map body, a decision record and a declared template all reach the browser now, so all
+ *  three are untrusted the way a ticket body already was. */
+function payloadWithGroups(body) {
+  const payload = payloadWith("plain");
+  payload.groups = [
+    {
+      kind: "effort",
+      path: ".scratch/an-effort",
+      title: body,
+      sections: { destination: body, notes: body, fog: body, outOfScope: body },
+      files: [
+        { role: "lead", path: ".scratch/an-effort/map.md", title: body, id: null, body },
+        {
+          role: "issue",
+          path: ".scratch/an-effort/issues/01-one.md",
+          title: body,
+          id: "01",
+          body,
+          type: body,
+          state: "takeable-now",
+          claimed: false,
+          blockedBy: [body],
+        },
+      ],
+    },
+    {
+      kind: "context",
+      path: ".",
+      title: body,
+      sections: {},
+      files: [
+        { role: "lead", path: "CONTEXT.md", title: body, id: null, body },
+        { role: "other", path: "docs/adr/0001-one.md", title: body, id: "0001", body, status: body },
+      ],
+    },
+  ];
+  payload.invocations = [
+    { name: body, template: `/grilling {path} ${body}` },
+    { name: "opted out", template: null },
+  ];
+  return payload;
+}
+
+test("a hostile map body, decision record and template survive the bake byte for byte", async () => {
+  const payload = payloadWithGroups(HOSTILE);
+  const html = await bake({ payload });
+
+  const at = html.indexOf(OPEN_TAG) + OPEN_TAG.length;
+  const region = html.slice(at, html.indexOf("</script>", at));
+  assert.equal(region.includes("<"), false, "the payload can end its own element");
+
+  const back = payloadFrom(html);
+  assert.deepEqual(back, payload);
+  assert.equal(back.groups[0].sections.destination, HOSTILE, "a map section was rewritten");
+  assert.equal(back.groups[0].files[1].body, HOSTILE, "an effort ticket body was rewritten");
+  assert.equal(back.groups[1].files[1].status, HOSTILE, "a decision record status was rewritten");
+  assert.equal(back.invocations[0].template, `/grilling {path} ${HOSTILE}`, "a template was rewritten");
+  assert.equal(back.invocations[1].template, null, "an opt-out must reach the browser as it was written");
+
+  const plain = await bake({ payload: payloadWithGroups("plain") });
+  assert.equal((html.match(/<script\b/gi) || []).length, (plain.match(/<script\b/gi) || []).length);
+});
+
+test("a template that tries to close the payload element cannot", async () => {
+  const attack = '</script><script>window.stolen = 1;</script><!--';
+  const payload = payloadWith("plain");
+  payload.invocations = [{ name: attack, template: `${attack} {path}` }];
+  const html = await bake({ payload });
+
+  const at = html.indexOf(OPEN_TAG) + OPEN_TAG.length;
+  const region = html.slice(at, html.indexOf("</script>", at));
+  assert.equal(region.includes("<"), false, "the template can end its own element");
+  assert.equal(payloadFrom(html).invocations[0].template, `${attack} {path}`);
+  const plain = await bake({ payload: payloadWith("plain") });
+  assert.equal(
+    (html.match(/<script\b/gi) || []).length,
+    (plain.match(/<script\b/gi) || []).length,
+    "the file grew a script element"
+  );
+});
+
+test("a group path that tries to break out of an attribute is only ever data", async () => {
+  const attack = '" onload="window.stolen = 1';
+  const payload = payloadWith("plain");
+  payload.groups = [
+    { kind: "effort", path: attack, title: attack, sections: {}, files: [] },
+  ];
+  const html = await bake({ payload });
+
+  const markup = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "");
+  assert.equal(markup.includes("onload"), false, "the attack reached the markup");
+  assert.equal(markup.includes("window.stolen"), false);
+  assert.equal(payloadFrom(html).groups[0].path, attack);
+});
+
+test("a hostile repair sentence in a warning survives the bake byte for byte", async () => {
+  const payload = payloadWith("plain");
+  payload.warnings = [
+    { path: HOSTILE, reason: HOSTILE, fix: `Add a map.md. ${HOSTILE}` },
+    { path: ".scratch/half-read", reason: "read as an effort and found no map.md" },
+  ];
+  const html = await bake({ payload });
+
+  const at = html.indexOf(OPEN_TAG) + OPEN_TAG.length;
+  const region = html.slice(at, html.indexOf("</script>", at));
+  assert.equal(region.includes("<"), false, "a repair sentence can end the payload element");
+
+  const back = payloadFrom(html);
+  assert.equal(back.warnings[0].fix, `Add a map.md. ${HOSTILE}`);
+  assert.equal(back.warnings[0].reason, HOSTILE);
+  assert.equal("fix" in back.warnings[1], false, "an ordinary warning grew a third key");
+
+  const markup = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "");
+  assert.equal(markup.includes("window.stolen"), false, "the attack reached the markup");
+});
+
+test("a payload with no group and no invocation bakes the file it baked before", async () => {
+  const plain = await bake({ payload: payloadWith("plain") });
+  const withKeys = await bake({ payload: payloadWithGroups("plain") });
+
+  assert.equal(plain.includes('"groups"'), false, "an absent key must not be invented");
+  assert.equal(plain.includes('"invocations"'), false);
+  assert.ok(withKeys.includes('"groups"'));
+  const empty = await bake({ payload: { ...payloadWith("plain"), groups: [], invocations: [] } });
+  assert.ok(empty.includes('"groups":[]'), "an empty array is the scan's own answer and travels as one");
+  assert.equal(
+    plain.replace(/<script type="application\/json"[\s\S]*?<\/script>/, ""),
+    withKeys.replace(/<script type="application\/json"[\s\S]*?<\/script>/, ""),
+    "the payload is the only thing a group changes in the file"
+  );
+});

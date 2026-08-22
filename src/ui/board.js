@@ -42,6 +42,26 @@
   const DIVIDER_RE = /^ {0,3}\|?[ :|-]*-[ :|-]*$/;
   const SAFE_HREF = /^(https?:\/\/|mailto:|#|\/)/i;
 
+  const dirOf = (path) => (path.lastIndexOf("/") === -1 ? "" : path.slice(0, path.lastIndexOf("/")));
+
+  /** Keys are escaped paths, because a href is already escaped by the time a link is read. */
+  let knownPaths = new Map();
+  let linkBase = "";
+
+  /** A baked board is one file, so a relative link to a path the payload holds is navigation. */
+  function inBoardTarget(href) {
+    if (!knownPaths.size || SAFE_HREF.test(href)) return "";
+    const wanted = href.split("#")[0].split("?")[0];
+    if (!wanted) return "";
+    const parts = [];
+    (linkBase ? linkBase.split("/") : []).concat(wanted.split("/")).forEach((part) => {
+      if (!part || part === ".") return;
+      if (part === "..") parts.pop();
+      else parts.push(part);
+    });
+    return knownPaths.get(parts.join("/")) || "";
+  }
+
   function renderInline(text) {
     const held = [];
     const hold = (html) => "\u0000" + (held.push(html) - 1) + "\u0000";
@@ -53,6 +73,10 @@
     work = work.replace(/\*\*([\s\S]+?)\*\*/g, "<strong>$1</strong>");
     work = work.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "<em>$1</em>");
     work = work.replace(/\[([^\]\n]*)\]\(([^)\s]+)(?:\s+&quot;[^)]*&quot;)?\)/g, (whole, label, href) => {
+      const inBoard = inBoardTarget(href);
+      if (inBoard) {
+        return hold('<button type="button" class="md-link" data-open="' + esc(inBoard) + '">' + label + "</button>");
+      }
       if (!SAFE_HREF.test(href)) return whole;
       return hold('<a href="' + href + '" target="_blank" rel="noreferrer">' + label + "</a>");
     });
@@ -284,7 +308,10 @@
     detailFacts: document.querySelector(".detail-facts"),
     detailBody: document.querySelector("[data-detail-body]"),
     bar: document.querySelector(".bar"),
-    header: document.querySelector(".hd")
+    header: document.querySelector(".hd"),
+    frame: document.querySelector(".frame"),
+    tabs: document.getElementById("tabs"),
+    views: document.getElementById("views")
   };
 
   const state = {
@@ -292,7 +319,8 @@
     needle: "",
     facets: new Map(),
     sort: "updated",
-    open: new Set()
+    open: new Set(),
+    view: "board"
   };
 
   let lanes = [];
@@ -311,6 +339,11 @@
   let notesButton = null;
   let noticeTimer = null;
   let painted = false;
+  let groups = [];
+  let groupByPath = new Map();
+  let fileByPath = new Map();
+  let invocations = [];
+  let wf = null;
 
   // ------------------------------------------------------------- values
 
@@ -655,6 +688,502 @@
     });
   }
 
+  // ------------------------------------------------------------- groups
+
+  /* These three are the payload's own state values, not lane names a config owns: the view has
+     no facet system and the scan computes the membership. */
+  const STATE_KEYS = ["behind-us", "takeable-now", "still-blocked"];
+  const OUT_OF_SCOPE = "out-of-scope";
+  const BULGE = 34;
+  const KINDS = new Set(["effort", "feature", "context"]);
+  const columnName = (key) => key.replace(/-/g, " ");
+  const fileLabel = (file) => (file.id ? "#" + file.id : file.title);
+
+  function readGroups(data) {
+    groups = (Array.isArray(data.groups) ? data.groups : [])
+      .filter((group) => group && typeof group === "object" && typeof group.path === "string")
+      .map((group) => ({
+        path: group.path,
+        kind: KINDS.has(group.kind) ? group.kind : "feature",
+        title: typeof group.title === "string" && group.title ? group.title : group.path,
+        sections: group.sections && typeof group.sections === "object" ? group.sections : {},
+        files: (Array.isArray(group.files) ? group.files : []).filter(
+          (file) => file && typeof file === "object" && typeof file.path === "string"
+        )
+      }))
+      .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+    groupByPath = new Map(groups.map((group) => [group.path, group]));
+    fileByPath = new Map();
+    groups.forEach((group) => {
+      group.files.forEach((file) => fileByPath.set(file.path, { file, group }));
+      group.edges = edgesOf(group);
+    });
+  }
+
+  /** A null template opts an entry out by name, so it never reaches a menu. */
+  function readInvocations(data) {
+    invocations = (Array.isArray(data.invocations) ? data.invocations : []).filter(
+      (entry) => entry && typeof entry.name === "string" && typeof entry.template === "string"
+    );
+  }
+
+  function edgesOf(group) {
+    if (group.kind !== "effort") return [];
+    const inColumn = (file) => Boolean(file) && STATE_KEYS.indexOf(file.state) !== -1;
+    const byLocal = new Map();
+    group.files.forEach((file) => {
+      if (file.id && !byLocal.has(String(file.id))) byLocal.set(String(file.id), file);
+    });
+    const edges = [];
+    group.files.forEach((file) => {
+      if (!inColumn(file)) return;
+      (Array.isArray(file.blockedBy) ? file.blockedBy : []).forEach((ref) => {
+        const blocker = byLocal.get(String(ref));
+        if (blocker === file || !inColumn(blocker)) return;
+        edges.push({ from: blocker.path, to: file.path, live: blocker.state !== "behind-us" });
+      });
+    });
+    return edges;
+  }
+
+  // ------------------------------------------------------------- tabs
+
+  function tabHtml(view, label) {
+    return (
+      '<button type="button" class="tab" data-view="' + esc(view) + '">' + esc(label) + "</button>"
+    );
+  }
+
+  /** With no group the row leaves the page, so a stock board carries no tab bar at all. */
+  function buildTabs() {
+    el.tabs.innerHTML = "";
+    if (!groups.length) {
+      el.tabs.remove();
+      return;
+    }
+    if (!el.tabs.parentNode) el.frame.insertBefore(el.tabs, el.bar);
+    el.tabs.innerHTML =
+      tabHtml("board", "board") + groups.map((group) => tabHtml(group.path, group.title)).join("");
+  }
+
+  function paintTabs() {
+    if (!el.tabs.parentNode) return;
+    el.tabs.querySelectorAll(".tab").forEach((tab) => {
+      if (tab.dataset.view === state.view) tab.setAttribute("aria-current", "page");
+      else tab.removeAttribute("aria-current");
+    });
+  }
+
+  function setView(name) {
+    state.view = groupByPath.has(name) ? name : "board";
+    paintTabs();
+    const group = groupByPath.get(state.view) || null;
+    el.bar.hidden = Boolean(group);
+    el.board.hidden = Boolean(group);
+    el.views.hidden = !group;
+    wf = null;
+    el.views.innerHTML = group ? viewHtml(group) : "";
+    el.views.scrollTop = 0;
+    if (group) mountView(group);
+  }
+
+  // ------------------------------------------------------------- group markup
+
+  const baseOf = (group) => {
+    const lead = group.files.filter((file) => file.role === "lead")[0];
+    return lead ? dirOf(esc(lead.path)) : esc(group.path);
+  };
+
+  function markdownHtml(base, source) {
+    linkBase = base;
+    const html = renderMarkdown(source);
+    linkBase = "";
+    return html;
+  }
+
+  /** What a fold reports is how many things it holds, so a list counts its items. */
+  function countOf(source) {
+    const lines = String(source == null ? "" : source).split("\n");
+    const items = lines.filter((line) => LIST_RE.test(line)).length;
+    if (items) return items;
+    let blocks = 0;
+    let inside = false;
+    lines.forEach((line) => {
+      if (!line.trim()) inside = false;
+      else if (!inside) {
+        blocks += 1;
+        inside = true;
+      }
+    });
+    return blocks;
+  }
+
+  function foldHtml(name, count, body) {
+    return (
+      '<details class="wf-fold"><summary class="wf-fold-btn">' +
+      '<span class="wf-fold-name">' + esc(name) + "</span>" +
+      '<span class="wf-fold-count">' + count + "</span></summary>" +
+      '<div class="wf-fold-body wf-md">' + body + "</div></details>"
+    );
+  }
+
+  function rowHtml(file) {
+    return (
+      '<li class="wf-row" data-path="' + esc(file.path) + '"' +
+      (file.id ? ' data-id="' + esc(file.id) + '"' : "") + ">" +
+      (file.id ? '<span class="wf-row-id">' + esc(file.id) + "</span>" : "") +
+      (file.type ? '<span class="wf-row-type">' + esc(file.type) + "</span>" : "") +
+      '<h3 class="wf-row-title"><button type="button" class="wf-card-open" aria-haspopup="dialog">' +
+      esc(file.title) + "</button></h3></li>"
+    );
+  }
+
+  const rowsHtml = (files) =>
+    files.length ? '<ol class="wf-list">' + files.map(rowHtml).join("") + "</ol>" : "";
+
+  function docsHtml(group) {
+    return group.files
+      .filter((file) => file.role === "other")
+      .map(
+        (file) =>
+          '<details class="wf-doc"><summary class="wf-doc-btn">' + esc(file.title) + "</summary>" +
+          '<div class="wf-doc-body wf-md">' + markdownHtml(dirOf(esc(file.path)), file.body) + "</div></details>"
+      )
+      .join("");
+  }
+
+  /** The lead document is a document like any other, so its title opens the same panel. */
+  function leadTitle(group, lead) {
+    if (!lead) return esc(group.title);
+    return (
+      '<button type="button" class="wf-card-open" aria-haspopup="dialog">' +
+      esc(group.title) + "</button>"
+    );
+  }
+
+  function headHtml(group) {
+    const base = baseOf(group);
+    const lead = group.files.filter((file) => file.role === "lead")[0] || null;
+    const sections = group.sections;
+    const opening = sections.destination || (group.kind === "context" && lead ? lead.body : "");
+    const spare = group.files.filter((file) => file.state === OUT_OF_SCOPE);
+    const docs = group.files.filter((file) => file.role === "other");
+    const folds = [];
+
+    if (sections.notes) folds.push(foldHtml("notes", countOf(sections.notes), markdownHtml(base, sections.notes)));
+    if (sections.fog) {
+      folds.push(foldHtml("not yet specified", countOf(sections.fog), markdownHtml(base, sections.fog)));
+    }
+    if (sections.outOfScope || spare.length) {
+      folds.push(
+        foldHtml(
+          "out of scope",
+          countOf(sections.outOfScope) + spare.length,
+          (sections.outOfScope ? markdownHtml(base, sections.outOfScope) : "") + rowsHtml(spare)
+        )
+      );
+    }
+    if (docs.length && group.kind !== "context") folds.push(foldHtml("documents", docs.length, docsHtml(group)));
+
+    return (
+      '<header class="wf-head"' + (lead ? ' data-path="' + esc(lead.path) + '"' : "") + ">" +
+      '<h1 class="wf-head-title">' + leadTitle(group, lead) + "</h1>" +
+      (opening ? '<div class="wf-dest wf-md">' + markdownHtml(base, opening) + "</div>" : "") +
+      (folds.length ? '<div class="wf-folds">' + folds.join("") + "</div>" : "") +
+      "</header>"
+    );
+  }
+
+  function cardHtmlFor(file) {
+    return (
+      '<li class="wf-card" data-path="' + esc(file.path) + '"' +
+      (file.id ? ' data-id="' + esc(file.id) + '"' : "") +
+      ' data-state="' + esc(file.state) + '"' +
+      (file.claimed ? ' data-claimed="true"' : "") + ">" +
+      '<div class="wf-card-top">' +
+      (file.type ? '<span class="wf-card-type">' + esc(file.type) + "</span>" : "") +
+      (file.claimed ? '<span class="wf-card-claim">claimed</span>' : "") +
+      (file.id ? '<span class="wf-card-id">' + esc(file.id) + "</span>" : "") +
+      "</div>" +
+      '<h3 class="wf-card-title"><button type="button" class="wf-card-open" aria-haspopup="dialog">' +
+      esc(file.title) + "</button></h3></li>"
+    );
+  }
+
+  function columnHtml(group, key) {
+    const files = group.files.filter((file) => file.state === key);
+    const claimed = key === "takeable-now" ? files.filter((file) => file.claimed).length : 0;
+    const folded = key === "behind-us";
+    return (
+      '<section class="wf-col' + (folded ? " is-collapsed" : "") + '" data-state="' + key + '"' +
+      ' aria-label="' + columnName(key) + '">' +
+      '<header class="wf-col-head">' +
+      '<span class="wf-col-glyph" aria-hidden="true">' + LANE_GLYPH + "</span>" +
+      '<h2 class="wf-col-name">' + columnName(key) + "</h2>" +
+      '<span class="wf-col-count">' + (files.length - claimed) + "</span>" +
+      (claimed ? '<span class="wf-col-claimed">+' + claimed + " claimed</span>" : "") +
+      (folded
+        ? '<button type="button" class="wf-col-toggle" aria-expanded="false">' +
+          '<span class="wf-col-toggle-txt wf-col-toggle-show">show tickets</span>' +
+          '<span class="wf-col-toggle-txt wf-col-toggle-collapse">collapse</span></button>'
+        : "") +
+      "</header>" +
+      '<ol class="wf-col-list">' + files.map(cardHtmlFor).join("") + "</ol></section>"
+    );
+  }
+
+  const ARROWS = { live: "wf-arrow-live", satisfied: "wf-arrow-satisfied" };
+  const STROKES = { live: "var(--accent-amber)", satisfied: "var(--accent-green)" };
+
+  function markerHtml(kind) {
+    return (
+      '<marker id="' + ARROWS[kind] + '" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6"' +
+      ' markerHeight="6" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="' + STROKES[kind] + '"/></marker>'
+    );
+  }
+
+  function edgesHtml(group) {
+    return (
+      '<svg class="wf-edges" aria-hidden="true"><defs>' +
+      markerHtml("live") + markerHtml("satisfied") + "</defs>" +
+      group.edges
+        .map((edge) => {
+          const kind = edge.live ? "live" : "satisfied";
+          return (
+            '<path class="wf-edge is-' + kind + '" d=""' +
+            ' data-from="' + esc(edge.from) + '" data-to="' + esc(edge.to) + '"' +
+            ' fill="none" stroke="' + STROKES[kind] + '" stroke-width="' + (edge.live ? "2" : "1.4") + '"' +
+            ' marker-end="url(#' + ARROWS[kind] + ')"/>'
+          );
+        })
+        .join("") +
+      "</svg>"
+    );
+  }
+
+  function effortHtml(group) {
+    return (
+      '<section class="wf-view" data-group="' + esc(group.path) + '" data-kind="effort">' +
+      headHtml(group) +
+      '<div class="wf-board">' + edgesHtml(group) +
+      '<div class="wf-cols">' + STATE_KEYS.map((key) => columnHtml(group, key)).join("") + "</div></div>" +
+      '<p class="wf-status" role="status" aria-live="polite"></p>' +
+      "</section>"
+    );
+  }
+
+  function featureHtml(group) {
+    const files = group.files.filter((file) => file.role === "issue");
+    return (
+      '<section class="wf-view" data-group="' + esc(group.path) + '" data-kind="feature">' +
+      headHtml(group) +
+      (files.length ? rowsHtml(files) : '<p class="wf-none">No ticket sits under this folder yet.</p>') +
+      "</section>"
+    );
+  }
+
+  function numberOf(file) {
+    if (file.id) return String(file.id);
+    const found = /\d+/.exec(file.path.slice(file.path.lastIndexOf("/") + 1));
+    return found ? found[0] : "";
+  }
+
+  function adrHtml(file, key) {
+    const status = typeof file.status === "string" ? file.status : "";
+    return (
+      '<li class="wf-adr" data-path="' + esc(file.path) + '">' +
+      (key ? '<span class="wf-adr-n">' + esc(key) + "</span>" : "") +
+      '<h3 class="wf-adr-title"><button type="button" class="wf-card-open" aria-haspopup="dialog">' +
+      esc(file.title) + "</button></h3>" +
+      (status ? '<span class="badge" data-accent="neutral">' + esc(status) + "</span>" : "") +
+      "</li>"
+    );
+  }
+
+  function contextHtml(group) {
+    const records = group.files
+      .filter((file) => file.role !== "lead")
+      .map((file) => ({ file, key: numberOf(file) }));
+    return (
+      '<section class="wf-view" data-group="' + esc(group.path) + '" data-kind="context">' +
+      headHtml(group) +
+      (records.length
+        ? '<ol class="wf-adrs">' + records.map((record) => adrHtml(record.file, record.key)).join("") + "</ol>"
+        : "") +
+      "</section>"
+    );
+  }
+
+  function viewHtml(group) {
+    if (group.kind === "effort") return effortHtml(group);
+    if (group.kind === "context") return contextHtml(group);
+    return featureHtml(group);
+  }
+
+  // ------------------------------------------------------------- edges
+
+  function mountView(group) {
+    const view = el.views.querySelector(".wf-view");
+    if (!view || group.kind !== "effort") return;
+    wf = {
+      view,
+      group,
+      cards: new Map(),
+      paths: [...view.querySelectorAll(".wf-edge")],
+      pinned: null,
+      hovered: null
+    };
+    view.querySelectorAll(".wf-card").forEach((node) => wf.cards.set(node.dataset.path, node));
+    drawEdges();
+    restView();
+  }
+
+  /** Real cards wrap, so every endpoint is read back from the layout rather than computed. */
+  function boxesOf(board) {
+    const base = board.getBoundingClientRect();
+    const found = new Map();
+    STATE_KEYS.forEach((key, column) => {
+      const section = wf.view.querySelector('.wf-col[data-state="' + key + '"]');
+      if (!section) return;
+      const files = wf.group.files.filter((file) => file.state === key);
+      const folded = section.classList.contains("is-collapsed");
+      const rail = section.getBoundingClientRect();
+      const slice = rail.height / Math.max(files.length, 1);
+      files.forEach((file, row) => {
+        const node = folded ? null : wf.cards.get(file.path);
+        const box = node ? node.getBoundingClientRect() : null;
+        found.set(file.path, {
+          x: (box ? box.left : rail.left) - base.left,
+          y: (box ? box.top : rail.top + slice * row) - base.top,
+          w: box ? box.width : rail.width,
+          h: box ? box.height : slice,
+          column
+        });
+      });
+    });
+    return found;
+  }
+
+  /** Both ends in one column would run backwards, so that edge bulges out on the right instead. */
+  function edgeShape(p, q) {
+    const y1 = Math.round(p.y + p.h / 2);
+    const y2 = Math.round(q.y + q.h / 2);
+    if (p.column === q.column) {
+      const x = Math.round(p.x + p.w);
+      const bulge = x + BULGE;
+      return "M" + x + " " + y1 + " C" + bulge + " " + y1 + " " + bulge + " " + y2 + " " + x + " " + y2;
+    }
+    const x1 = Math.round(p.x + p.w);
+    const x2 = Math.round(q.x);
+    const mid = Math.round((x1 + x2) / 2);
+    return "M" + x1 + " " + y1 + " C" + mid + " " + y1 + " " + mid + " " + y2 + " " + x2 + " " + y2;
+  }
+
+  function drawEdges() {
+    if (!wf) return;
+    const board = wf.view.querySelector(".wf-board");
+    const svg = wf.view.querySelector(".wf-edges");
+    if (!board || !svg) return;
+    const width = Math.round(board.clientWidth);
+    const height = Math.round(board.clientHeight);
+    svg.setAttribute("width", width);
+    svg.setAttribute("height", height);
+    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+    const boxes = boxesOf(board);
+    wf.paths.forEach((node, index) => {
+      const edge = wf.group.edges[index];
+      const from = edge && boxes.get(edge.from);
+      const to = edge && boxes.get(edge.to);
+      node.setAttribute("d", from && to ? edgeShape(from, to) : "");
+    });
+  }
+
+  // ------------------------------------------------------------- hover and pin
+
+  function downstreamOf(path) {
+    const keep = new Set([path]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      wf.group.edges.forEach((edge) => {
+        if (keep.has(edge.from) && !keep.has(edge.to)) {
+          keep.add(edge.to);
+          grew = true;
+        }
+      });
+    }
+    return keep;
+  }
+
+  function setStatus(html) {
+    const slot = wf && wf.view.querySelector(".wf-status");
+    if (slot) slot.innerHTML = html;
+  }
+
+  function focusCard(path) {
+    const entry = fileByPath.get(path);
+    if (!wf || !entry) return;
+    const keep = downstreamOf(path);
+    wf.view.classList.add("is-focused");
+    wf.cards.forEach((node, key) => node.classList.toggle("is-dim", !keep.has(key)));
+    wf.paths.forEach((node) =>
+      node.classList.toggle("is-on", keep.has(node.dataset.from) && keep.has(node.dataset.to))
+    );
+
+    const file = entry.file;
+    const unblocks = [...keep]
+      .filter((key) => key !== path)
+      .map((key) => fileByPath.get(key))
+      .filter(Boolean)
+      .map((one) => fileLabel(one.file))
+      .sort();
+    const facts = [file.type, columnName(file.state), file.claimed ? "claimed" : ""].filter(Boolean);
+    setStatus(
+      "<b>" + esc(fileLabel(file) + " " + file.title) + "</b> " + esc(facts.join(", ")) + ". " +
+      (unblocks.length
+        ? esc(unblocks.length + " it unblocks: " + unblocks.join(", ") + ".")
+        : '<span class="wf-none">Nothing it unblocks.</span>') +
+      (wf.pinned ? ' <span class="wf-none">pinned, click it again or press escape</span>' : "")
+    );
+  }
+
+  function restText() {
+    const live = wf.group.edges.filter((edge) => edge.live).length;
+    if (!wf.group.edges.length) return '<span class="wf-none">Nothing here blocks anything else.</span>';
+    return (
+      '<span class="wf-none">' +
+      esc(
+        live + (live === 1 ? " live blocker" : " live blockers") + " of " + wf.group.edges.length +
+        ". Hover a ticket to see what it unblocks."
+      ) +
+      "</span>"
+    );
+  }
+
+  function restView() {
+    if (!wf || wf.pinned) return;
+    wf.view.classList.remove("is-focused");
+    wf.cards.forEach((node) => node.classList.remove("is-dim"));
+    wf.paths.forEach((node) => node.classList.remove("is-on"));
+    setStatus(restText());
+  }
+
+  function clearPin() {
+    if (!wf || !wf.pinned) return;
+    wf.pinned = null;
+    wf.hovered = null;
+    restView();
+  }
+
+  function toggleColumn(button) {
+    const section = button.closest(".wf-col");
+    if (!section) return;
+    const opening = section.classList.contains("is-collapsed");
+    section.classList.toggle("is-collapsed", !opening);
+    button.setAttribute("aria-expanded", opening ? "true" : "false");
+    drawEdges();
+  }
+
   // ------------------------------------------------------------- detail
 
   /** Config names the icon for a field. These cover the rows the board builds itself, plus the
@@ -787,9 +1316,7 @@
     return ok;
   }
 
-  function copyPath() {
-    const slot = el.detail.querySelector("[data-detail-path]");
-    const text = slot ? slot.textContent : "";
+  function copyText(text) {
     if (!text) return;
     const byCommand = () => markCopy(copyByCommand(text) ? "done" : "failed");
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -797,6 +1324,59 @@
       return;
     }
     byCommand();
+  }
+
+  const openPathText = () => {
+    const slot = el.detail.querySelector("[data-detail-path]");
+    return slot ? slot.textContent : "";
+  };
+
+  function copyPath() {
+    copyText(openPathText());
+  }
+
+  /* The declared list is the whole menu, so a board that declares none grows no caret. */
+  const PATH_TOKEN = "{path}";
+  let copyMenu = null;
+
+  function buildCopyMenu() {
+    if (copyMenu) {
+      copyMenu.remove();
+      copyMenu = null;
+    }
+    if (!invocations.length || !el.detailCopy.parentNode) return;
+    const menu = document.createElement("div");
+    menu.className = "copy-more";
+    menu.innerHTML =
+      '<button type="button" class="copy-more-btn" aria-expanded="false"' +
+      ' aria-label="Copy a prepared invocation" title="Copy a prepared invocation">' +
+      '<span class="fl-dd-caret" aria-hidden="true">&#9662;</span></button>' +
+      '<div class="copy-more-pop">' +
+      invocations
+        .map(
+          (entry, index) =>
+            '<button type="button" class="copy-more-opt" data-invocation="' + index + '">' +
+            esc(entry.name) + "</button>"
+        )
+        .join("") +
+      "</div>";
+    el.detailCopy.parentNode.insertBefore(menu, el.detailCopy.nextSibling);
+    menu.hidden = el.detailCopy.hidden;
+    copyMenu = menu;
+  }
+
+  function setCopyMenu(open) {
+    if (!copyMenu) return;
+    copyMenu.classList.toggle("is-open", open);
+    copyMenu.querySelector(".copy-more-btn").setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  /** Split and join, because a replacement string reads $& and a template is a stranger's text. */
+  function copyInvocation(index) {
+    const entry = invocations[index];
+    const path = openPathText();
+    setCopyMenu(false);
+    if (entry && path) copyText(entry.template.split(PATH_TOKEN).join(path));
   }
 
   function setSlot(name, value) {
@@ -814,11 +1394,12 @@
     }
     el.detailFacts.style.display = "";
     el.detailCopy.hidden = false;
+    if (copyMenu) copyMenu.hidden = false;
     markCopy("rest");
     setSlot("id", ticket.id ? "#" + ticket.id : "");
     setSlot("title", ticket.title);
     fillFacts(ticket);
-    el.detailBody.innerHTML = renderMarkdown(ticket.body);
+    el.detailBody.innerHTML = markdownHtml(dirOf(esc(ticket.path)), ticket.body);
     el.detailBody.scrollTop = 0;
     openPath = ticket.path;
     openLabel = ticket.id ? "#" + ticket.id : ticket.title;
@@ -830,11 +1411,54 @@
     showTicket(ticket);
   }
 
+  /** A group file is not a ticket, so it fills the same dialog from its own facts. */
+  function showFile(entry) {
+    const file = entry.file;
+    const badge = el.detail.querySelector("[data-detail-badge]");
+    const status = typeof file.status === "string" ? file.status : "";
+    if (badge) {
+      badge.hidden = !status;
+      badge.dataset.accent = "neutral";
+      badge.textContent = status;
+    }
+    el.detailFacts.style.display = "";
+    el.detailCopy.hidden = false;
+    if (copyMenu) copyMenu.hidden = false;
+    markCopy("rest");
+    setSlot("id", file.id ? "#" + file.id : "");
+    setSlot("title", file.title);
+
+    el.detailFacts.innerHTML = "";
+    factRow("group", '<span class="detail-lane">' + esc(entry.group.title) + "</span>");
+    if (file.type) factRow("type", esc(file.type));
+    if (file.state) factRow("state", esc(columnName(file.state)) + (file.claimed ? ", claimed" : ""));
+    factRow("path", "<code data-detail-path>" + esc(file.path) + "</code>");
+
+    el.detailBody.innerHTML = markdownHtml(dirOf(esc(file.path)), file.body);
+    el.detailBody.scrollTop = 0;
+    openPath = file.path;
+    openLabel = fileLabel(file);
+    if (!el.detail.open) el.detail.showModal();
+  }
+
+  function openByPath(path, from) {
+    const ticket = byPath.get(path);
+    if (ticket) {
+      openTicket(ticket, from);
+      return;
+    }
+    const entry = fileByPath.get(path);
+    if (!entry) return;
+    if (from) opener = from;
+    showFile(entry);
+  }
+
   function showNotes() {
     const badge = el.detail.querySelector("[data-detail-badge]");
     if (badge) badge.hidden = true;
     el.detailFacts.style.display = "none";
     el.detailCopy.hidden = true;
+    if (copyMenu) copyMenu.hidden = true;
     markCopy("rest");
     setSlot("id", "");
     setSlot("title", "Scan notes");
@@ -844,7 +1468,8 @@
         .map((note) => {
           const where = note && note.path ? "<code>" + esc(note.path) + "</code> " : "";
           const why = note && note.reason ? esc(note.reason) : esc(note);
-          return "<li>" + where + why + "</li>";
+          const fix = note && note.fix ? '<span class="note-fix">' + esc(note.fix) + "</span>" : "";
+          return "<li>" + where + why + fix + "</li>";
         })
         .join("") +
       "</ul>";
@@ -876,6 +1501,7 @@
     });
     if (state.sort !== "updated") parts.push("sort=" + encodeURIComponent(state.sort));
     if (state.open.size) parts.push("open=" + [...state.open].map(encodeURIComponent).join(","));
+    if (state.view !== "board") parts.push("view=" + encodeURIComponent(state.view));
     const hash = parts.length ? "#" + parts.join("&") : "";
     const next = location.pathname + location.search + hash;
     if (next !== location.pathname + location.search + location.hash) history.replaceState(null, "", next);
@@ -897,6 +1523,7 @@
     state.sort = "updated";
     state.facets = new Map();
     state.open = new Set();
+    state.view = "board";
 
     raw.split("&").forEach((pair) => {
       if (!pair) return;
@@ -911,6 +1538,11 @@
       if (key === "sort") {
         const wanted = decode(value);
         state.sort = SORTS[wanted] ? wanted : "updated";
+        return;
+      }
+      if (key === "view") {
+        const wanted = decode(value);
+        if (groupByPath.has(wanted)) state.view = wanted;
         return;
       }
       if (key === "open") {
@@ -1025,7 +1657,74 @@
     if (ticket) openTicket(ticket, button);
   });
 
+  el.tabs.addEventListener("click", (event) => {
+    const tab = event.target.closest(".tab");
+    if (!tab) return;
+    setView(tab.dataset.view);
+    writeHash();
+  });
+
+  el.views.addEventListener("click", (event) => {
+    const open = event.target.closest(".wf-card-open");
+    if (open) {
+      const holder = open.closest("[data-path]");
+      if (holder) openByPath(holder.dataset.path, open);
+      return;
+    }
+    const link = event.target.closest("[data-open]");
+    if (link) {
+      openByPath(link.dataset.open, link);
+      return;
+    }
+    const toggle = event.target.closest(".wf-col-toggle");
+    if (toggle) {
+      toggleColumn(toggle);
+      return;
+    }
+    if (!wf) return;
+    const card = event.target.closest(".wf-card");
+    if (!card) {
+      clearPin();
+      return;
+    }
+    wf.pinned = wf.pinned === card.dataset.path ? null : card.dataset.path;
+    if (wf.pinned) focusCard(wf.pinned);
+    else restView();
+  });
+
+  el.views.addEventListener("mouseover", (event) => {
+    if (!wf || wf.pinned) return;
+    const card = event.target.closest(".wf-card");
+    if (!card || card === wf.hovered) return;
+    wf.hovered = card;
+    focusCard(card.dataset.path);
+  });
+
+  el.views.addEventListener("mouseout", (event) => {
+    if (!wf || wf.pinned) return;
+    const card = event.target.closest(".wf-card");
+    if (!card || (event.relatedTarget && card.contains(event.relatedTarget))) return;
+    wf.hovered = null;
+    restView();
+  });
+
   el.detail.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-invocation]");
+    if (option) {
+      copyInvocation(Number(option.dataset.invocation));
+      return;
+    }
+    const caret = event.target.closest(".copy-more-btn");
+    if (caret) {
+      setCopyMenu(!copyMenu.classList.contains("is-open"));
+      return;
+    }
+    setCopyMenu(false);
+    const link = event.target.closest("[data-open]");
+    if (link) {
+      openByPath(link.dataset.open);
+      return;
+    }
     const ref = event.target.closest("[data-ref]");
     if (!ref) return;
     const ticket = byId.get(ref.dataset.ref);
@@ -1034,9 +1733,19 @@
 
   el.detailCopy.addEventListener("click", copyPath);
 
+  /** An endpoint is read back off the layout, so a font or a reflow moves every one of them. */
+  let redrawTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(redrawTimer);
+    redrawTimer = setTimeout(drawEdges, 120);
+  });
+  window.addEventListener("load", drawEdges);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawEdges, () => {});
+
   el.detailClose.addEventListener("click", () => el.detail.close());
   el.detail.addEventListener("close", () => {
     markCopy("rest");
+    setCopyMenu(false);
     openPath = null;
     if (opener && document.contains(opener)) opener.focus();
     opener = null;
@@ -1079,6 +1788,10 @@
     }
     if (event.key !== "Escape") return;
     if (el.detail.open) return;
+    if (wf && wf.pinned) {
+      clearPin();
+      return;
+    }
     const openDrop = everyDrop().filter((drop) => drop.open)[0];
     if (openDrop) {
       openDrop.open = false;
@@ -1098,6 +1811,7 @@
     paintControls();
     sortRecords();
     apply();
+    setView(state.view);
   });
 
   // ------------------------------------------------------------- load
@@ -1129,6 +1843,7 @@
     el.clear.hidden = true;
     el.boardEmpty.hidden = false;
     el.lanes.innerHTML = "";
+    el.tabs.remove();
   }
 
   function addNotesButton() {
@@ -1184,6 +1899,8 @@
     document.title = title;
 
     readFacets(data);
+    readGroups(data);
+    readInvocations(data);
 
     byPath = new Map();
     byId = new Map();
@@ -1207,6 +1924,10 @@
     hasIds = byId.size > 0;
     if (el.sortById) el.sortById.hidden = !hasIds;
 
+    knownPaths = new Map();
+    byPath.forEach((ticket, path) => knownPaths.set(esc(path), path));
+    fileByPath.forEach((entry, path) => knownPaths.set(esc(path), path));
+
     const counts = (data.counts && data.counts.byLane) || {};
     lanes = (data.lanes || []).map((lane) => ({
       name: lane.name,
@@ -1229,8 +1950,10 @@
       )
       .join("");
 
+    buildTabs();
     readHash();
     buildFacetControls();
+    buildCopyMenu();
     paintControls();
 
     sortRecords();
@@ -1238,6 +1961,7 @@
       if (!lane.collapsed) buildLane(lane);
     });
     apply();
+    setView(state.view);
     emptyState(records.length);
     addNotesButton();
 
@@ -1287,6 +2011,11 @@
     const ticket = byPath.get(memory.ticket);
     if (ticket) {
       showTicket(ticket);
+      return;
+    }
+    const entry = fileByPath.get(memory.ticket);
+    if (entry) {
+      showFile(entry);
       return;
     }
     if (el.detail.open) el.detail.close();

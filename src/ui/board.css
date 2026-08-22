@@ -1256,6 +1256,407 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 }
 
 /* ---- motion off ---- */
+/* ==========================================================================
+   GROUPS: the tab row, the wayfinder view, and the prepared invocations.
+   Every colour here is a token the theme test already checks.
+   ========================================================================== */
+
+.bar[hidden],
+.board[hidden],
+.views[hidden] { display: none; }
+
+/* ---- the tab row. The board is pinned first and never wraps. ---- */
+.tabs {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--line-1);
+}
+.tabs:empty { display: none; }
+
+.tab {
+  flex: none;
+  height: 34px;
+  padding: 0 16px;
+  font: 500 11px/1 var(--font-display);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--fg-3);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.tab + .tab { border-left: 1px solid var(--line-1); }
+.tab:hover { color: var(--fg-1); background: var(--surface-hover); }
+.tab[aria-current="page"] { color: var(--fg-1); border-bottom-color: var(--green); }
+.tab:focus-visible { outline: var(--focus-outline); outline-offset: -3px; }
+
+.views {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background-color: var(--bg-root);
+  background-image: var(--scanlines);
+}
+
+.wf-view { padding: 22px 24px 48px; }
+
+/* ---- the map body, rendered as the view header ---- */
+.wf-head { margin: 0 0 26px; }
+.wf-head-title {
+  margin: 0 0 12px;
+  font: var(--type-title);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-1);
+}
+.wf-dest { max-width: 84ch; }
+.wf-folds {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+  max-width: 84ch;
+}
+.wf-fold { border: 1px solid var(--line-1); background: var(--bg-surface); }
+.wf-fold-btn,
+.wf-doc-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  list-style: none;
+  cursor: pointer;
+  font: 500 11px/1 var(--font-display);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.wf-fold-btn::-webkit-details-marker,
+.wf-doc-btn::-webkit-details-marker { display: none; }
+.wf-fold-btn:hover,
+.wf-doc-btn:hover { color: var(--fg-1); background: var(--surface-hover); }
+.wf-fold-count {
+  margin-left: auto;
+  padding: 3px 6px;
+  font: 500 11px/1 var(--font-mono);
+  color: var(--fg-2);
+  background: var(--bg-overlay);
+}
+.wf-fold-body { padding: 2px 12px 12px; }
+.wf-doc { border-top: 1px solid var(--line-1); }
+.wf-doc-btn { text-transform: none; font-family: var(--font-mono); }
+.wf-doc-body { padding: 0 12px 12px; }
+
+/* ---- markdown outside the detail drawer ---- */
+.wf-md { font: var(--type-ui); color: var(--fg-2); }
+.wf-md > :first-child { margin-top: 0; }
+.wf-md > :last-child { margin-bottom: 0; }
+.wf-md h1, .wf-md h2, .wf-md h3, .wf-md h4 {
+  margin: 16px 0 8px;
+  font: 500 12px var(--font-display);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.wf-md p { margin: 0 0 10px; }
+.wf-md strong { color: var(--fg-1); }
+.wf-md ul, .wf-md ol { margin: 0 0 10px; padding-left: 20px; }
+.wf-md li { margin: 3px 0; }
+.wf-md li::marker { color: var(--fg-4); }
+.wf-md code {
+  padding: 1px 4px;
+  font-size: 12px;
+  color: var(--fg-1);
+  background: var(--bg-overlay);
+}
+.wf-md pre {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  color: var(--fg-2);
+  background: var(--bg-deep);
+  border: 1px solid var(--line-1);
+}
+.wf-md pre code { padding: 0; background: none; }
+.wf-md blockquote {
+  margin: 0 0 10px;
+  padding-left: 12px;
+  border-left: 2px solid var(--line-2);
+  color: var(--fg-3);
+}
+.wf-md hr { margin: 14px 0; border: none; border-top: 1px solid var(--line-1); }
+.wf-md a { color: var(--cyan); }
+.wf-md a:hover { color: var(--fg-1); }
+
+/* ---- a link the payload can resolve opens in the board instead ---- */
+.md-link {
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: var(--cyan);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.md-link:hover { color: var(--fg-1); }
+.md-link:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+
+/* ---- the three columns and the edges over them ---- */
+.wf-board { position: relative; }
+.wf-edges { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.wf-cols { display: flex; align-items: flex-start; gap: 96px; }
+
+.wf-col {
+  flex: 0 1 264px;
+  min-width: 196px;
+  display: flex;
+  flex-direction: column;
+}
+.wf-col-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 34px;
+  border-bottom: 1px solid var(--line-1);
+}
+.wf-col-glyph { display: inline-flex; color: var(--fg-3); }
+.wf-col-name {
+  margin: 0;
+  font: 500 11px var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  white-space: nowrap;
+}
+.wf-col-count {
+  padding: 3px 6px;
+  font: 500 11px/1 var(--font-mono);
+  color: var(--fg-2);
+  background: var(--bg-overlay);
+}
+.wf-col-claimed { font: 400 11px/1 var(--font-mono); color: var(--fg-4); white-space: nowrap; }
+
+.wf-col-list {
+  flex: 1;
+  margin: 0;
+  padding: 13px 0 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+/* ---- behind us: folded with its count, always ---- */
+.wf-col.is-collapsed {
+  position: relative;
+  flex: 0 0 52px;
+  min-width: 52px;
+  align-self: stretch;
+  min-height: 220px;
+  cursor: pointer;
+  border: 1px solid var(--line-1);
+  background: var(--bg-surface);
+}
+.wf-col.is-collapsed .wf-col-list { display: none; }
+.wf-col.is-collapsed .wf-col-head {
+  flex: 1;
+  height: auto;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: none;
+}
+.wf-col.is-collapsed .wf-col-name { writing-mode: vertical-rl; }
+.wf-col.is-collapsed:hover { background: var(--surface-hover); }
+
+.wf-col-toggle {
+  margin-left: auto;
+  height: 24px;
+  padding: 0 8px;
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--fg-3);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.wf-col-toggle:hover { color: var(--fg-1); border-color: var(--line-2); }
+.wf-col.is-collapsed .wf-col-toggle {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  height: auto;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+}
+.wf-col.is-collapsed .wf-col-toggle .wf-col-toggle-txt { opacity: 0; }
+.wf-col .wf-col-toggle .wf-col-toggle-collapse { display: inline; }
+.wf-col .wf-col-toggle .wf-col-toggle-show { display: none; }
+.wf-col.is-collapsed .wf-col-toggle .wf-col-toggle-collapse { display: none; }
+.wf-col.is-collapsed .wf-col-toggle .wf-col-toggle-show { display: inline; }
+
+/* ---- the card. Smaller than a ticket card on purpose. ---- */
+.wf-card {
+  position: relative;
+  padding: 8px 10px;
+  cursor: pointer;
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.wf-card[data-state="behind-us"] {
+  background: var(--accent-green-tint);
+  border-color: var(--accent-green);
+}
+.wf-card[data-state="still-blocked"] {
+  background: var(--surface-hover);
+  border-color: var(--border-default);
+}
+.wf-card[data-claimed="true"] {
+  background: var(--surface-panel);
+  border-color: var(--border-default);
+}
+.wf-card[data-claimed="true"] .wf-card-open,
+.wf-card[data-claimed="true"] .wf-card-type { color: var(--fg-4); }
+
+.wf-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.wf-card-type {
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+.wf-card-claim {
+  padding: 2px 5px;
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--fg-2);
+  background: var(--bg-overlay);
+}
+.wf-card-id { margin-left: auto; font: 500 11px/1 var(--font-mono); color: var(--fg-3); }
+.wf-card-title { margin: 0; font: 400 13px/1.35 var(--font-mono); }
+.wf-card-open {
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: var(--fg-1);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.wf-card-open:hover { color: var(--cyan); }
+.wf-card-open:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+
+/* ---- edges: live at rest, satisfied only on hover ---- */
+.wf-edge { transition: opacity var(--dur-fast) var(--ease-out); }
+.wf-edge.is-live { opacity: 1; }
+.wf-edge.is-satisfied { opacity: 0; }
+.wf-view.is-focused .wf-edge.is-live { opacity: 0.12; }
+.wf-view.is-focused .wf-edge.is-live.is-on { opacity: 1; }
+.wf-view.is-focused .wf-edge.is-satisfied.is-on { opacity: 0.85; }
+.wf-view.is-focused .wf-card.is-dim { opacity: 0.22; }
+
+.wf-status {
+  margin: 22px 0 0;
+  min-height: 20px;
+  font: var(--type-ui);
+  color: var(--fg-2);
+}
+.wf-none { color: var(--fg-3); }
+
+/* ---- a feature list and a decision log ---- */
+.note-fix {
+  display: block;
+  margin-top: 4px;
+  color: var(--fg-3);
+}
+
+.wf-list,
+.wf-adrs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 84ch;
+  border-top: 1px solid var(--line-1);
+}
+.wf-row,
+.wf-adr {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--line-1);
+}
+.wf-row-id,
+.wf-adr-n { flex: none; font: 500 11px/1 var(--font-mono); color: var(--fg-3); }
+.wf-row-type {
+  flex: none;
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--fg-4);
+}
+.wf-row-title,
+.wf-adr-title { flex: 1; margin: 0; font: 400 13px/1.35 var(--font-mono); }
+.wf-adr .badge { flex: none; }
+
+/* ---- the copy caret, built only when the payload declares invocations ---- */
+.copy-more { position: relative; display: inline-flex; margin-left: -8px; }
+.copy-more[hidden] { display: none; }
+.copy-more-btn {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h);
+  padding: 0 6px;
+  color: var(--fg-3);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.copy-more-btn:hover { color: var(--fg-1); background: var(--surface-hover); }
+.copy-more-btn:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
+.copy-more-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 3;
+  display: none;
+  min-width: 180px;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--shadow-overlay);
+}
+.copy-more.is-open .copy-more-pop { display: block; }
+.copy-more-opt {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  font: 400 12px/1.3 var(--font-mono);
+  color: var(--fg-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.copy-more-opt:hover { color: var(--fg-1); background: var(--surface-hover); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     transition: none !important;
