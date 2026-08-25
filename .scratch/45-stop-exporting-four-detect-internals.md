@@ -1,6 +1,6 @@
 ---
 title: Stop exporting four detect internals nothing calls
-status: ready-for-agent
+status: done
 priority: p3
 labels: [scanner, architecture]
 ---
