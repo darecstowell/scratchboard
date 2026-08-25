@@ -89,8 +89,9 @@ async function loadAssets() {
   const here = import.meta.url;
   const template = await readFile(new URL("./ui/index.html", here), "utf8");
   const renderer = await readFile(new URL("./ui/markdown.mjs", here), "utf8");
+  const payload = await readFile(new URL("./ui/payload.mjs", here), "utf8");
   const board = await readFile(new URL("./ui/board.js", here), "utf8");
-  const script = `${scriptFromModule(renderer)}\n${board}`;
+  const script = `${scriptFromModule(renderer)}\n${scriptFromModule(payload)}\n${board}`;
   const favicon = await dataUrl(new URL("../assets/favicon.svg", here), "image/svg+xml");
 
   const sheet = await readFile(new URL("./ui/board.css", here), "utf8");
