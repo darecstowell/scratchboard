@@ -500,6 +500,42 @@ test("a feature group carries a plain ticket list and no wayfinder fields", asyn
   for (const held of Object.values(group.sections)) assert.equal(held, "");
 });
 
+test("a group file with no title and no heading is named in warnings, not dropped", async () => {
+  const root = mkdtempSync(join(tmpdir(), "scratchboard-untitled-"));
+  mkdirSync(join(root, ".scratch", "an-effort", "issues"), { recursive: true });
+  writeFileSync(join(root, ".scratch", "an-effort", "map.md"), "No heading anywhere.\n");
+  writeFileSync(
+    join(root, ".scratch", "an-effort", "issues", "01-named.md"),
+    "# Named by its heading\n\nBody.\n"
+  );
+  writeFileSync(join(root, ".scratch", "an-effort", "issues", "02-nameless.md"), "Body only.\n");
+  writeFileSync(
+    join(root, "reader.mjs"),
+    'export function parse(path, text) { return { id: null, title: " ", body: text, fields: {} }; }'
+  );
+
+  const payload = await scan({
+    root,
+    config: dialectBoard({ parser: "reader.mjs" }),
+    version: "0.1.0",
+  });
+
+  const [group] = payload.groups;
+  assert.equal(group.files.length, 3, "a board never quietly loses a file");
+  assert.equal(fileAt(group, "01-named.md").title, "Named by its heading");
+  assert.equal(fileAt(group, "02-nameless.md").title, "nameless", "the file name stands in");
+  assert.equal(group.title, "map", "the group takes the name its lead falls back to");
+
+  const untitled = payload.warnings.filter(
+    (one) => one.reason === "no title found, so the file name is used"
+  );
+  assert.deepEqual(
+    untitled.map((one) => one.path).sort(),
+    [".scratch/an-effort/issues/02-nameless.md", ".scratch/an-effort/map.md"],
+    "every file that names itself nowhere is named with its path"
+  );
+});
+
 test("a folder holding two lead documents is ambiguous and names both markers", async () => {
   const payload = await onFixture("ambiguous");
 

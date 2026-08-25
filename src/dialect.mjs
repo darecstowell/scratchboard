@@ -1,10 +1,11 @@
 import { readFile, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve, sep } from "node:path";
+import { nameFile } from "./naming.mjs";
 
 /**
- * The one place scratchboard names the upstream layout. Recognition, the lead document's
- * sections, an issue's structured lines, and the state derived from them all live here, so the
- * rest of the codebase learns no upstream vocabulary.
+ * The one place scratchboard names the upstream layout. Recognition, the assembly of a group,
+ * the lead document's sections, an issue's structured lines, and the state derived from them all
+ * live here, so the rest of the codebase learns no upstream vocabulary.
  */
 
 export const LEAD_DOCUMENTS = new Map([
@@ -56,13 +57,13 @@ export function leadFor(kind) {
   return null;
 }
 
-export function emptySections() {
+function emptySections() {
   const out = {};
   for (const key of SECTION_KEYS) out[key] = "";
   return out;
 }
 
-export function headingOf(text) {
+function headingOf(text) {
   let fenced = false;
   for (const line of String(text || "").split("\n")) {
     if (FENCE.test(line)) {
@@ -76,7 +77,7 @@ export function headingOf(text) {
   return null;
 }
 
-export function roleOf(path, root, lead) {
+function roleOf(path, root, lead) {
   if (lead && path === lead) return "lead";
   const rest = root && root !== "." ? path.slice(root.length + 1) : path;
   return rest.startsWith(`${ISSUES_DIR}/`) ? "issue" : "other";
@@ -262,7 +263,7 @@ function idKeys(id) {
 }
 
 /** A ticket is takeable when every ticket it names as a blocker is resolved. */
-export function deriveStates(issues) {
+function deriveStates(issues) {
   const byId = new Map();
   for (const issue of issues) {
     for (const key of idKeys(issue.id)) if (!byId.has(key)) byId.set(key, issue);
@@ -311,6 +312,84 @@ export function statusOf(text) {
     return value || null;
   }
   return null;
+}
+
+const ROLE_ORDER = { lead: 0, issue: 1, other: 2 };
+const NO_TITLE = "no title found, so the file name is used";
+
+function baseNameOf(path) {
+  return path.slice(path.lastIndexOf("/") + 1);
+}
+
+function assembleFile(plan, path, source, idPattern, warnings) {
+  const named = nameFile(path, source.parsed, idPattern);
+  const title = named.title || headingOf(source.text);
+  if (!title) warnings.push({ path, reason: NO_TITLE });
+  const file = {
+    role: roleOf(path, plan.path, plan.lead),
+    path,
+    title: title || named.slug,
+    id: named.id,
+    body: (source.parsed && source.parsed.body) || source.text,
+  };
+  if (plan.kind === "context") file.status = statusOf(source.text);
+  return file;
+}
+
+/** Only an effort carries edges and states, because only its issues write the structured line. */
+function addEffortState(files, held, where, warnings) {
+  const issues = files.filter((file) => file.role === "issue");
+  const fields = issues.map((file) => readIssueFields(held.get(file.path).text));
+  const states = deriveStates(
+    issues.map((file, at) => ({
+      id: file.id,
+      status: fields[at].status,
+      blockedBy: fields[at].blockedBy,
+    }))
+  );
+  issues.forEach((file, at) => {
+    file.type = fields[at].type;
+    file.state = states[at].state;
+    file.claimed = fields[at].status === CLAIMED;
+    file.blockedBy = fields[at].blockedBy;
+    for (const name of states[at].unknown) {
+      warnings.push({
+        path: file.path,
+        reason: `names blocker ${name}, which is no file in ${where}`,
+      });
+    }
+  });
+}
+
+/**
+ * The one entry point for assembling a group: its title, its sections, and its files. Every
+ * branch on the kind sits here, so the caller reads no upstream vocabulary to build one.
+ * The warnings come back rather than being pushed, so the caller keeps its own order.
+ */
+export function assembleGroup(plan, held, config) {
+  const warnings = [];
+  const files = plan.files
+    .filter((path) => held.has(path))
+    .map((path) => assembleFile(plan, path, held.get(path), config.idPattern, warnings));
+  files.sort(
+    (a, b) =>
+      ROLE_ORDER[a.role] - ROLE_ORDER[b.role] ||
+      plan.files.indexOf(a.path) - plan.files.indexOf(b.path)
+  );
+  if (plan.kind === "effort") addEffortState(files, held, plan.path, warnings);
+
+  const lead = plan.lead && held.has(plan.lead) ? held.get(plan.lead) : null;
+  const named = files.find((file) => file.role === "lead");
+  return {
+    group: {
+      kind: plan.kind,
+      path: plan.path,
+      title: (named && named.title) || plan.title || baseNameOf(plan.path),
+      sections: lead ? splitSections(lead.text) : emptySections(),
+      files,
+    },
+    warnings,
+  };
 }
 
 export function contextLinks(text) {
