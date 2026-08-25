@@ -168,7 +168,7 @@ async function parsingCount(root, files, enough) {
   return count;
 }
 
-export async function findCandidates(root) {
+async function findCandidates(root) {
   const all = await walk(root);
   const markdown = all.filter((path) => path.toLowerCase().endsWith(".md"));
   const ignored = await gitIgnored(root, markdown);
@@ -213,7 +213,7 @@ function baseName(path) {
 }
 
 /** The whole tree, or the one repeated file name inside it that carries the tickets. */
-export function candidateSets(files) {
+function candidateSets(files) {
   const sets = [{ name: null, files }];
   const byName = new Map();
   for (const path of files) {
@@ -229,7 +229,7 @@ export function candidateSets(files) {
   return sets;
 }
 
-export async function readTexts(root, files) {
+async function readTexts(root, files) {
   const texts = new Map();
   for (const path of files) {
     try {
@@ -246,7 +246,7 @@ export async function readTexts(root, files) {
  * never reaches a majority as a whole, so the narrower set is tried beside the whole tree, and
  * the winner reads the most files net of the ones it cannot.
  */
-export function pickFormat(sets, texts) {
+function pickFormat(sets, texts) {
   const tried = Object.keys(PRESETS);
   let best = null;
   for (const set of sets) {
