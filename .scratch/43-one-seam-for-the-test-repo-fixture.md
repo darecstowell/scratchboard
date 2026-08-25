@@ -1,6 +1,6 @@
 ---
 title: Build a test repo fixture through one seam
-status: ready-for-agent
+status: done
 priority: p2
 labels: [testing, architecture]
 ---

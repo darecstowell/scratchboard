@@ -1,9 +1,8 @@
-import { test } from "./context.mjs";
+import { test, ticket, writeRepo } from "./context.mjs";
 import assert from "node:assert/strict";
 import { createServer as createHttpServer, get } from "node:http";
 import { createServer as createSocketServer } from "node:net";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { scan } from "../src/scan.mjs";
 import {
@@ -28,19 +27,14 @@ const CONFIG = {
   facets: [{ field: "priority", colors: { p1: "amber" } }],
 };
 
-const ticket = (title, extra = "") =>
-  `---\ntitle: ${title}\npriority: p1\n---\n\n# ${title}\n\n${extra}body text\n`;
+const card = (title) => ticket(title, { priority: "p1" }, `# ${title}\n\nbody text\n`);
 
-async function fixture(t) {
-  const root = await mkdtemp(join(tmpdir(), "sb-serve-"));
-  await mkdir(join(root, "tickets", "todo"), { recursive: true });
-  await mkdir(join(root, "tickets", "done"), { recursive: true });
-  await writeFile(join(root, "tickets", "todo", "1-first.md"), ticket("First"));
-  await writeFile(join(root, "tickets", "todo", "2-second.md"), ticket("Second"));
-  await writeFile(join(root, "tickets", "done", "3-third.md"), ticket("Third"));
-  t.after(() => rm(root, { recursive: true, force: true }));
-  return root;
-}
+const fixture = (t) =>
+  writeRepo(t, {
+    "tickets/todo/1-first.md": card("First"),
+    "tickets/todo/2-second.md": card("Second"),
+    "tickets/done/3-third.md": card("Third"),
+  });
 
 async function start(t, root, options = {}) {
   const payload = await scan({ root, config: CONFIG, version: "0.1.0" });
@@ -232,7 +226,7 @@ test("a ticket edit pushes one payload down the stream", async (t) => {
   const running = await start(t, root);
 
   const event = await firstEvent(`${running.url}events`, () =>
-    writeFile(join(root, "tickets", "todo", "1-first.md"), ticket("First, renamed"))
+    writeFile(join(root, "tickets", "todo", "1-first.md"), card("First, renamed"))
   );
 
   assert.match(event.headers["content-type"], /text\/event-stream/);
@@ -251,7 +245,7 @@ test("a new ticket file reaches the stream too", async (t) => {
   const running = await start(t, root);
 
   const event = await firstEvent(`${running.url}events`, () =>
-    writeFile(join(root, "tickets", "todo", "4-fourth.md"), ticket("Fourth"))
+    writeFile(join(root, "tickets", "todo", "4-fourth.md"), card("Fourth"))
   );
   assert.equal(event.data.counts.total, 4);
 });
@@ -262,7 +256,7 @@ test("the poller drives the same push path as the native watcher", async (t) => 
   assert.equal(typeof running.watcher.poll, "function");
 
   const event = await firstEvent(`${running.url}events`, () =>
-    writeFile(join(root, "tickets", "todo", "2-second.md"), ticket("Second, edited"))
+    writeFile(join(root, "tickets", "todo", "2-second.md"), card("Second, edited"))
   );
   assert.ok(event.data.tickets.some((entry) => entry.title === "Second, edited"));
 });
@@ -273,7 +267,7 @@ test("an edit made the instant the poller is serving still reaches the stream", 
 
   /* serve resolves only once the baseline is taken, so this edit is a change and
      not part of the snapshot the poller compares against */
-  await writeFile(join(root, "tickets", "todo", "1-first.md"), ticket("First, raced"));
+  await writeFile(join(root, "tickets", "todo", "1-first.md"), card("First, raced"));
 
   const event = await firstEvent(`${running.url}events`, () => running.watcher.poll());
   assert.ok(event.data.tickets.some((entry) => entry.title === "First, raced"));
@@ -293,7 +287,7 @@ test("the poller reports a change on its own", async (t) => {
   await watcher.ready;
   assert.equal(fired, 0, "a quiet tree fires nothing");
 
-  await writeFile(join(root, "tickets", "todo", "5-fifth.md"), ticket("Fifth"));
+  await writeFile(join(root, "tickets", "todo", "5-fifth.md"), card("Fifth"));
   await watcher.poll();
   assert.equal(fired, 1);
 
@@ -317,7 +311,7 @@ test("the poller stops when it is closed", async (t) => {
   await watcher.ready;
   watcher.close();
 
-  await writeFile(join(root, "tickets", "todo", "6-sixth.md"), ticket("Sixth"));
+  await writeFile(join(root, "tickets", "todo", "6-sixth.md"), card("Sixth"));
   await watcher.poll();
   assert.equal(fired, 0);
 });

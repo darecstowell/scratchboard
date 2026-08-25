@@ -1,9 +1,9 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, utimesSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { utimesSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { test, writeRepo } from "./context.mjs";
 import { datesFor, toDay } from "../src/dates.mjs";
 
 function haveGit() {
@@ -17,8 +17,8 @@ function haveGit() {
 
 const skip = haveGit() ? false : "git is not available";
 
-function repo() {
-  const root = mkdtempSync(join(tmpdir(), "scratchboard-dates-"));
+/** The commits are the fixture here, so git runs over a tree writeRepo has already laid out. */
+function gitIn(root) {
   const git = (args, when) =>
     execFileSync("git", ["-C", root, ...args], {
       stdio: "ignore",
@@ -32,20 +32,22 @@ function repo() {
       },
     });
   git(["init", "-q"]);
-  return { root, git };
+  return git;
 }
 
-test("a ticket keeps its created date through a git mv between lanes", { skip }, async () => {
-  const { root, git } = repo();
+test("a ticket keeps its created date through a git mv between lanes", { skip }, async (t) => {
+  const root = await writeRepo(
+    t,
+    { "tickets/todo/1-alpha/issue.md": "Alpha, at rest.\n" },
+    { dirs: ["tickets/done"] }
+  );
+  const git = gitIn(root);
   const born = "2021-03-04T12:00:00";
   const moved = "2021-09-08T12:00:00";
 
-  mkdirSync(join(root, "tickets", "todo", "1-alpha"), { recursive: true });
-  writeFileSync(join(root, "tickets", "todo", "1-alpha", "issue.md"), "Alpha, at rest.\n");
   git(["add", "-A"]);
   git(["commit", "-q", "-m", "add alpha"], born);
 
-  mkdirSync(join(root, "tickets", "done"), { recursive: true });
   git(["mv", "tickets/todo/1-alpha", "tickets/done/1-alpha"]);
   git(["commit", "-q", "-m", "finish alpha"], moved);
 
@@ -58,14 +60,13 @@ test("a ticket keeps its created date through a git mv between lanes", { skip },
   assert.equal(stamps.updated, "2021-09-08");
 });
 
-test("a file git has never seen falls back to mtime", { skip }, async () => {
-  const { root, git } = repo();
-  mkdirSync(join(root, "tickets"), { recursive: true });
-  writeFileSync(join(root, "tickets", "tracked.md"), "Tracked.\n");
+test("a file git has never seen falls back to mtime", { skip }, async (t) => {
+  const root = await writeRepo(t, { "tickets/tracked.md": "Tracked.\n" });
+  const git = gitIn(root);
   git(["add", "-A"]);
   git(["commit", "-q", "-m", "add tracked"], "2021-03-04T12:00:00");
 
-  writeFileSync(join(root, "tickets", "loose.md"), "Never committed.\n");
+  await writeFile(join(root, "tickets", "loose.md"), "Never committed.\n");
   const when = new Date("2019-06-07T12:00:00");
   utimesSync(join(root, "tickets", "loose.md"), when, when);
 
@@ -76,10 +77,8 @@ test("a file git has never seen falls back to mtime", { skip }, async () => {
   assert.equal(dates.get("tickets/loose.md").updated, "2019-06-07");
 });
 
-test("outside a git repo every date comes from mtime", async () => {
-  const root = mkdtempSync(join(tmpdir(), "scratchboard-nogit-"));
-  mkdirSync(join(root, "tickets"), { recursive: true });
-  writeFileSync(join(root, "tickets", "one.md"), "One.\n");
+test("outside a git repo every date comes from mtime", async (t) => {
+  const root = await writeRepo(t, { "tickets/one.md": "One.\n" });
   const when = new Date("2018-01-02T12:00:00");
   utimesSync(join(root, "tickets", "one.md"), when, when);
 
