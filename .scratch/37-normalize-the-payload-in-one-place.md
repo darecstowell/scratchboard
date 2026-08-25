@@ -1,6 +1,6 @@
 ---
 title: Normalize the payload in one place
-status: ready-for-agent
+status: done
 priority: p1
 labels: [ui, payload, testing, architecture]
 ---

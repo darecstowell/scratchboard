@@ -24,7 +24,10 @@ here instead of fixed here.
 run the suite on 18 as well as current before calling a change done.
 
 **The payload is the contract.** `scan.mjs` emits it, the browser renders it, and `src/ui/` reads
-nothing else. Adding a field is a change to both sides.
+nothing else. Adding a field is a change to both sides. `src/ui/payload.mjs` is the one reader:
+`normalizePayload` holds every default and every type check, so `board.js` gets a payload it can
+trust. `test/ui-payload.test.mjs` calls it, and the bake concatenates it ahead of the board
+script, the same way it does the renderer.
 
 **Config names every lane and every field, except the dialect.** No lane name, status value, or
 metadata key belongs in the source. A stranger's `severity` field has to work with no code

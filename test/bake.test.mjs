@@ -166,6 +166,20 @@ test("the renderer travels inside the board's one script, with no module keyword
   assert.ok(holding[0].includes('"use strict"'), "the renderer and the board are two elements");
 });
 
+test("the payload reader travels inside the board's one script, with no module keyword left", async () => {
+  const html = await bake({ payload: payloadWith("plain") });
+  const reader = await readFile(new URL("../src/ui/payload.mjs", import.meta.url), "utf8");
+
+  assert.match(reader, /^export function normalizePayload\(data\) \{$/m, "the seam is gone");
+  assert.equal(html.includes("export function normalizePayload"), false, "a module keyword reached the page");
+  assert.equal(html.split("function normalizePayload(").length - 1, 1, "the reader is inlined once");
+
+  const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/gi)].map(([, code]) => code);
+  const holding = blocks.filter((code) => code.includes("function normalizePayload("));
+  assert.equal(holding.length, 1, "the reader sits in more than one element");
+  assert.ok(holding[0].includes("function renderMarkdown("), "the reader and the renderer are two elements");
+});
+
 test("a module becomes script text and keeps every declaration it exported", () => {
   const out = scriptFromModule('export const A = 1;\nexport function f() { return A; }\nexport class C {}\n');
   assert.equal(out.includes("export"), false);

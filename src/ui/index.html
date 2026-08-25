@@ -158,6 +158,8 @@ OWNERSHIP
 PAYLOAD
   Read once from <script type="application/json" id="payload">, parsed at
   load. The bake step writes it; nothing is fetched over the network.
+  normalizePayload in payload.mjs is the one reader of this block. It holds
+  every default below, so board.js sees a missing key already repaired.
 
   { version, generated_at, root, title,
     counts: { total, byLane: { LANE: N } },

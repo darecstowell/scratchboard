@@ -160,12 +160,13 @@ export default [
   },
   {
     // The board script runs in a page, not in Node, and it is one IIFE rather than a module.
-    // The bake concatenates the renderer ahead of it, so renderMarkdown is a global there.
+    // The bake concatenates the renderer and the payload reader ahead of it, so renderMarkdown
+    // and normalizePayload are globals there.
     files: ["src/ui/board.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "script",
-      globals: { ...browserGlobals, renderMarkdown: "readonly" },
+      globals: { ...browserGlobals, renderMarkdown: "readonly", normalizePayload: "readonly" },
     },
   },
   {

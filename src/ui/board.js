@@ -461,36 +461,17 @@
   const STATE_KEYS = ["behind-us", "takeable-now", "still-blocked"];
   const OUT_OF_SCOPE = "out-of-scope";
   const BULGE = 34;
-  const KINDS = new Set(["effort", "feature", "context"]);
   const columnName = (key) => key.replace(/-/g, " ");
   const fileLabel = (file) => (file.id ? "#" + file.id : file.title);
 
-  function readGroups(data) {
-    groups = (Array.isArray(data.groups) ? data.groups : [])
-      .filter((group) => group && typeof group === "object" && typeof group.path === "string")
-      .map((group) => ({
-        path: group.path,
-        kind: KINDS.has(group.kind) ? group.kind : "feature",
-        title: typeof group.title === "string" && group.title ? group.title : group.path,
-        sections: group.sections && typeof group.sections === "object" ? group.sections : {},
-        files: (Array.isArray(group.files) ? group.files : []).filter(
-          (file) => file && typeof file === "object" && typeof file.path === "string"
-        )
-      }))
-      .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  function setGroups(normalized) {
+    groups = normalized;
     groupByPath = new Map(groups.map((group) => [group.path, group]));
     fileByPath = new Map();
     groups.forEach((group) => {
       group.files.forEach((file) => fileByPath.set(file.path, { file, group }));
       group.edges = edgesOf(group);
     });
-  }
-
-  /** A null template opts an entry out by name, so it never reaches a menu. */
-  function readInvocations(data) {
-    invocations = (Array.isArray(data.invocations) ? data.invocations : []).filter(
-      (entry) => entry && typeof entry.name === "string" && typeof entry.template === "string"
-    );
   }
 
   function edgesOf(group) {
@@ -1630,46 +1611,25 @@
     notesButton = button;
   }
 
-  function readFacets(data) {
-    const tallies = data.facets && typeof data.facets === "object" ? data.facets : {};
-    const config = Array.isArray(data.facetConfig) ? data.facetConfig : [];
-    const order = config.map((entry) => entry && entry.field).filter((field) => field in tallies);
-    Object.keys(tallies).forEach((field) => {
-      if (order.indexOf(field) === -1) order.push(field);
-    });
-    const colors = new Map();
-    const icons = new Map();
-    config.forEach((entry) => {
-      if (!entry || !entry.field) return;
-      if (entry.colors) colors.set(entry.field, entry.colors);
-      if (entry.icon) icons.set(entry.field, entry.icon);
-    });
-
-    facets = order.map((field) => ({
-      field,
-      values: Array.isArray(tallies[field]) ? tallies[field] : [],
-      colors: colors.get(field) || null,
-      icon: icons.get(field) || null
-    }));
+  function setFacets(normalized) {
+    facets = normalized;
     facetByField = new Map(facets.map((facet) => [facet.field, facet]));
     badgeFacet = facets.filter((facet) => facet.colors)[0] || null;
   }
 
   function load(data) {
-    warnings = Array.isArray(data.warnings) ? data.warnings : [];
-    const title = typeof data.title === "string" && data.title ? data.title : "scratchboard";
-    el.boardTitle.textContent = title;
-    document.title = title;
+    const payload = normalizePayload(data);
+    warnings = payload.warnings;
+    el.boardTitle.textContent = payload.title;
+    document.title = payload.title;
 
-    readFacets(data);
-    readGroups(data);
-    readInvocations(data);
+    setFacets(payload.facets);
+    setGroups(payload.groups);
+    invocations = payload.invocations;
 
     byPath = new Map();
     byId = new Map();
-    const records = (data.tickets || []).map((ticket) => {
-      ticket.fields = ticket.fields && typeof ticket.fields === "object" ? ticket.fields : {};
-      ticket.refs = Array.isArray(ticket.refs) ? ticket.refs : [];
+    const records = payload.tickets.map((ticket) => {
       byPath.set(ticket.path, ticket);
       if (ticket.id) byId.set(ticket.id, ticket);
       const values = Object.keys(ticket.fields)
@@ -1691,19 +1651,12 @@
     byPath.forEach((ticket, path) => knownPaths.set(esc(path), path));
     fileByPath.forEach((entry, path) => knownPaths.set(esc(path), path));
 
-    const counts = (data.counts && data.counts.byLane) || {};
-    lanes = (data.lanes || []).map((lane) => ({
-      name: lane.name,
-      collapsed: lane.collapsed === true,
-      records: [],
-      built: false
-    }));
+    lanes = payload.lanes.map((lane) => ({ ...lane, records: [], built: false }));
     laneByName = new Map(lanes.map((lane) => [lane.name, lane]));
     buildBoard();
 
     lanes.forEach((lane) => {
       lane.records = records.filter((record) => record.ticket.lane === lane.name);
-      lane.total = typeof counts[lane.name] === "number" ? counts[lane.name] : lane.records.length;
     });
     el.headCounts.innerHTML = lanes
       .map(

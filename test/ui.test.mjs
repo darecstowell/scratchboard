@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { test } from "./context.mjs";
+import { normalizePayload } from "../src/ui/payload.mjs";
 
 const source = (name) => readFileSync(fileURLToPath(new URL(`../src/ui/${name}`, import.meta.url)), "utf8");
 
@@ -94,6 +95,8 @@ test("the page declares the tab row empty, so the rebuild can delete nothing it 
 });
 
 test("a payload with no group leaves the page with no tab row at all", () => {
+  assert.deepEqual(normalizePayload({ tickets: [] }).groups, [], "a payload with no groups key has no group");
+
   const board = source("board.js");
   const at = board.indexOf("function buildTabs()");
   assert.notEqual(at, -1, "board.js builds the tab row");
@@ -233,9 +236,10 @@ test("the copy caret is built only when the payload declares an invocation", () 
     "the page declares the caret, so a stock board would carry it"
   );
 
-  const read = board.indexOf("function readInvocations(");
-  const reader = board.slice(read, board.indexOf("\n  }", read));
-  assert.match(reader, /typeof entry\.template === "string"/, "a null template is an opt-out and must be skipped");
+  const menu = normalizePayload({
+    invocations: [{ name: "opted out", template: null }, { name: "kept", template: "/skill $&" }],
+  }).invocations;
+  assert.deepEqual(menu, [{ name: "kept", template: "/skill $&" }], "a null template must never reach a menu");
 });
 
 test("a group view opens the one detail dialog the board already has", () => {
@@ -277,6 +281,12 @@ test("the notes panel renders a warning's fix and is unchanged without one", () 
 });
 
 test("an empty groups or invocations array reads as nothing, never as one of something", () => {
+  const empty = normalizePayload({ groups: [], invocations: [] });
+  assert.deepEqual(empty.groups, []);
+  assert.deepEqual(empty.invocations, []);
+  assert.deepEqual(normalizePayload({}).groups, empty.groups, "a missing key reads as the empty array");
+  assert.deepEqual(normalizePayload({}).invocations, empty.invocations, "a missing key reads as the empty array");
+
   const board = source("board.js");
   assert.match(board, /if \(!groups\.length\)/, "the tab row branches on the key rather than the count");
   assert.match(board, /if \(!invocations\.length/, "the caret branches on the key rather than the count");
@@ -284,6 +294,14 @@ test("an empty groups or invocations array reads as nothing, never as one of som
 });
 
 test("a context lists its decision records in payload order", () => {
+  const files = [
+    { role: "lead", path: "CONTEXT.md", title: "Glossary" },
+    { role: "other", path: "docs/adr/0003.md", title: "Third", status: "accepted" },
+    { role: "other", path: "docs/adr/0001.md", title: "First", status: null },
+  ];
+  const group = normalizePayload({ groups: [{ kind: "context", path: ".", files }] }).groups[0];
+  assert.deepEqual(group.files, files, "the reader reorders what the scan already sorted");
+
   const board = source("board.js");
   const at = board.indexOf("function contextHtml(");
   assert.notEqual(at, -1, "board.js builds the context view");
