@@ -38,8 +38,10 @@ rule.
 `path`.
 
 **Ticket markdown is untrusted.** It comes from a stranger's repo and renders in a browser. The
-`SAFE_HREF` allowlist in `board.js` and the payload escaping in `bake.mjs` are the only things
-between the two, so a change there ships with a test that attacks it.
+`SAFE_HREF` allowlist in `src/ui/markdown.mjs` and the payload escaping in `bake.mjs` are the only
+things between the two, so a change there ships with a test that attacks it. The renderer is a
+plain module, `test/ui-markdown.test.mjs` calls it, and `bake.mjs` drops the `export` keyword and
+concatenates the text ahead of the board script, so the page stays one file that fetches nothing.
 
 **A file the parser cannot read lands in `warnings` with its path and its reason.** A board that
 quietly drops three tickets is worse than a board that shows an error. This holds for every
