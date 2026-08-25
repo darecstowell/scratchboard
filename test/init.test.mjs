@@ -1,24 +1,18 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { test } from "./context.mjs";
+import { test, ticket, writeRepo } from "./context.mjs";
 import { init } from "../src/detect.mjs";
 
-const ticket = (title, status) =>
-  `---\ntitle: ${title}\nstatus: ${status}\nlabels: [alpha, beta]\n---\n\nBody.\n`;
+const card = (title, status) => ticket(title, { status, labels: ["alpha", "beta"] });
 
-async function repo(t, config) {
-  const root = await mkdtemp(join(tmpdir(), "sb-init-"));
-  t.after(() => rm(root, { recursive: true, force: true }));
-  await mkdir(join(root, "tasks", "todo"), { recursive: true });
-  await mkdir(join(root, "tasks", "done"), { recursive: true });
-  await writeFile(join(root, "tasks", "todo", "1-a.md"), ticket("A", "todo"));
-  await writeFile(join(root, "tasks", "todo", "2-b.md"), ticket("B", "todo"));
-  await writeFile(join(root, "tasks", "done", "3-c.md"), ticket("C", "done"));
-  if (config !== undefined) await writeFile(join(root, "scratchboard.json"), config);
-  return root;
-}
+const TICKETS = {
+  "tasks/todo/1-a.md": card("A", "todo"),
+  "tasks/todo/2-b.md": card("B", "todo"),
+  "tasks/done/3-c.md": card("C", "done"),
+};
+
+const config = (text) => ({ "scratchboard.json": text });
 
 /** init prints and can set an exit code, neither of which belongs in the runner's own output. */
 function capture(t) {
@@ -50,7 +44,10 @@ const written = {
 };
 
 test("init writes back every key it did not understand, top level and inside a lane", async (t) => {
-  const root = await repo(t, `${JSON.stringify(written, null, 2)}\n`);
+  const root = await writeRepo(t, {
+    ...TICKETS,
+    ...config(`${JSON.stringify(written, null, 2)}\n`),
+  });
   capture(t);
 
   await init({ config: join(root, "scratchboard.json"), yes: true });
@@ -68,7 +65,10 @@ test("init writes back every key it did not understand, top level and inside a l
 });
 
 test("a second init leaves the file it just wrote unchanged", async (t) => {
-  const root = await repo(t, `${JSON.stringify(written, null, 2)}\n`);
+  const root = await writeRepo(t, {
+    ...TICKETS,
+    ...config(`${JSON.stringify(written, null, 2)}\n`),
+  });
   capture(t);
 
   const target = join(root, "scratchboard.json");
@@ -80,7 +80,7 @@ test("a second init leaves the file it just wrote unchanged", async (t) => {
 
 test("init refuses to overwrite a config it could not parse", async (t) => {
   const broken = '{ "tickets": "tasks/**/*.md",\n';
-  const root = await repo(t, broken);
+  const root = await writeRepo(t, { ...TICKETS, ...config(broken) });
   const io = capture(t);
 
   await init({ config: join(root, "scratchboard.json"), yes: true });
@@ -92,9 +92,8 @@ test("init refuses to overwrite a config it could not parse", async (t) => {
 });
 
 test("init fills an empty config with what it detected", async (t) => {
-  const root = await repo(t);
+  const root = await writeRepo(t, { ...TICKETS, ...config("{}\n") });
   const target = join(root, "scratchboard.json");
-  await writeFile(target, "{}\n");
   capture(t);
 
   await init({ config: target, yes: true });
@@ -106,7 +105,7 @@ test("init fills an empty config with what it detected", async (t) => {
 });
 
 test("init creates the config beside the tickets when the repo holds none", async (t) => {
-  const root = await repo(t);
+  const root = await writeRepo(t, TICKETS);
   const here = process.cwd();
   t.after(() => process.chdir(here));
   process.chdir(root);
