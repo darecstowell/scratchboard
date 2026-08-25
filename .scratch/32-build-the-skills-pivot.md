@@ -701,4 +701,4 @@ Not verifiable here, and stated rather than assumed: the badge fixture set defen
 against the templates as they read today, and nothing on this machine records which version a
 `find-skills` install actually has.
 
-Follow-on work this raised: [ticket 33](./33-prototypes-ship-in-the-tarball.md).
+Follow-on work this raised: keeping the prototypes out of the published tarball, shipped in 0.3.0.

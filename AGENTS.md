@@ -92,7 +92,7 @@ Every folder under `.scratch/` is a piece of work, never a state. That is the up
 it is why the backlog sits flat at the root. Wayfinder efforts are the one folder shape here: an
 effort is a map and its decision tickets at `.scratch/<effort>/`, and it is planning rather than
 backlog. `docs/agents/issue-tracker.md` holds the conventions. The scanner reads that shape now:
-the demo scans with no warnings, 31 tickets on the lanes, no `Unmapped` lane, and two groups, this
+the demo scans with no warnings, 26 tickets on the lanes, no `Unmapped` lane, and two groups, this
 repo's own context and the skills-pivot effort. A group's files leave the lanes and get a surface
 of their own, so the effort is planning on the demo and the backlog stays the board.
 [docs/local-markdown-spec.md](docs/local-markdown-spec.md) publishes what the scanner reads, and
