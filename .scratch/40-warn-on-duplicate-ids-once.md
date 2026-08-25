@@ -1,6 +1,6 @@
 ---
 title: Warn on duplicate ids once, not twice
-status: ready-for-agent
+status: done
 priority: p2
 labels: [scanner, warnings, architecture]
 ---
