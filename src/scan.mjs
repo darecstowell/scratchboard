@@ -5,7 +5,8 @@ import { matchGlob, globRoot, walk } from "./walk.mjs";
 import { datesFor } from "./dates.mjs";
 import { makeExcerpt, findRefs } from "./parse/markdown.mjs";
 import { CATCH_ALL, laneFields } from "./config.mjs";
-import * as dialect from "./dialect.mjs";
+import { assembleGroup, discoverContexts, recognize } from "./dialect.mjs";
+import { nameFile } from "./naming.mjs";
 import * as yamlFrontmatter from "./parse/yaml-frontmatter.mjs";
 import * as keyValueBlock from "./parse/key-value-block.mjs";
 
@@ -13,34 +14,6 @@ export const PRESETS = {
   "yaml-frontmatter": yamlFrontmatter,
   "key-value-block": keyValueBlock,
 };
-
-const GENERIC_NAMES = new Set(["issue", "index", "readme", "ticket", "task"]);
-
-/** The deepest segment that names the ticket, skipping container file names like `issue.md`. */
-export function ticketName(path) {
-  const segments = path.split("/");
-  const file = segments[segments.length - 1].replace(/\.[^.]+$/, "");
-  if (GENERIC_NAMES.has(file.toLowerCase()) && segments.length > 1) {
-    return segments[segments.length - 2];
-  }
-  return file;
-}
-
-export function identify(path, idPattern) {
-  const name = ticketName(path);
-  if (!idPattern) return { id: null, slug: name };
-  let re;
-  try {
-    re = new RegExp(idPattern);
-  } catch {
-    return { id: null, slug: name };
-  }
-  const match = re.exec(name);
-  if (!match) return { id: null, slug: name };
-  const id = match[1] !== undefined ? String(match[1]) : match[0];
-  const slug = name.slice(match.index + match[0].length).replace(/^[-_\s]+/, "");
-  return { id, slug: slug || name };
-}
 
 function values(field) {
   if (field === undefined || field === null) return [];
@@ -144,41 +117,6 @@ export function mergeInvocations(declared) {
   return [...merged.values()];
 }
 
-const ROLE_ORDER = { lead: 0, issue: 1, other: 2 };
-
-function baseNameOf(path) {
-  return path.slice(path.lastIndexOf("/") + 1);
-}
-
-function groupFiles(plan, held, config) {
-  const files = plan.files
-    .filter((path) => held.has(path))
-    .map((path) => {
-      const source = held.get(path);
-      const parsed = source.parsed || {};
-      const named = identify(path, config.idPattern);
-      const title =
-        (typeof parsed.title === "string" && parsed.title.trim() && parsed.title) ||
-        dialect.headingOf(source.text) ||
-        named.slug;
-      const file = {
-        role: dialect.roleOf(path, plan.path, plan.lead),
-        path,
-        title,
-        id: parsed.id !== null && parsed.id !== undefined ? String(parsed.id) : named.id,
-        body: parsed.body || source.text,
-      };
-      if (plan.kind === "context") file.status = dialect.statusOf(source.text);
-      return file;
-    });
-  files.sort(
-    (a, b) =>
-      ROLE_ORDER[a.role] - ROLE_ORDER[b.role] ||
-      plan.files.indexOf(a.path) - plan.files.indexOf(b.path)
-  );
-  return files;
-}
-
 /** One id on two paths is one warning, and `named` is the noun the message counts. */
 export function warnDuplicateIds(warnings, entries, named) {
   const byId = new Map();
@@ -194,31 +132,6 @@ export function warnDuplicateIds(warnings, entries, named) {
       reason: `id ${id} is on ${paths.length} ${named}: ${paths.join(", ")}`,
     });
   }
-}
-
-/** Only an effort carries edges and states, because only its issues write the structured line. */
-function addEffortState(files, held, where, warnings) {
-  const issues = files.filter((file) => file.role === "issue");
-  const fields = issues.map((file) => dialect.readIssueFields(held.get(file.path).text));
-  const states = dialect.deriveStates(
-    issues.map((file, at) => ({
-      id: file.id,
-      status: fields[at].status,
-      blockedBy: fields[at].blockedBy,
-    }))
-  );
-  issues.forEach((file, at) => {
-    file.type = fields[at].type;
-    file.state = states[at].state;
-    file.claimed = fields[at].status === dialect.CLAIMED;
-    file.blockedBy = fields[at].blockedBy;
-    for (const name of states[at].unknown) {
-      warnings.push({
-        path: file.path,
-        reason: `names blocker ${name}, which is no file in ${where}`,
-      });
-    }
-  });
 }
 
 /** The one read and parse. A file that cannot be read gets a warning and nothing back. A parser
@@ -270,7 +183,7 @@ export async function scan(context) {
     }
     overrides.set(one.path, one.kind);
   }
-  const recognized = dialect.recognize(files, { base: scope, overrides });
+  const recognized = recognize(files, { base: scope, overrides });
   warnings.push(...recognized.diagnostics);
 
   const plans = recognized.groups.map((group) => ({
@@ -279,7 +192,7 @@ export async function scan(context) {
     files: files.filter((path) => path === group.path || path.startsWith(`${group.path}/`)),
   }));
   if (!config.documents || config.documents.context !== false) {
-    const found = await dialect.discoverContexts(root);
+    const found = await discoverContexts(root);
     warnings.push(...found.warnings);
     for (const held of found.contexts) plans.push({ kind: "context", ...held });
   }
@@ -297,18 +210,10 @@ export async function scan(context) {
   }
 
   const groups = plans.map((plan) => {
-    const inside = groupFiles(plan, held, config);
-    warnDuplicateIds(warnings, inside, `files in ${plan.path}`);
-    if (plan.kind === "effort") addEffortState(inside, held, plan.path, warnings);
-    const lead = plan.lead && held.has(plan.lead) ? held.get(plan.lead) : null;
-    const named = inside.find((file) => file.role === "lead");
-    return {
-      kind: plan.kind,
-      path: plan.path,
-      title: (named && named.title) || plan.title || baseNameOf(plan.path),
-      sections: lead ? dialect.splitSections(lead.text) : dialect.emptySections(),
-      files: inside,
-    };
+    const assembled = assembleGroup(plan, held, config);
+    warnDuplicateIds(warnings, assembled.group.files, `files in ${plan.path}`);
+    warnings.push(...assembled.warnings);
+    return assembled.group;
   });
 
   const read = [];
@@ -317,11 +222,12 @@ export async function scan(context) {
     const source = await readAndParse(root, path, parser, warnings);
     if (!source || source.threw) continue;
     const { text, parsed } = source;
-    if (!parsed || typeof parsed.title !== "string" || !parsed.title.trim()) {
+    const named = nameFile(path, parsed, config.idPattern);
+    if (named.title === null) {
       warnings.push({ path, reason: "no title found" });
       continue;
     }
-    read.push({ path, text, parsed });
+    read.push({ path, text, parsed, named });
   }
 
   const { dates, warning: dateWarning } = await datesFor(
@@ -331,14 +237,12 @@ export async function scan(context) {
   );
   if (dateWarning) warnings.push({ path: null, reason: dateWarning });
 
-  const tickets = read.map(({ path, text, parsed }) => {
-    const named = identify(path, config.idPattern);
-    const id = parsed.id !== null && parsed.id !== undefined ? String(parsed.id) : named.id;
+  const tickets = read.map(({ path, text, parsed, named }) => {
     const stamps = dates.get(path);
     return {
-      id,
+      id: named.id,
       slug: named.slug,
-      title: parsed.title,
+      title: named.title,
       path,
       lane: null,
       fields: parsed.fields || {},

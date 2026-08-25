@@ -1,6 +1,6 @@
 ---
 title: Give the dialect one entry point for assembling a group
-status: ready-for-agent
+status: done
 priority: p1
 labels: [scanner, dialect, architecture]
 ---
