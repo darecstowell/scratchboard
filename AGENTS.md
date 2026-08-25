@@ -79,6 +79,26 @@ The first proves the port still agrees on every ticket, field, and facet. The se
 zero-config run and a hand-written config produce the same lanes. Run both for anything touching
 `scan.mjs`, `parse/`, `detect.mjs`, or `config.mjs`.
 
+The second one also has a corpus of its own, so it runs on every push:
+
+```
+node tools/compare-detection.mjs tools/fixtures/offmain
+```
+
+`tools/fixtures/offmain/` is twelve tickets in the OffMain layout the spec config describes,
+with folder lanes and an `issue.md` in each ticket folder. It sits beside the tooling rather than
+in `.scratch/`, so the demo board never counts it, and outside `src/`, so the tarball never ships
+it. This repo cannot be that corpus: the backlog is flat and `status` is the lane, which
+detection cannot guess, so the two runs would disagree forever.
+
+Both runs name a config on the command line, and the detection run names an empty one. An empty
+config declares nothing, so every key still comes from detection, and naming it anchors the root
+at the corpus. A corpus inside another repository would otherwise resolve that repository's root
+and read its tickets instead.
+
+`compare-python.mjs` stays a local step, because it needs a second repository at one commit and
+that is a decision of its own.
+
 ## The board is dogfooded
 
 `.scratch/` holds this project's real backlog, and every push bakes it to the Pages demo with

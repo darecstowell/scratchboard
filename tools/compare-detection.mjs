@@ -82,8 +82,10 @@ async function main() {
   const config = await withConfig(root, SPEC_CONFIG, async (path) =>
     JSON.parse(await run("node", [CLI, "--scan", "--config", path], root))
   );
-  const detected = await withConfig(root, null, async () =>
-    JSON.parse(await run("node", [CLI, "--scan"], root))
+  // An empty config declares nothing, so every key still comes from detection. It is written
+  // because a corpus inside another repository would otherwise resolve that repository's root.
+  const detected = await withConfig(root, {}, async (path) =>
+    JSON.parse(await run("node", [CLI, "--scan", "--config", path], root))
   );
 
   process.stdout.write(

@@ -21,6 +21,19 @@ jobs:
       # Nothing installed. The guard is node: builtins only, the same as the package.
       - run: node tools/guard.mjs
 
+  corpus:
+    name: detection against the corpus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      # Nothing installed. The tool runs the packaged CLI twice over a committed fixture.
+      - run: node tools/compare-detection.mjs tools/fixtures/offmain
+
   lint:
     name: lint
     runs-on: ubuntu-latest
