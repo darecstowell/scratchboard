@@ -4,7 +4,13 @@ import { mkdtempSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { BACKSLASH_REASON, mergeInvocations, scan, warnDuplicateIds } from "../src/scan.mjs";
+import {
+  BACKSLASH_REASON,
+  mergeInvocations,
+  readAndParse,
+  scan,
+  warnDuplicateIds,
+} from "../src/scan.mjs";
 import { CATCH_ALL } from "../src/config.mjs";
 
 const LANES = fileURLToPath(new URL("./fixtures/lanes", import.meta.url));
@@ -154,6 +160,56 @@ function parserTree(source) {
   writeFileSync(join(root, "reader.mjs"), source);
   return root;
 }
+
+test("readAndParse hands back the text and the parse of a file it can read", async () => {
+  const root = parserTree("");
+  const warnings = [];
+  const parser = { parse: (path, text) => ({ title: "Good", body: text }) };
+
+  const source = await readAndParse(root, "tickets/1-good/issue.md", parser, warnings);
+
+  assert.equal(source.text, "Good ticket body.\n");
+  assert.deepEqual(source.parsed, { title: "Good", body: "Good ticket body.\n" });
+  assert.equal(source.threw, false);
+  assert.deepEqual(warnings, []);
+});
+
+test("readAndParse keeps the text and nulls the parse when the parser throws", async () => {
+  const root = parserTree("");
+  const warnings = [];
+  const parser = {
+    parse: () => {
+      throw new Error("boom");
+    },
+  };
+
+  const source = await readAndParse(root, "tickets/2-bad/issue.md", parser, warnings);
+
+  assert.equal(source.text, "Bad ticket body.\n");
+  assert.equal(source.parsed, null);
+  assert.equal(source.threw, true);
+  assert.deepEqual(warnings, [{ path: "tickets/2-bad/issue.md", reason: "parser threw (boom)" }]);
+});
+
+test("readAndParse hands back nothing and warns when the file cannot be read", async () => {
+  const root = parserTree("");
+  const warnings = [];
+  let calls = 0;
+  const parser = {
+    parse: () => {
+      calls += 1;
+      return null;
+    },
+  };
+
+  const source = await readAndParse(root, "tickets/3-gone/issue.md", parser, warnings);
+
+  assert.equal(source, null);
+  assert.equal(calls, 0);
+  assert.equal(warnings.length, 1);
+  assert.equal(warnings[0].path, "tickets/3-gone/issue.md");
+  assert.match(warnings[0].reason, /^cannot read \(/);
+});
 
 test("a parser that throws puts the file in warnings with its path and reason", async () => {
   const root = parserTree(`

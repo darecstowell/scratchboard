@@ -1,6 +1,6 @@
 ---
 title: Read and parse a file through one helper
-status: ready-for-agent
+status: done
 priority: p2
 labels: [scanner, warnings, architecture]
 ---
