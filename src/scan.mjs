@@ -221,6 +221,27 @@ function addEffortState(files, held, where, warnings) {
   });
 }
 
+/** The one read and parse. A file that cannot be read gets a warning and nothing back. A parser
+ * that throws gets a warning and a null parse, so the caller decides what to do with the text. */
+export async function readAndParse(root, path, parser, warnings) {
+  let text;
+  try {
+    text = await readFile(join(root, path), "utf8");
+  } catch (error) {
+    warnings.push({ path, reason: `cannot read (${error.message})` });
+    return null;
+  }
+  let parsed = null;
+  let threw = false;
+  try {
+    parsed = parser.parse(path, text);
+  } catch (error) {
+    warnings.push({ path, reason: `parser threw (${error.message})` });
+    threw = true;
+  }
+  return { text, parsed, threw };
+}
+
 export async function scan(context) {
   const { root, config, version } = context;
   const warnings = [...(context.warnings || [])];
@@ -270,20 +291,8 @@ export async function scan(context) {
     for (const path of plan.files) {
       taken.add(path);
       if (held.has(path)) continue;
-      let text;
-      try {
-        text = await readFile(join(root, path), "utf8");
-      } catch (error) {
-        warnings.push({ path, reason: `cannot read (${error.message})` });
-        continue;
-      }
-      let parsed = null;
-      try {
-        parsed = parser.parse(path, text);
-      } catch (error) {
-        warnings.push({ path, reason: `parser threw (${error.message})` });
-      }
-      held.set(path, { text, parsed });
+      const source = await readAndParse(root, path, parser, warnings);
+      if (source) held.set(path, source);
     }
   }
 
@@ -305,20 +314,9 @@ export async function scan(context) {
   const read = [];
   for (const path of files) {
     if (taken.has(path)) continue;
-    let text;
-    try {
-      text = await readFile(join(root, path), "utf8");
-    } catch (error) {
-      warnings.push({ path, reason: `cannot read (${error.message})` });
-      continue;
-    }
-    let parsed;
-    try {
-      parsed = parser.parse(path, text);
-    } catch (error) {
-      warnings.push({ path, reason: `parser threw (${error.message})` });
-      continue;
-    }
+    const source = await readAndParse(root, path, parser, warnings);
+    if (!source || source.threw) continue;
+    const { text, parsed } = source;
     if (!parsed || typeof parsed.title !== "string" || !parsed.title.trim()) {
       warnings.push({ path, reason: "no title found" });
       continue;
