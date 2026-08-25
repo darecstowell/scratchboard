@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { BACKSLASH_REASON, mergeInvocations, scan } from "../src/scan.mjs";
+import { BACKSLASH_REASON, mergeInvocations, scan, warnDuplicateIds } from "../src/scan.mjs";
 import { CATCH_ALL } from "../src/config.mjs";
 
 const LANES = fileURLToPath(new URL("./fixtures/lanes", import.meta.url));
@@ -490,6 +490,51 @@ test("every diagnostic hands over a plain sentence and never the config writing 
       assert.ok(one.path, `${name} names the path`);
     }
   }
+});
+
+test("warnDuplicateIds warns once per colliding id and names the count in its label", () => {
+  const warnings = [];
+  warnDuplicateIds(
+    warnings,
+    [
+      { id: "3", path: "a.md" },
+      { id: "3", path: "b.md" },
+      { id: "3", path: "c.md" },
+      { id: "4", path: "d.md" },
+      { id: null, path: "e.md" },
+      { id: "", path: "f.md" },
+    ],
+    "tickets"
+  );
+
+  assert.deepEqual(warnings, [
+    { path: null, reason: "id 3 is on 3 tickets: a.md, b.md, c.md" },
+  ]);
+});
+
+test("warnDuplicateIds carries the label into the message and says nothing on a clean list", () => {
+  const warnings = [];
+  warnDuplicateIds(
+    warnings,
+    [
+      { id: "03", path: ".scratch/an-effort/issues/03-one.md" },
+      { id: "03", path: ".scratch/an-effort/issues/03-two.md" },
+    ],
+    "files in .scratch/an-effort"
+  );
+  assert.deepEqual(warnings, [
+    {
+      path: null,
+      reason:
+        "id 03 is on 2 files in .scratch/an-effort: " +
+        ".scratch/an-effort/issues/03-one.md, .scratch/an-effort/issues/03-two.md",
+    },
+  ]);
+
+  const quiet = [];
+  warnDuplicateIds(quiet, [{ id: "1", path: "a.md" }, { id: "2", path: "b.md" }], "tickets");
+  warnDuplicateIds(quiet, [], "tickets");
+  assert.deepEqual(quiet, []);
 });
 
 test("ids scope to the group, so a collision inside one warns and one across does not", async () => {

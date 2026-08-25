@@ -179,18 +179,19 @@ function groupFiles(plan, held, config) {
   return files;
 }
 
-function scopeIds(files, where, warnings) {
+/** One id on two paths is one warning, and `named` is the noun the message counts. */
+export function warnDuplicateIds(warnings, entries, named) {
   const byId = new Map();
-  for (const file of files) {
-    if (!file.id) continue;
-    if (!byId.has(file.id)) byId.set(file.id, []);
-    byId.get(file.id).push(file.path);
+  for (const entry of entries) {
+    if (!entry.id) continue;
+    if (!byId.has(entry.id)) byId.set(entry.id, []);
+    byId.get(entry.id).push(entry.path);
   }
   for (const [id, paths] of byId) {
     if (paths.length < 2) continue;
     warnings.push({
       path: null,
-      reason: `id ${id} is on ${paths.length} files in ${where}: ${paths.join(", ")}`,
+      reason: `id ${id} is on ${paths.length} ${named}: ${paths.join(", ")}`,
     });
   }
 }
@@ -288,7 +289,7 @@ export async function scan(context) {
 
   const groups = plans.map((plan) => {
     const inside = groupFiles(plan, held, config);
-    scopeIds(inside, plan.path, warnings);
+    warnDuplicateIds(warnings, inside, `files in ${plan.path}`);
     if (plan.kind === "effort") addEffortState(inside, held, plan.path, warnings);
     const lead = plan.lead && held.has(plan.lead) ? held.get(plan.lead) : null;
     const named = inside.find((file) => file.role === "lead");
@@ -353,21 +354,9 @@ export async function scan(context) {
     };
   });
 
-  const byId = new Map();
-  for (const ticket of tickets) {
-    if (!ticket.id) continue;
-    if (!byId.has(ticket.id)) byId.set(ticket.id, []);
-    byId.get(ticket.id).push(ticket.path);
-  }
-  for (const [id, paths] of byId) {
-    if (paths.length < 2) continue;
-    warnings.push({
-      path: null,
-      reason: `id ${id} is on ${paths.length} tickets: ${paths.join(", ")}`,
-    });
-  }
+  warnDuplicateIds(warnings, tickets, "tickets");
 
-  const knownIds = new Set(byId.keys());
+  const knownIds = new Set(tickets.map((ticket) => ticket.id).filter(Boolean));
   for (const ticket of tickets) {
     ticket.refs = findRefs(ticket._text, knownIds, ticket.id);
     delete ticket._text;
