@@ -7,9 +7,9 @@ labels: [scanner, testing, architecture]
 
 # Stop exporting stripMarkdown, and test it through makeExcerpt
 
-`stripMarkdown` at `src/parse/markdown.mjs:21-33` has one caller anywhere: `makeExcerpt`, on line
+`stripMarkdown` at `src/text.mjs:21-33` has one caller anywhere: `makeExcerpt`, on line
 73 of the same file. It is exported anyway, it carries a doc comment about its own ordering
-("images before links, emphasis before backslash drop"), and `test/markdown.test.mjs:5-46` pins
+("images before links, emphasis before backslash drop"), and `test/text.test.mjs:5-46` pins
 that ordering with eight tests of its own.
 
 What `scan.mjs` actually depends on is `makeExcerpt` and `findRefs` (`src/scan.mjs:6`, used at

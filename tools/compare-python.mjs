@@ -2,7 +2,7 @@
 // Reads both scanners live at one commit and compares them. Never hardcodes a count.
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { makeExcerpt } from "../src/parse/markdown.mjs";
+import { makeExcerpt } from "../src/text.mjs";
 import { CLI, Report, SPEC_CONFIG, facetTally, run, withConfig } from "./corpus.mjs";
 
 const isEmpty = (value) =>

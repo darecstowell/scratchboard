@@ -1,6 +1,6 @@
 ---
 title: Move parse/markdown.mjs out of the parser seam
-status: ready-for-agent
+status: done
 priority: p3
 labels: [scanner, architecture]
 ---

@@ -3,7 +3,7 @@ import { pathToFileURL } from "node:url";
 import { join } from "node:path";
 import { matchGlob, globRoot, walk } from "./walk.mjs";
 import { datesFor } from "./dates.mjs";
-import { makeExcerpt, findRefs } from "./parse/markdown.mjs";
+import { makeExcerpt, findRefs } from "./text.mjs";
 import { CATCH_ALL, laneFields } from "./config.mjs";
 import { assembleGroup, discoverContexts, recognize } from "./dialect.mjs";
 import { nameFile } from "./naming.mjs";

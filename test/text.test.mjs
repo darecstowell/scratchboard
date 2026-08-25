@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { makeExcerpt, findRefs, EXCERPT_LEN } from "../src/parse/markdown.mjs";
+import { makeExcerpt, findRefs, EXCERPT_LEN } from "../src/text.mjs";
 
 test("an image leaves nothing behind, because it is stripped before links", () => {
   assert.equal(makeExcerpt("![alt](http://x/y.png)"), "");
