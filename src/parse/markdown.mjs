@@ -19,7 +19,7 @@ const TRAILING_CHARS = new Set([" ", ",", ";", ":"]);
 const BACKOFF = EXCERPT_LEN * 0.6;
 
 /** Order is load-bearing: images before links, emphasis before backslash drop. */
-export function stripMarkdown(line) {
+function stripMarkdown(line) {
   let out = line;
   out = out.replace(IMAGE, "");
   out = out.replace(LINK, "$1");

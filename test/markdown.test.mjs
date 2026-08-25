@@ -1,48 +1,52 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { stripMarkdown, makeExcerpt, findRefs, EXCERPT_LEN } from "../src/parse/markdown.mjs";
+import { makeExcerpt, findRefs, EXCERPT_LEN } from "../src/parse/markdown.mjs";
 
 test("an image leaves nothing behind, because it is stripped before links", () => {
-  assert.equal(stripMarkdown("![alt](http://x/y.png)"), "");
-  assert.equal(stripMarkdown("before ![alt](u) after"), "before after");
+  assert.equal(makeExcerpt("![alt](http://x/y.png)"), "");
+  assert.equal(makeExcerpt("before ![alt](u) after"), "before after");
 });
 
 test("an inline link keeps its text and drops its url", () => {
-  assert.equal(stripMarkdown("see [the doc](http://x) now"), "see the doc now");
+  assert.equal(makeExcerpt("see [the doc](http://x) now"), "see the doc now");
 });
 
 test("a reference link keeps its text and drops its label", () => {
-  assert.equal(stripMarkdown("see [the doc][ref] now"), "see the doc now");
+  assert.equal(makeExcerpt("see [the doc][ref] now"), "see the doc now");
 });
 
 test("an autolink keeps the bare url", () => {
-  assert.equal(stripMarkdown("go <https://x.dev/a> now"), "go https://x.dev/a now");
+  assert.equal(makeExcerpt("go <https://x.dev/a> now"), "go https://x.dev/a now");
 });
 
 test("a remaining html tag is removed whole", () => {
-  assert.equal(stripMarkdown("a <br/> b <span class='x'>c</span>"), "a b c");
+  assert.equal(makeExcerpt("a <br/> b <span class='x'>c</span>"), "a b c");
 });
 
 test("every emphasis marker is removed", () => {
-  assert.equal(stripMarkdown("**bold** __b__ *i* _i_ `code` ~~cut~~"), "bold b i i code cut");
+  assert.equal(makeExcerpt("**bold** __b__ *i* _i_ `code` ~~cut~~"), "bold b i i code cut");
 });
 
 test("a list marker is removed only at the start of the line", () => {
-  assert.equal(stripMarkdown("- one - two"), "one - two");
-  assert.equal(stripMarkdown("  + one"), "one");
-  assert.equal(stripMarkdown("3. one"), "one");
-  assert.equal(stripMarkdown("3) one"), "one");
-  assert.equal(stripMarkdown("step 1. one"), "step 1. one");
+  assert.equal(makeExcerpt("- one - two"), "one - two");
+  assert.equal(makeExcerpt("  + one"), "one");
+  assert.equal(makeExcerpt("3. one"), "one");
+  assert.equal(makeExcerpt("3) one"), "one");
+  assert.equal(makeExcerpt("step 1. one"), "step 1. one");
 });
 
 test("an escaped asterisk loses both the backslash and the asterisk", () => {
-  assert.equal(stripMarkdown("a \\* b"), "a b");
-  assert.equal(stripMarkdown("\\_x\\_"), "x");
-  assert.equal(stripMarkdown("C:\\\\path"), "C:path");
+  assert.equal(makeExcerpt("a \\* b"), "a b");
+  assert.equal(makeExcerpt("\\_x\\_"), "x");
+  assert.equal(makeExcerpt("C:\\\\path"), "C:path");
 });
 
-test("whitespace runs collapse to one space and the line is trimmed", () => {
-  assert.equal(stripMarkdown("  a\t\tb   c  "), "a b c");
+test("a backslash goes after emphasis, so a split tilde pair survives", () => {
+  assert.equal(makeExcerpt("a ~\\~ b"), "a ~~ b");
+});
+
+test("whitespace runs collapse to one space", () => {
+  assert.equal(makeExcerpt("  a\t\tb   c  "), "a b c");
 });
 
 test("a blank line ends the excerpt once 80 characters are held", () => {

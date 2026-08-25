@@ -1,6 +1,6 @@
 ---
 title: Stop exporting stripMarkdown, and test it through makeExcerpt
-status: ready-for-agent
+status: done
 priority: p3
 labels: [scanner, testing, architecture]
 ---
