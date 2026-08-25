@@ -30,7 +30,7 @@ Move `renderMarkdown` and its private helpers into `src/ui/markdown.mjs`, with t
 `inBoardTarget` closure over `knownPaths` and `linkBase`, so the caller supplies what the module
 needs instead of the module reading mutable state above it.
 
-`src/parse/markdown.mjs` already proves the pattern. It is a plain ESM file, `node:test` imports
+`src/text.mjs` already proves the pattern. It is a plain ESM file, `node:test` imports
 it directly, and nothing is installed to make that work.
 
 The baked board stays one self-contained HTML file. `bake.mjs` already splices the text of
