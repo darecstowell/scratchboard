@@ -1,6 +1,6 @@
 ---
 title: Give compare-detection a corpus it can run against in CI
-status: ready-for-agent
+status: done
 priority: p2
 labels: [ci, scanner, testing]
 ---
