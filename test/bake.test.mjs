@@ -180,6 +180,29 @@ test("the payload reader travels inside the board's one script, with no module k
   assert.ok(holding[0].includes("function renderMarkdown("), "the reader and the renderer are two elements");
 });
 
+test("the markup helpers travel inside the board's one script, with no module keyword left", async () => {
+  const html = await bake({ payload: payloadWith("plain") });
+  const helpers = await readFile(new URL("../src/ui/board-render.mjs", import.meta.url), "utf8");
+
+  assert.match(helpers, /^export function headHtml\(group, markdownHtml\) \{$/m, "the seam is gone");
+  assert.equal(html.includes("export function headHtml"), false, "a module keyword reached the page");
+  assert.equal(html.split("function headHtml(").length - 1, 1, "the helpers are inlined once");
+
+  const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/gi)].map(([, code]) => code);
+  const holding = blocks.filter((code) => code.includes("function headHtml("));
+  assert.equal(holding.length, 1, "the helpers sit in more than one element");
+  assert.ok(holding[0].includes("function normalizePayload("), "the helpers and the reader are two elements");
+});
+
+test("the concatenated modules share one scope, so no two of them declare one name", async () => {
+  const html = await bake({ payload: payloadWith("plain") });
+  const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/gi)].map(([, code]) => code);
+
+  assert.ok(blocks.length, "the page carries no script at all");
+  /* A name two modules both declare is a SyntaxError the browser reports and no test sees. */
+  for (const code of blocks) new Function(code);
+});
+
 test("a module becomes script text and keeps every declaration it exported", () => {
   const out = scriptFromModule('export const A = 1;\nexport function f() { return A; }\nexport class C {}\n');
   assert.equal(out.includes("export"), false);

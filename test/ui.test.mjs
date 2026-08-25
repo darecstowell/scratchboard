@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { test } from "./context.mjs";
 import { normalizePayload } from "../src/ui/payload.mjs";
+import { OUT_OF_SCOPE } from "../src/ui/board-render.mjs";
 
 const source = (name) => readFileSync(fileURLToPath(new URL(`../src/ui/${name}`, import.meta.url)), "utf8");
 
@@ -123,32 +124,15 @@ test("the columns key on the payload's own state values and out of scope is neve
   assert.ok(keys, "board.js names the three columns");
   const named = keys[1].split(",").map((one) => one.trim().replace(/"/g, "")).filter(Boolean);
   assert.deepEqual(named, ["behind-us", "takeable-now", "still-blocked"]);
-  assert.match(board, /const OUT_OF_SCOPE = "out-of-scope"/);
+  assert.equal(OUT_OF_SCOPE, "out-of-scope");
 
   const contract = source("index.html");
-  for (const state of named.concat("out-of-scope")) {
+  for (const state of named.concat(OUT_OF_SCOPE)) {
     assert.ok(contract.indexOf(`"${state}"`) !== -1, `the contract block names ${state}`);
   }
-  assert.match(board, /file\.state === OUT_OF_SCOPE/, "an out of scope ticket renders in the header");
 });
 
-test("behind us renders folded with its count, with no threshold", () => {
-  const board = source("board.js");
-  const at = board.indexOf("function columnHtml(");
-  assert.notEqual(at, -1, "board.js builds a column");
-  const body = board.slice(at, board.indexOf("\n  }", at));
-
-  assert.match(body, /const folded = key === "behind-us";/, "the fold is the state, not a size");
-  assert.equal(/length >|length <|\.length >=/.test(body), false, "a threshold decided the fold");
-  assert.ok(body.indexOf('"wf-col-count"') !== -1, "the folded column still reports its count");
-});
-
-test("a claimed ticket greys and is not counted by its column", () => {
-  const board = source("board.js");
-  const at = board.indexOf("function columnHtml(");
-  const body = board.slice(at, board.indexOf("\n  }", at));
-  assert.match(body, /files\.length - claimed/, "a claimed ticket counts toward the column number");
-
+test("a claimed ticket greys rather than taking the prototype's tint", () => {
   const css = source("board.css");
   const grey = css.indexOf('.wf-card[data-claimed="true"] .wf-card-open');
   assert.notEqual(grey, -1, "the stylesheet greys a claimed card");
@@ -179,17 +163,6 @@ test("the view draws only live edges at rest and reveals satisfied ones on hover
   assert.match(board, /live: blocker\.state !== "behind-us"/, "an edge is live while its blocker is not resolved");
 });
 
-test("the hover walk is downstream only, with no mode left over from the prototype", () => {
-  const board = source("board.js");
-  const at = board.indexOf("function downstreamOf(");
-  assert.notEqual(at, -1, "board.js walks the edges forward");
-  const body = board.slice(at, board.indexOf("\n  }", at));
-
-  assert.ok(body.indexOf("keep.has(edge.from) && !keep.has(edge.to)") !== -1, "the walk follows from to to");
-  assert.equal(body.indexOf("keep.has(edge.to) && !keep.has(edge.from)"), -1, "the upstream branch still ships");
-  assert.equal(/\bmode\b/.test(board), false, "the prototype's mode switch still ships");
-});
-
 test("a pin clears on a second click, on the background, and on escape", () => {
   const board = source("board.js");
   assert.match(board, /wf\.pinned = wf\.pinned === card\.dataset\.path \? null : card\.dataset\.path/);
@@ -197,20 +170,6 @@ test("a pin clears on a second click, on the background, and on escape", () => {
   const escape = board.indexOf('if (event.key !== "Escape") return;');
   assert.notEqual(escape, -1);
   assert.match(board.slice(escape, escape + 200), /if \(wf && wf\.pinned\) \{\s*\n\s*clearPin\(\);/);
-});
-
-test("a card carries its type as a word and reaches for no icon", () => {
-  const board = source("board.js");
-  const at = board.indexOf("function cardHtmlFor(");
-  assert.notEqual(at, -1, "board.js builds a card");
-  const body = board.slice(at, board.indexOf("\n  }", at));
-
-  assert.match(body, /wf-card-type[^]*esc\(file\.type\)/, "the type is plain text above the title");
-  for (const reach of ["glyphSvg", "ICONS[", "iconFor("]) {
-    assert.equal(body.indexOf(reach), -1, `the card reaches for ${reach}`);
-  }
-  assert.equal(/…|slice\(0, ?\d+\)/.test(body), false, "a real title wraps rather than clipping");
-  assert.match(body, /wf-card-open" aria-haspopup="dialog"/, "a card opens the detail dialog the board already has");
 });
 
 test("the token the browser substitutes is the one config validates", async () => {
@@ -251,17 +210,8 @@ test("a group view opens the one detail dialog the board already has", () => {
   assert.match(html, /<dialog class="detail" id="detail"/);
 });
 
-test("a lead document is openable from its group header, through the one open path", () => {
+test("one click route opens every group file the views hold", () => {
   const board = source("board.js");
-  const at = board.indexOf("function headHtml(");
-  assert.notEqual(at, -1, "board.js builds the group header");
-  const body = board.slice(at, board.indexOf("\n  }", at));
-
-  assert.match(body, /'<header class="wf-head"' \+ \(lead \? ' data-path="' \+ esc\(lead\.path\)/, "the header carries the lead path");
-  const title = board.slice(board.indexOf("function leadTitle("), at);
-  assert.match(title, /class="wf-card-open"/, "the header title is the same control a card uses");
-  assert.match(title, /if \(!lead\) return esc\(group\.title\)/, "a group with no lead stays plain text");
-
   const click = board.indexOf('el.views.addEventListener("click"');
   const handler = board.slice(click, board.indexOf("\n  });", click));
   assert.match(handler, /closest\("\.wf-card-open"\)[^]*closest\("\[data-path\]"\)/, "one route opens every group file");

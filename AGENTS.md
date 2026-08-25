@@ -29,6 +29,15 @@ nothing else. Adding a field is a change to both sides. `src/ui/payload.mjs` is 
 trust. `test/ui-payload.test.mjs` calls it, and the bake concatenates it ahead of the board
 script, the same way it does the renderer.
 
+**A pure helper leaves `board.js`, because a test can call it.** Nothing here runs a DOM, so a
+helper that stays inside the board script can only be tested by a regular expression over its own
+source. `src/ui/board-render.mjs` holds the data in and string out half of the view: the link
+resolver, the group header, the columns, the cards, and the downstream walk. It touches no
+`document` and no `window`, and every piece of state it needs comes in as a parameter.
+`test/ui-board-render.test.mjs` calls it. `board.js` keeps the event wiring, and the bake
+concatenates the module ahead of it. The three modules share one scope in the baked page, so a
+name two of them declare is a syntax error in the browser rather than a red test.
+
 **Config names every lane and every field, except the dialect.** No lane name, status value, or
 metadata key belongs in the source. A stranger's `severity` field has to work with no code
 change, which is the reason this was extracted from the board it grew in. The dialect is the one

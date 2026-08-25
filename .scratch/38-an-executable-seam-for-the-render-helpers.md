@@ -1,6 +1,6 @@
 ---
 title: Give the render helpers an executable seam
-status: ready-for-agent
+status: done
 priority: p1
 labels: [ui, testing, architecture]
 ---

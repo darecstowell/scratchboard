@@ -25,33 +25,13 @@
     "workflow": '<path d="M0 1.75C0 .784.784 0 1.75 0h3.5C6.216 0 7 .784 7 1.75v3.5A1.75 1.75 0 0 1 5.25 7H4v4a1 1 0 0 0 1 1h4v-1.25C9 9.784 9.784 9 10.75 9h3.5c.966 0 1.75.784 1.75 1.75v3.5A1.75 1.75 0 0 1 14.25 16h-3.5A1.75 1.75 0 0 1 9 14.25v-.75H5A2.5 2.5 0 0 1 2.5 11V7h-.75A1.75 1.75 0 0 1 0 5.25Zm1.75-.25a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h3.5a.25.25 0 0 0 .25-.25v-3.5a.25.25 0 0 0-.25-.25Zm9 9a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h3.5a.25.25 0 0 0 .25-.25v-3.5a.25.25 0 0 0-.25-.25Z"/>',
   };
 
-  const LANE_GLYPH =
-    '<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">' +
-    '<path d="M1.5 1.5h13v13h-13v-13Zm1.5 1.5v10h10V3H3Z"/><path d="M5.5 5.5h5v5h-5v-5Z"/></svg>';
-
   const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (c) => ESCAPES[c]);
 
   // ------------------------------------------------------------- links
 
-  const dirOf = (path) => (path.lastIndexOf("/") === -1 ? "" : path.slice(0, path.lastIndexOf("/")));
-
   /** Keys are escaped paths, because a href is already escaped by the time a link is read. */
   let knownPaths = new Map();
-
-  /** A baked board is one file, so a relative link to a path the payload holds is navigation. */
-  function inBoardTarget(base, href) {
-    if (!knownPaths.size) return "";
-    const wanted = href.split("#")[0].split("?")[0];
-    if (!wanted) return "";
-    const parts = [];
-    (base ? base.split("/") : []).concat(wanted.split("/")).forEach((part) => {
-      if (!part || part === ".") return;
-      if (part === "..") parts.pop();
-      else parts.push(part);
-    });
-    return knownPaths.get(parts.join("/")) || "";
-  }
 
   // ------------------------------------------------------------- elements
 
@@ -459,9 +439,7 @@
   /* These three are the payload's own state values, not lane names a config owns: the view has
      no facet system and the scan computes the membership. */
   const STATE_KEYS = ["behind-us", "takeable-now", "still-blocked"];
-  const OUT_OF_SCOPE = "out-of-scope";
   const BULGE = 34;
-  const columnName = (key) => key.replace(/-/g, " ");
   const fileLabel = (file) => (file.id ? "#" + file.id : file.title);
 
   function setGroups(normalized) {
@@ -536,145 +514,8 @@
 
   // ------------------------------------------------------------- group markup
 
-  const baseOf = (group) => {
-    const lead = group.files.filter((file) => file.role === "lead")[0];
-    return lead ? dirOf(esc(lead.path)) : esc(group.path);
-  };
-
-  const markdownHtml = (base, source) => renderMarkdown(source, (href) => inBoardTarget(base, href));
-
-  const ITEM_RE = /^\s*([-*+]|\d{1,9}[.)])\s+/;
-
-  /** What a fold reports is how many things it holds, so a list counts its markers. */
-  function countOf(source) {
-    const lines = String(source == null ? "" : source).split("\n");
-    const items = lines.filter((line) => ITEM_RE.test(line)).length;
-    if (items) return items;
-    let blocks = 0;
-    let inside = false;
-    lines.forEach((line) => {
-      if (!line.trim()) inside = false;
-      else if (!inside) {
-        blocks += 1;
-        inside = true;
-      }
-    });
-    return blocks;
-  }
-
-  function foldHtml(name, count, body) {
-    return (
-      '<details class="wf-fold"><summary class="wf-fold-btn">' +
-      '<span class="wf-fold-name">' + esc(name) + "</span>" +
-      '<span class="wf-fold-count">' + count + "</span></summary>" +
-      '<div class="wf-fold-body wf-md">' + body + "</div></details>"
-    );
-  }
-
-  function rowHtml(file) {
-    return (
-      '<li class="wf-row" data-path="' + esc(file.path) + '"' +
-      (file.id ? ' data-id="' + esc(file.id) + '"' : "") + ">" +
-      (file.id ? '<span class="wf-row-id">' + esc(file.id) + "</span>" : "") +
-      (file.type ? '<span class="wf-row-type">' + esc(file.type) + "</span>" : "") +
-      '<h3 class="wf-row-title"><button type="button" class="wf-card-open" aria-haspopup="dialog">' +
-      esc(file.title) + "</button></h3></li>"
-    );
-  }
-
-  const rowsHtml = (files) =>
-    files.length ? '<ol class="wf-list">' + files.map(rowHtml).join("") + "</ol>" : "";
-
-  function docsHtml(group) {
-    return group.files
-      .filter((file) => file.role === "other")
-      .map(
-        (file) =>
-          '<details class="wf-doc"><summary class="wf-doc-btn">' + esc(file.title) + "</summary>" +
-          '<div class="wf-doc-body wf-md">' + markdownHtml(dirOf(esc(file.path)), file.body) + "</div></details>"
-      )
-      .join("");
-  }
-
-  /** The lead document is a document like any other, so its title opens the same panel. */
-  function leadTitle(group, lead) {
-    if (!lead) return esc(group.title);
-    return (
-      '<button type="button" class="wf-card-open" aria-haspopup="dialog">' +
-      esc(group.title) + "</button>"
-    );
-  }
-
-  function headHtml(group) {
-    const base = baseOf(group);
-    const lead = group.files.filter((file) => file.role === "lead")[0] || null;
-    const sections = group.sections;
-    const opening = sections.destination || (group.kind === "context" && lead ? lead.body : "");
-    const spare = group.files.filter((file) => file.state === OUT_OF_SCOPE);
-    const docs = group.files.filter((file) => file.role === "other");
-    const folds = [];
-
-    if (sections.notes) folds.push(foldHtml("notes", countOf(sections.notes), markdownHtml(base, sections.notes)));
-    if (sections.fog) {
-      folds.push(foldHtml("not yet specified", countOf(sections.fog), markdownHtml(base, sections.fog)));
-    }
-    if (sections.outOfScope || spare.length) {
-      folds.push(
-        foldHtml(
-          "out of scope",
-          countOf(sections.outOfScope) + spare.length,
-          (sections.outOfScope ? markdownHtml(base, sections.outOfScope) : "") + rowsHtml(spare)
-        )
-      );
-    }
-    if (docs.length && group.kind !== "context") folds.push(foldHtml("documents", docs.length, docsHtml(group)));
-
-    return (
-      '<header class="wf-head"' + (lead ? ' data-path="' + esc(lead.path) + '"' : "") + ">" +
-      '<h1 class="wf-head-title">' + leadTitle(group, lead) + "</h1>" +
-      (opening ? '<div class="wf-dest wf-md">' + markdownHtml(base, opening) + "</div>" : "") +
-      (folds.length ? '<div class="wf-folds">' + folds.join("") + "</div>" : "") +
-      "</header>"
-    );
-  }
-
-  function cardHtmlFor(file) {
-    return (
-      '<li class="wf-card" data-path="' + esc(file.path) + '"' +
-      (file.id ? ' data-id="' + esc(file.id) + '"' : "") +
-      ' data-state="' + esc(file.state) + '"' +
-      (file.claimed ? ' data-claimed="true"' : "") + ">" +
-      '<div class="wf-card-top">' +
-      (file.type ? '<span class="wf-card-type">' + esc(file.type) + "</span>" : "") +
-      (file.claimed ? '<span class="wf-card-claim">claimed</span>' : "") +
-      (file.id ? '<span class="wf-card-id">' + esc(file.id) + "</span>" : "") +
-      "</div>" +
-      '<h3 class="wf-card-title"><button type="button" class="wf-card-open" aria-haspopup="dialog">' +
-      esc(file.title) + "</button></h3></li>"
-    );
-  }
-
-  function columnHtml(group, key) {
-    const files = group.files.filter((file) => file.state === key);
-    const claimed = key === "takeable-now" ? files.filter((file) => file.claimed).length : 0;
-    const folded = key === "behind-us";
-    return (
-      '<section class="wf-col' + (folded ? " is-collapsed" : "") + '" data-state="' + key + '"' +
-      ' aria-label="' + columnName(key) + '">' +
-      '<header class="wf-col-head">' +
-      '<span class="wf-col-glyph" aria-hidden="true">' + LANE_GLYPH + "</span>" +
-      '<h2 class="wf-col-name">' + columnName(key) + "</h2>" +
-      '<span class="wf-col-count">' + (files.length - claimed) + "</span>" +
-      (claimed ? '<span class="wf-col-claimed">+' + claimed + " claimed</span>" : "") +
-      (folded
-        ? '<button type="button" class="wf-col-toggle" aria-expanded="false">' +
-          '<span class="wf-col-toggle-txt wf-col-toggle-show">show tickets</span>' +
-          '<span class="wf-col-toggle-txt wf-col-toggle-collapse">collapse</span></button>'
-        : "") +
-      "</header>" +
-      '<ol class="wf-col-list">' + files.map(cardHtmlFor).join("") + "</ol></section>"
-    );
-  }
+  const markdownHtml = (base, source) =>
+    renderMarkdown(source, (href) => inBoardTarget(knownPaths, base, href));
 
   const ARROWS = { live: "wf-arrow-live", satisfied: "wf-arrow-satisfied" };
   const STROKES = { live: "var(--accent-amber)", satisfied: "var(--accent-green)" };
@@ -708,7 +549,7 @@
   function effortHtml(group) {
     return (
       '<section class="wf-view" data-group="' + esc(group.path) + '" data-kind="effort">' +
-      headHtml(group) +
+      headHtml(group, markdownHtml) +
       '<div class="wf-board">' + edgesHtml(group) +
       '<div class="wf-cols">' + STATE_KEYS.map((key) => columnHtml(group, key)).join("") + "</div></div>" +
       '<p class="wf-status" role="status" aria-live="polite"></p>' +
@@ -720,7 +561,7 @@
     const files = group.files.filter((file) => file.role === "issue");
     return (
       '<section class="wf-view" data-group="' + esc(group.path) + '" data-kind="feature">' +
-      headHtml(group) +
+      headHtml(group, markdownHtml) +
       (files.length ? rowsHtml(files) : '<p class="wf-none">No ticket sits under this folder yet.</p>') +
       "</section>"
     );
@@ -750,7 +591,7 @@
       .map((file) => ({ file, key: numberOf(file) }));
     return (
       '<section class="wf-view" data-group="' + esc(group.path) + '" data-kind="context">' +
-      headHtml(group) +
+      headHtml(group, markdownHtml) +
       (records.length
         ? '<ol class="wf-adrs">' + records.map((record) => adrHtml(record.file, record.key)).join("") + "</ol>"
         : "") +
@@ -844,21 +685,6 @@
 
   // ------------------------------------------------------------- hover and pin
 
-  function downstreamOf(path) {
-    const keep = new Set([path]);
-    let grew = true;
-    while (grew) {
-      grew = false;
-      wf.group.edges.forEach((edge) => {
-        if (keep.has(edge.from) && !keep.has(edge.to)) {
-          keep.add(edge.to);
-          grew = true;
-        }
-      });
-    }
-    return keep;
-  }
-
   function setStatus(html) {
     const slot = wf && wf.view.querySelector(".wf-status");
     if (slot) slot.innerHTML = html;
@@ -867,7 +693,7 @@
   function focusCard(path) {
     const entry = fileByPath.get(path);
     if (!wf || !entry) return;
-    const keep = downstreamOf(path);
+    const keep = downstreamOf(wf.group.edges, path);
     wf.view.classList.add("is-focused");
     wf.cards.forEach((node, key) => node.classList.toggle("is-dim", !keep.has(key)));
     wf.paths.forEach((node) =>
