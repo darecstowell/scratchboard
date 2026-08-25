@@ -1,6 +1,6 @@
 ---
 title: Extract the markdown renderer, and attack it in a test
-status: ready-for-agent
+status: done
 priority: p0
 labels: [security, ui, testing, architecture]
 ---

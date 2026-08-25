@@ -210,22 +210,6 @@ test("a card carries its type as a word and reaches for no icon", () => {
   assert.match(body, /wf-card-open" aria-haspopup="dialog"/, "a card opens the detail dialog the board already has");
 });
 
-test("an in-board link is resolved against the payload and everything else keeps the allowlist", () => {
-  const board = source("board.js");
-  const at = board.indexOf("function inBoardTarget(");
-  assert.notEqual(at, -1, "board.js resolves a link against the payload");
-  const body = board.slice(at, board.indexOf("\n  }", at));
-
-  assert.match(body, /SAFE_HREF\.test\(href\)\) return ""/, "an allowed href is left to the anchor path");
-  assert.equal(/fetch|XMLHttpRequest|readFile/.test(body), false, "the resolver reads something other than the payload");
-
-  const link = board.indexOf("const inBoard = inBoardTarget(href);");
-  assert.notEqual(link, -1, "the markdown link reader asks the resolver first");
-  const rest = board.slice(link, link + 460);
-  assert.match(rest, /data-open="' \+ esc\(inBoard\)/, "the resolved path is escaped into the button");
-  assert.match(rest, /if \(!SAFE_HREF\.test\(href\)\) return whole;/, "the allowlist is unchanged for everything else");
-});
-
 test("the token the browser substitutes is the one config validates", async () => {
   const { PATH_TOKEN } = await import("../src/config.mjs");
   const board = source("board.js");
@@ -277,14 +261,6 @@ test("a lead document is openable from its group header, through the one open pa
   const click = board.indexOf('el.views.addEventListener("click"');
   const handler = board.slice(click, board.indexOf("\n  });", click));
   assert.match(handler, /closest\("\.wf-card-open"\)[^]*closest\("\[data-path\]"\)/, "one route opens every group file");
-});
-
-test("a rendered body leaves no link base behind it", () => {
-  const board = source("board.js");
-  const at = board.indexOf("function markdownHtml(");
-  assert.notEqual(at, -1, "board.js sets the base before it renders");
-  const body = board.slice(at, board.indexOf("\n  }", at));
-  assert.match(body, /linkBase = base;[^]*linkBase = "";/, "the next direct render would inherit a stale base");
 });
 
 test("the notes panel renders a warning's fix and is unchanged without one", () => {

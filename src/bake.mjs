@@ -50,6 +50,11 @@ export function jsonForScript(payload) {
   return JSON.stringify(payload).replace(/</g, "\\u003c");
 }
 
+/** The baked board is one script, so the module keyword goes and the declarations stay. */
+export function scriptFromModule(source) {
+  return source.replace(/^export (?=(?:const|let|var|function|class|async)\b)/gm, "");
+}
+
 /** A style element ends only at `</style`. A script also reacts to `<!--`. */
 export function codeForElement(code, tag) {
   const closed = code.replace(new RegExp(`</(${tag})`, "gi"), (match, name) => `<\\/${name}`);
@@ -83,7 +88,9 @@ export function once(load) {
 async function loadAssets() {
   const here = import.meta.url;
   const template = await readFile(new URL("./ui/index.html", here), "utf8");
-  const script = await readFile(new URL("./ui/board.js", here), "utf8");
+  const renderer = await readFile(new URL("./ui/markdown.mjs", here), "utf8");
+  const board = await readFile(new URL("./ui/board.js", here), "utf8");
+  const script = `${scriptFromModule(renderer)}\n${board}`;
   const favicon = await dataUrl(new URL("../assets/favicon.svg", here), "image/svg+xml");
 
   const sheet = await readFile(new URL("./ui/board.css", here), "utf8");

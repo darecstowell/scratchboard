@@ -9,6 +9,7 @@ import {
   bakeToFile,
   codeForElement,
   comment,
+  scriptFromModule,
   jsonForScript,
   summary,
   tempTarget,
@@ -128,6 +129,47 @@ test("the baked file references nothing outside itself", async () => {
   assert.equal(html.includes('url("fonts/'), false, "a font url survived the bake");
   assert.equal(html.includes("@import"), false);
   assert.ok(html.includes('<link rel="icon" href="data:image/svg+xml;base64,'));
+});
+
+test("the baked board is one file, and it asks the network for nothing", async () => {
+  const html = await bake({ payload: payloadWith("plain") });
+
+  assert.equal(/<script[^>]*\ssrc=/i.test(html), false, "the page loads a second script file");
+  assert.equal(/type="module"/.test(html), false, "a module element imports over the network");
+  for (const reach of [/\bfetch\s*\(/, /XMLHttpRequest/, /new EventSource/, /\bimport\s*\(/, /importScripts/, /sendBeacon/, /new WebSocket/]) {
+    assert.equal(reach.test(html), false, `the page reaches out with ${reach.source}`);
+  }
+
+  const markup = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "");
+  for (const [, attribute, value] of markup.matchAll(/\s(href|src)="([^"]*)"/g)) {
+    const inside = value.startsWith("data:") || value.startsWith("#");
+    assert.ok(inside, `${attribute}="${value.slice(0, 40)}" points outside the file`);
+  }
+  for (const [, value] of html.matchAll(/url\("([^"]*)"\)/g)) {
+    assert.ok(value.startsWith("data:"), `url("${value.slice(0, 40)}") points outside the file`);
+  }
+});
+
+test("the renderer travels inside the board's one script, with no module keyword left", async () => {
+  const html = await bake({ payload: payloadWith("plain") });
+  const renderer = await readFile(new URL("../src/ui/markdown.mjs", import.meta.url), "utf8");
+
+  assert.match(renderer, /^export function renderMarkdown\(source, resolveLink\) \{$/m, "the seam is gone");
+  assert.equal(html.includes("export function renderMarkdown"), false, "a module keyword reached the page");
+  assert.equal(html.split("function renderMarkdown(").length - 1, 1, "the renderer is inlined once");
+
+  const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/gi)].map(([, code]) => code);
+  const holding = blocks.filter((code) => code.includes("function renderMarkdown("));
+  assert.equal(holding.length, 1, "the renderer sits in more than one element");
+  assert.ok(holding[0].includes('"use strict"'), "the renderer and the board are two elements");
+});
+
+test("a module becomes script text and keeps every declaration it exported", () => {
+  const out = scriptFromModule('export const A = 1;\nexport function f() { return A; }\nexport class C {}\n');
+  assert.equal(out.includes("export"), false);
+  assert.equal(new Function(`${out}\nreturn f() + (new C() instanceof C ? 1 : 0);`)(), 2);
 });
 
 test("every woff2 lands as a base64 data url inside its font-face", async () => {

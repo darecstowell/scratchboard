@@ -160,17 +160,18 @@ export default [
   },
   {
     // The board script runs in a page, not in Node, and it is one IIFE rather than a module.
+    // The bake concatenates the renderer ahead of it, so renderMarkdown is a global there.
     files: ["src/ui/board.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "script",
-      globals: browserGlobals,
+      globals: { ...browserGlobals, renderMarkdown: "readonly" },
     },
   },
   {
-    // Control characters are the subject in these two files, not an accident: the renderer
-    // holds parsed spans behind NUL, and the bake test asserts the page carries none.
-    files: ["src/ui/board.js", "test/bake.test.mjs"],
+    // Control characters are the subject in these files, not an accident: the renderer holds
+    // parsed spans behind NUL, and the bake test asserts the page carries none.
+    files: ["src/ui/markdown.mjs", "test/bake.test.mjs", "test/ui-markdown.test.mjs"],
     rules: { "no-control-regex": "off", "no-irregular-whitespace": "off" },
   },
 ];
