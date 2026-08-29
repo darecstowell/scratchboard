@@ -9,8 +9,12 @@ import {
   columnName,
   dirOf,
   downstreamOf,
+  EDGE_BULGE,
+  EDGE_HIDDEN,
+  edgeShape,
   headHtml,
   inBoardTarget,
+  revealRanks,
   rowsHtml,
 } from "../src/ui/board-render.mjs";
 import { renderMarkdown } from "../src/ui/markdown.mjs";
@@ -296,4 +300,84 @@ test("a hostile answer lands on the card as escaped text", () => {
 
   assert.equal(html.includes("<img"), false, "an answer carried an element through");
   assert.ok(html.includes("&lt;img src=x onerror=&quot;alert(1)&quot;&gt; &amp; done"));
+});
+
+/** A box off the layout: the left edge, the top edge, the size, and the column it sits in. */
+const box = (over) => ({ x: 0, y: 0, w: 100, h: 20, column: 0, ...over });
+
+const curve = (d) => {
+  const found = /^M(-?\d+) (-?\d+) C(-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)$/.exec(d);
+  assert.ok(found, `${d} is one move and one cubic curve`);
+  const [x1, y1, c1x, c1y, c2x, c2y, x2, y2] = found.slice(1).map(Number);
+  return { x1, y1, c1x, c1y, c2x, c2y, x2, y2 };
+};
+
+test("an edge leaves the right of its source and lands on the left of its target", () => {
+  const from = box({ x: 10, y: 100, w: 200, h: 40, column: 0 });
+  const to = box({ x: 500, y: 300, w: 200, h: 60, column: 1 });
+  const shape = curve(edgeShape(from, to));
+
+  assert.equal(shape.x1, 210, "the line starts at the right edge of the source");
+  assert.equal(shape.y1, 120, "the line starts halfway down the source");
+  assert.equal(shape.x2, 500, "the line ends at the left edge of the target");
+  assert.equal(shape.y2, 330, "the line ends halfway down the target");
+  assert.equal(shape.c1x, 355, "both handles sit on the midline between the two ends");
+  assert.equal(shape.c2x, 355);
+  assert.equal(shape.c1y, shape.y1, "the curve leaves flat, so the arrow reads left to right");
+  assert.equal(shape.c2y, shape.y2, "and it arrives flat");
+});
+
+test("both ends in one column would run backwards, so that edge bulges out on the right", () => {
+  const from = box({ x: 10, y: 100, w: 200, h: 40, column: 2 });
+  const to = box({ x: 10, y: 300, w: 200, h: 40, column: 2 });
+  const shape = curve(edgeShape(from, to));
+
+  assert.equal(shape.x1, 210, "the line leaves the right edge");
+  assert.equal(shape.x2, 210, "and comes back to it rather than running right to left");
+  assert.equal(shape.c1x, 210 + EDGE_BULGE, "the handles carry the line clear of the column");
+  assert.equal(shape.c2x, 210 + EDGE_BULGE);
+  assert.ok(shape.y2 > shape.y1, "the two ends are still told apart by height");
+});
+
+test("a layout reads back in fractions, and a path holds whole numbers only", () => {
+  const from = box({ x: 10.4, y: 100.6, w: 200.2, h: 41.3, column: 0 });
+  const to = box({ x: 500.5, y: 300.5, w: 200, h: 61.1, column: 1 });
+
+  assert.match(edgeShape(from, to), /^M[-\d ]+C[-\d ]+$/, "a coordinate carries no decimal point");
+  const shape = curve(edgeShape(from, to));
+  assert.equal(shape.x1, 211, "10.4 plus 200.2 rounds up");
+  assert.equal(shape.y1, 121, "100.6 plus half of 41.3 rounds down from 121.25");
+  assert.equal(shape.x2, 501);
+  assert.equal(shape.c1x, 356, "the midline rounds after the two ends do");
+});
+
+test("a hover reveals the edges into the card and every edge out of it, and nothing else", () => {
+  const edges = [
+    { from: "1.md", to: "2.md" },
+    { from: "2.md", to: "3.md" },
+    { from: "4.md", to: "2.md" },
+    { from: "8.md", to: "9.md" },
+  ];
+
+  assert.deepEqual(revealRanks(edges, "2.md"), [0, 0, 0, EDGE_HIDDEN], "both blockers come with it");
+  assert.deepEqual(revealRanks(edges, "1.md"), [0, 1, EDGE_HIDDEN, EDGE_HIDDEN]);
+  assert.deepEqual(
+    revealRanks(edges, "3.md"),
+    [EDGE_HIDDEN, 0, EDGE_HIDDEN, EDGE_HIDDEN],
+    "one edge in, and nothing downstream of it"
+  );
+  assert.deepEqual(revealRanks(edges, "7.md"), edges.map(() => EDGE_HIDDEN), "a path no edge names");
+});
+
+test("a rank is how many blockers a line waits behind, and a ring still answers", () => {
+  const chain = [
+    { from: "3.md", to: "4.md" },
+    { from: "1.md", to: "2.md" },
+    { from: "2.md", to: "3.md" },
+  ];
+  assert.deepEqual(revealRanks(chain, "1.md"), [2, 0, 1], "the stagger follows the walk, not the list");
+
+  const ring = [{ from: "1.md", to: "2.md" }, { from: "2.md", to: "1.md" }];
+  assert.deepEqual(revealRanks(ring, "1.md"), [0, 0], "a cycle ends, and the edge back in draws first");
+  assert.deepEqual(revealRanks([], "1.md"), [], "a group with no edge reveals nothing");
 });

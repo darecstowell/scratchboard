@@ -151,16 +151,64 @@ function rule(selector) {
   return css.slice(at + selector.length + 3, css.indexOf("}", at)).trim();
 }
 
-test("the view draws only live edges at rest and reveals satisfied ones on hover", () => {
-  assert.equal(rule(".wf-edge.is-live"), "opacity: 1;");
-  assert.equal(rule(".wf-edge.is-satisfied"), "opacity: 0;");
-  assert.equal(rule(".wf-view.is-focused .wf-edge.is-live"), "opacity: 0.12;");
+test("no edge is drawn at rest, and a hover reveals the ones a card touches", () => {
+  assert.match(rule(".wf-edge,\n.wf-dash"), /opacity: 0;/, "the diagram is a knot when every edge is drawn");
   assert.equal(rule(".wf-view.is-focused .wf-edge.is-live.is-on"), "opacity: 1;");
-  assert.equal(rule(".wf-view.is-focused .wf-edge.is-satisfied.is-on"), "opacity: 0.85;");
+  assert.equal(rule(".wf-view.is-focused .wf-edge.is-satisfied.is-on"), "opacity: 0.7;");
   assert.equal(rule(".wf-view.is-focused .wf-card.is-dim"), "opacity: 0.22;");
 
   const board = source("board.js");
   assert.match(board, /live: blocker\.state !== "behind-us"/, "an edge is live while its blocker is not resolved");
+  assert.match(board, /node\.classList\.toggle\("is-on", rank !== EDGE_HIDDEN\)/, "the reveal keys on the rank");
+});
+
+/** Reduced motion turns off every transition and animation, so a hand rolled frame loop would
+ *  drive right through it. The reveal is CSS, and this holds it that way. */
+test("a revealed edge draws itself in CSS, and its arrowhead waits for the line to land", () => {
+  const css = source("board.css");
+  const draw = rule(".wf-view.is-focused .wf-edge.is-on");
+
+  assert.match(draw, /animation:\s*\n?\s*wf-draw var\(--wf-draw\) var\(--wf-land\) var\(--wf-delay, 0ms\) backwards/);
+  assert.match(draw, /wf-tip var\(--wf-draw\) steps\(1, end\) var\(--wf-delay, 0ms\) backwards/);
+  assert.match(draw, /marker-end: var\(--wf-marker\)/, "the arrowhead is CSS, so an animation can hold it back");
+  assert.match(rule(".wf-edge,\n.wf-dash"), /--wf-draw: 220ms;/);
+  assert.match(rule(".wf-edge,\n.wf-dash"), /--wf-land: cubic-bezier\(0\.23, 1, 0\.32, 1\);/);
+  assert.match(css, /@keyframes wf-draw \{ from \{ stroke-dashoffset: var\(--wf-len, 0px\); \} \}/);
+  assert.match(css, /@keyframes wf-tip \{ from \{ marker-end: none; \} \}/);
+  assert.match(
+    rule(".wf-view.is-focused .wf-dash.is-on"),
+    /animation: wf-flow 2\.4s linear calc\(var\(--wf-delay, 0ms\) \+ var\(--wf-draw\)\) infinite;/,
+    "the travelling dash starts when the line it rides on lands"
+  );
+  assert.equal(css.indexOf(".wf-edge { marker-end:"), -1, "the base rule must not paint an arrowhead");
+  assert.match(rule(".wf-edge"), /marker-end: none;/, "an undrawn edge carries no arrowhead");
+
+  const board = source("board.js");
+  assert.equal(/requestAnimationFrame|cancelAnimationFrame/.test(board), false, "the motion is CSS, never a frame loop");
+  assert.match(board, /const EDGE_STAGGER = 40;/, "each line waits its turn");
+  assert.match(board, /setProperty\("--wf-delay", rank \* EDGE_STAGGER \+ "ms"\)/);
+  assert.match(board, /setProperty\("--wf-len", length\)/, "CSS cannot measure a curve, so the board hands it over");
+  assert.match(board, /style="--wf-marker:url\(#/, "the markup names the marker the CSS reveals");
+});
+
+/** The board scrolls inside itself now, so an origin off the visible box is right only until
+ *  the first scroll. */
+test("an edge is placed against the board's content, never against the part of it on screen", () => {
+  const board = source("board.js");
+  const at = board.indexOf("function boxesOf(board)");
+  assert.notEqual(at, -1, "board.js reads the endpoints back off the layout");
+  const boxes = board.slice(at, board.indexOf("\n  }", at));
+
+  assert.match(boxes, /const left = base\.left - board\.scrollLeft;/);
+  assert.match(boxes, /const top = base\.top - board\.scrollTop;/);
+  assert.equal(/- base\.left|- base\.top/.test(boxes.slice(boxes.indexOf("found.set"))), false,
+    "a box read after a scroll is offset by exactly the scroll");
+
+  const draw = board.slice(board.indexOf("function drawEdges()"));
+  assert.match(draw.slice(0, 600), /board\.scrollWidth/, "the layer covers the whole diagram");
+  assert.match(draw.slice(0, 600), /board\.scrollHeight/);
+  assert.equal(/clientWidth|clientHeight/.test(draw.slice(0, 600)), false, "the visible box is not the drawing");
+  assert.equal(/inset: 0/.test(rule(".wf-edges")), false, "a stretched layer would squash the viewBox");
 });
 
 test("a pin clears on a second click, on the background, and on escape", () => {

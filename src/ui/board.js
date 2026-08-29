@@ -439,7 +439,7 @@
   /* These three are the payload's own state values, not lane names a config owns: the view has
      no facet system and the scan computes the membership. */
   const STATE_KEYS = ["behind-us", "takeable-now", "still-blocked"];
-  const BULGE = 34;
+  const EDGE_STAGGER = 40;
   const fileLabel = (file) => (file.id ? "#" + file.id : file.title);
 
   function setGroups(normalized) {
@@ -527,21 +527,25 @@
     );
   }
 
+  /** The line carries the arrowhead, held back by CSS until it lands, and a second path over
+   *  it carries the dash that travels the way the work flows. */
+  function edgeHtml(edge) {
+    const kind = edge.live ? "live" : "satisfied";
+    return (
+      '<path class="wf-edge is-' + kind + '" d="" fill="none" stroke="' + STROKES[kind] + '"' +
+      ' data-from="' + esc(edge.from) + '" data-to="' + esc(edge.to) + '"' +
+      ' stroke-width="' + (edge.live ? "2" : "1.4") + '"' +
+      ' style="--wf-marker:url(#' + ARROWS[kind] + ')"/>' +
+      '<path class="wf-dash" d="" fill="none"' +
+      ' stroke-width="' + (edge.live ? "3" : "2.4") + '"/>'
+    );
+  }
+
   function edgesHtml(group) {
     return (
       '<svg class="wf-edges" aria-hidden="true"><defs>' +
       markerHtml("live") + markerHtml("satisfied") + "</defs>" +
-      group.edges
-        .map((edge) => {
-          const kind = edge.live ? "live" : "satisfied";
-          return (
-            '<path class="wf-edge is-' + kind + '" d=""' +
-            ' data-from="' + esc(edge.from) + '" data-to="' + esc(edge.to) + '"' +
-            ' fill="none" stroke="' + STROKES[kind] + '" stroke-width="' + (edge.live ? "2" : "1.4") + '"' +
-            ' marker-end="url(#' + ARROWS[kind] + ')"/>'
-          );
-        })
-        .join("") +
+      group.edges.map(edgeHtml).join("") +
       "</svg>"
     );
   }
@@ -615,6 +619,7 @@
       group,
       cards: new Map(),
       paths: [...view.querySelectorAll(".wf-edge")],
+      dashes: [...view.querySelectorAll(".wf-dash")],
       pinned: null,
       hovered: null
     };
@@ -626,6 +631,8 @@
   /** Real cards wrap, so every endpoint is read back from the layout rather than computed. */
   function boxesOf(board) {
     const base = board.getBoundingClientRect();
+    const left = base.left - board.scrollLeft;
+    const top = base.top - board.scrollTop;
     const found = new Map();
     STATE_KEYS.forEach((key, column) => {
       const section = wf.view.querySelector('.wf-col[data-state="' + key + '"]');
@@ -638,8 +645,8 @@
         const node = folded ? null : wf.cards.get(file.path);
         const box = node ? node.getBoundingClientRect() : null;
         found.set(file.path, {
-          x: (box ? box.left : rail.left) - base.left,
-          y: (box ? box.top : rail.top + slice * row) - base.top,
+          x: (box ? box.left : rail.left) - left,
+          y: (box ? box.top : rail.top + slice * row) - top,
           w: box ? box.width : rail.width,
           h: box ? box.height : slice,
           column
@@ -649,28 +656,15 @@
     return found;
   }
 
-  /** Both ends in one column would run backwards, so that edge bulges out on the right instead. */
-  function edgeShape(p, q) {
-    const y1 = Math.round(p.y + p.h / 2);
-    const y2 = Math.round(q.y + q.h / 2);
-    if (p.column === q.column) {
-      const x = Math.round(p.x + p.w);
-      const bulge = x + BULGE;
-      return "M" + x + " " + y1 + " C" + bulge + " " + y1 + " " + bulge + " " + y2 + " " + x + " " + y2;
-    }
-    const x1 = Math.round(p.x + p.w);
-    const x2 = Math.round(q.x);
-    const mid = Math.round((x1 + x2) / 2);
-    return "M" + x1 + " " + y1 + " C" + mid + " " + y1 + " " + mid + " " + y2 + " " + x2 + " " + y2;
-  }
-
   function drawEdges() {
     if (!wf) return;
     const board = wf.view.querySelector(".wf-board");
     const svg = wf.view.querySelector(".wf-edges");
     if (!board || !svg) return;
-    const width = Math.round(board.clientWidth);
-    const height = Math.round(board.clientHeight);
+    /* The board scrolls inside itself and the edge layer scrolls with it, so the layer covers
+       the content rather than the part of it a reader can see. */
+    const width = Math.round(board.scrollWidth);
+    const height = Math.round(board.scrollHeight);
     svg.setAttribute("width", width);
     svg.setAttribute("height", height);
     svg.setAttribute("viewBox", "0 0 " + width + " " + height);
@@ -679,7 +673,16 @@
       const edge = wf.group.edges[index];
       const from = edge && boxes.get(edge.from);
       const to = edge && boxes.get(edge.to);
-      node.setAttribute("d", from && to ? edgeShape(from, to) : "");
+      const shape = from && to ? edgeShape(from, to) : "";
+      node.setAttribute("d", shape);
+      /* The draw runs on the line's own length, and it is only measurable once the line is set. */
+      const length = Math.round(shape ? node.getTotalLength() : 0) + "px";
+      const dash = wf.dashes[index];
+      node.style.setProperty("--wf-len", length);
+      if (dash) {
+        dash.setAttribute("d", shape);
+        dash.style.setProperty("--wf-len", length);
+      }
     });
   }
 
@@ -696,9 +699,13 @@
     const keep = downstreamOf(wf.group.edges, path);
     wf.view.classList.add("is-focused");
     wf.cards.forEach((node, key) => node.classList.toggle("is-dim", !keep.has(key)));
-    wf.paths.forEach((node) =>
-      node.classList.toggle("is-on", keep.has(node.dataset.from) && keep.has(node.dataset.to))
-    );
+    revealRanks(wf.group.edges, path).forEach((rank, index) => {
+      [wf.paths[index], wf.dashes[index]].forEach((node) => {
+        if (!node) return;
+        node.classList.toggle("is-on", rank !== EDGE_HIDDEN);
+        node.style.setProperty("--wf-delay", rank * EDGE_STAGGER + "ms");
+      });
+    });
 
     const file = entry.file;
     const unblocks = [...keep]
@@ -734,7 +741,7 @@
     if (!wf || wf.pinned) return;
     wf.view.classList.remove("is-focused");
     wf.cards.forEach((node) => node.classList.remove("is-dim"));
-    wf.paths.forEach((node) => node.classList.remove("is-on"));
+    wf.paths.concat(wf.dashes).forEach((node) => node.classList.remove("is-on"));
     setStatus(restText());
   }
 

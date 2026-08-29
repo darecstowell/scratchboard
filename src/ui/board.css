@@ -1461,10 +1461,13 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 /* ---- the three columns and the edges over them ---- */
 .wf-board { position: relative; }
 /* Panel, then edge, then card, stated rather than left to source order. A
-   z-index on .wf-col would trap its own cards under the edge layer instead. */
+   z-index on .wf-col would trap its own cards under the edge layer instead. The board
+   scrolls and the layer scrolls with it, so the drawing sizes the layer rather than the
+   part of the board a reader can see. */
 .wf-edges {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   z-index: 1;
   pointer-events: none;
   overflow: visible;
@@ -1630,13 +1633,47 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 .wf-card-open:hover { color: var(--cyan); }
 .wf-card-open:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
 
-/* ---- edges: live at rest, satisfied only on hover ---- */
-.wf-edge { transition: opacity var(--dur-fast) var(--ease-out); }
-.wf-edge.is-live { opacity: 1; }
-.wf-edge.is-satisfied { opacity: 0; }
-.wf-view.is-focused .wf-edge.is-live { opacity: 0.12; }
+/* ---- edges: nothing at rest, drawn source to target on hover ---- */
+/* The board sets --wf-len and --wf-delay on each path, because CSS cannot measure a curve. */
+.wf-edge,
+.wf-dash {
+  --wf-draw: 220ms;
+  --wf-land: cubic-bezier(0.23, 1, 0.32, 1);
+  opacity: 0;
+}
+.wf-edge {
+  stroke-dasharray: var(--wf-len, none);
+  stroke-dashoffset: 0;
+  marker-end: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.wf-view.is-focused .wf-edge.is-on {
+  marker-end: var(--wf-marker);
+  animation:
+    wf-draw var(--wf-draw) var(--wf-land) var(--wf-delay, 0ms) backwards,
+    wf-tip var(--wf-draw) steps(1, end) var(--wf-delay, 0ms) backwards;
+}
 .wf-view.is-focused .wf-edge.is-live.is-on { opacity: 1; }
-.wf-view.is-focused .wf-edge.is-satisfied.is-on { opacity: 0.85; }
+.wf-view.is-focused .wf-edge.is-satisfied.is-on { opacity: 0.7; }
+
+/* One dash travels the line the moment it lands, and it takes the text colour rather than the
+   line's, because a pulse the colour of the line under it reads as nothing. */
+.wf-dash {
+  stroke: var(--fg-1);
+  stroke-linecap: round;
+  stroke-dasharray: 16px var(--wf-len, 0px);
+}
+.wf-view.is-focused .wf-dash.is-on {
+  animation: wf-flow 2.4s linear calc(var(--wf-delay, 0ms) + var(--wf-draw)) infinite;
+}
+
+@keyframes wf-draw { from { stroke-dashoffset: var(--wf-len, 0px); } }
+/* The arrowhead is a discrete value, so a one step curve holds it back until the line lands. */
+@keyframes wf-tip { from { marker-end: none; } }
+@keyframes wf-flow {
+  from { opacity: 0.9; stroke-dashoffset: 0; }
+  to { opacity: 0.9; stroke-dashoffset: calc(-1 * (var(--wf-len, 0px) + 16px)); }
+}
 .wf-view.is-focused .wf-card.is-dim { opacity: 0.22; }
 
 .wf-status {

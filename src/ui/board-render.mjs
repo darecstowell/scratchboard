@@ -223,3 +223,50 @@ export function downstreamOf(edges, path) {
   }
   return keep;
 }
+
+/** A column of its own has no room between the ends, so a same-column edge bulges past them. */
+export const EDGE_BULGE = 34;
+
+/** Two boxes off the layout in, one path string out, so the curve is testable without a page. */
+export function edgeShape(p, q) {
+  const y1 = Math.round(p.y + p.h / 2);
+  const y2 = Math.round(q.y + q.h / 2);
+  if (p.column === q.column) {
+    const x = Math.round(p.x + p.w);
+    const bulge = x + EDGE_BULGE;
+    return "M" + x + " " + y1 + " C" + bulge + " " + y1 + " " + bulge + " " + y2 + " " + x + " " + y2;
+  }
+  const x1 = Math.round(p.x + p.w);
+  const x2 = Math.round(q.x);
+  const mid = Math.round((x1 + x2) / 2);
+  return "M" + x1 + " " + y1 + " C" + mid + " " + y1 + " " + mid + " " + y2 + " " + x2 + " " + y2;
+}
+
+/** A rank an edge never draws on. */
+export const EDGE_HIDDEN = -1;
+
+/**
+ * A hover reveals the edges into the card and every edge out of it, and each one waits its turn.
+ * The rank is how many blockers a line starts away from the card, so the drawing grows outward.
+ */
+export function revealRanks(edges, path) {
+  const depth = new Map([[path, 0]]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    edges.forEach((edge) => {
+      const from = depth.get(edge.from);
+      if (from === undefined) return;
+      const to = depth.get(edge.to);
+      if (to === undefined || to > from + 1) {
+        depth.set(edge.to, from + 1);
+        grew = true;
+      }
+    });
+  }
+  return edges.map((edge) => {
+    if (edge.to === path) return 0;
+    const from = depth.get(edge.from);
+    return from === undefined ? EDGE_HIDDEN : from;
+  });
+}
