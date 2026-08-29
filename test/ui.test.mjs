@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { test } from "./context.mjs";
 import { normalizePayload } from "../src/ui/payload.mjs";
-import { OUT_OF_SCOPE } from "../src/ui/board-render.mjs";
+import { OUT_OF_SCOPE, cardHtmlFor } from "../src/ui/board-render.mjs";
 
 const source = (name) => readFileSync(fileURLToPath(new URL(`../src/ui/${name}`, import.meta.url)), "utf8");
 
@@ -339,4 +339,28 @@ test("a context lists its decision records in payload order", () => {
     source("index.html").indexOf("blockedBy, status } ] } ]") !== -1,
     "the payload contract names the field the badge reads"
   );
+});
+
+/**
+ * The renderer names a class and the stylesheet answers it, and nothing else spans that seam.
+ * `wf-card-answer` shipped rendered and unstyled once, so every class a card emits is held here.
+ */
+test("every class a wayfinder card emits has a rule", () => {
+  const css = source("board.css");
+  const html = cardHtmlFor({
+    path: "e/issues/01-a.md",
+    id: "01",
+    title: "A resolved question",
+    type: "grilling",
+    state: "behind-us",
+    claimed: false,
+    body: "## Answer\n\nOne app list, no per-app rules.\n"
+  });
+  const names = new Set();
+  for (const [, list] of html.matchAll(/class="([^"]+)"/g)) list.split(/\s+/).forEach((n) => names.add(n));
+
+  assert.ok(names.has("wf-card-answer"), "a resolved card renders its answer");
+  for (const name of names) {
+    assert.match(css, new RegExp("\\." + name + "[\\s,:.{]"), `.${name} is rendered, so it is styled`);
+  }
 });
