@@ -1,6 +1,6 @@
 ---
 title: Recut the wayfinder map surface
-status: in-progress
+status: ready-for-agent
 priority: p2
 labels: [ui, wayfinder, design, css]
 ---
