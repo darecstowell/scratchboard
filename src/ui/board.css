@@ -1443,10 +1443,8 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 
 /* ---- the three columns and the edges over them ---- */
 .wf-board { position: relative; }
-/* Panel, then edge, then card, stated rather than left to source order. A
-   z-index on .wf-col would trap its own cards under the edge layer instead. The board
-   scrolls and the layer scrolls with it, so the drawing sizes the layer rather than the
-   part of the board a reader can see. */
+/* Panel, then edge, then card, stated rather than left to source order: a z-index on
+   .wf-col would trap that lane's own cards under the edge layer. */
 .wf-edges {
   position: absolute;
   top: 0;
@@ -1506,8 +1504,10 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 }
 
 /* ---- behind us: folded with its count, always ---- */
+/* above the edge layer, because a fold routes edges through the rail and over the label */
 .wf-col.is-collapsed {
   position: relative;
+  z-index: 3;
   flex: 0 0 52px;
   min-width: 52px;
   align-self: stretch;
@@ -1617,6 +1617,13 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 }
 .wf-card-open:hover { color: var(--cyan); }
 .wf-card-open:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+.wf-card-answer {
+  margin: 7px 0 0;
+  padding-left: 8px;
+  font: 400 12px/1.35 var(--font-mono);
+  color: var(--fg-3);
+  border-left: 2px solid var(--accent-green);
+}
 
 /* ---- edges: nothing at rest, drawn source to target on hover ---- */
 /* The board sets --wf-len and --wf-delay on each path, because CSS cannot measure a curve. */
@@ -1630,8 +1637,13 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   stroke-dasharray: var(--wf-len, none);
   stroke-dashoffset: 0;
   marker-end: none;
-  transition: opacity var(--dur-fast) var(--ease-out);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    stroke-dashoffset var(--dur-fast) var(--ease-out);
 }
+/* Exit undraws: a line that landed retracts, and one caught mid-draw leaves at once rather
+   than flashing its full length. */
+.wf-edge:not(.is-on) { stroke-dashoffset: var(--wf-len, 0px); }
 .wf-view.is-focused .wf-edge.is-on {
   marker-end: var(--wf-marker);
   animation:
