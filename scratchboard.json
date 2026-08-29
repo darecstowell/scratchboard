@@ -4,13 +4,13 @@
   "format": "yaml-frontmatter",
   "idPattern": "^(\\d+)-",
   "lanes": [
-    { "name": "Needs triage", "match": { "field": "status", "equals": "needs-triage" } },
-    { "name": "Needs info", "match": { "field": "status", "equals": "needs-info" } },
-    { "name": "Ready for agent", "match": { "field": "status", "equals": "ready-for-agent" } },
-    { "name": "Ready for human", "match": { "field": "status", "equals": "ready-for-human" } },
-    { "name": "Deferred", "match": { "field": "status", "equals": "deferred" } },
-    { "name": "Done", "match": { "field": "status", "equals": "done" }, "collapsed": true },
-    { "name": "Wontfix", "match": { "field": "status", "equals": "wontfix" }, "collapsed": true }
+    { "name": "Needs triage", "icon": "issue-opened", "match": { "field": "status", "equals": "needs-triage" } },
+    { "name": "Needs info", "icon": "question", "match": { "field": "status", "equals": "needs-info" } },
+    { "name": "Ready for agent", "icon": "workflow", "match": { "field": "status", "equals": "ready-for-agent" } },
+    { "name": "Ready for human", "icon": "person", "match": { "field": "status", "equals": "ready-for-human" } },
+    { "name": "Deferred", "icon": "calendar", "match": { "field": "status", "equals": "deferred" } },
+    { "name": "Done", "icon": "check", "match": { "field": "status", "equals": "done" }, "collapsed": true },
+    { "name": "Wontfix", "icon": "circle-slash", "match": { "field": "status", "equals": "wontfix" }, "collapsed": true }
   ],
   "facets": [
     {

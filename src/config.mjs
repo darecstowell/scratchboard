@@ -13,7 +13,7 @@ const KNOWN_KEYS = new Set([
   "documents",
   "invocations",
 ]);
-const KNOWN_LANE_KEYS = new Set(["name", "match", "collapsed"]);
+const KNOWN_LANE_KEYS = new Set(["name", "match", "collapsed", "icon"]);
 const KNOWN_FACET_KEYS = new Set(["field", "colors", "order", "icon"]);
 const KNOWN_GROUP_KEYS = new Set(["path", "kind"]);
 const KNOWN_DOCUMENT_KEYS = new Set(["context"]);
@@ -119,6 +119,10 @@ function cleanLane(lane, index, warn) {
     return null;
   }
   const out = { name: lane.name, collapsed: lane.collapsed === true };
+  if (lane.icon !== undefined) {
+    if (ICON_NAMES.has(lane.icon)) out.icon = lane.icon;
+    else warn(`unknown icon "${lane.icon}" in ${where}, ignored`);
+  }
 
   const match = lane.match;
   if (!match || typeof match !== "object") {

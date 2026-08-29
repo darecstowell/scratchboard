@@ -59,6 +59,19 @@ test("a ticket matching no lane lands in a trailing Unmapped lane and warns by v
   assert.equal(warning.reason, "3 tickets match no lane (Ready, doing, done)");
 });
 
+test("a lane carries the glyph config named it, and an unnamed lane carries none", async () => {
+  const payload = await run(
+    board([
+      { name: "Todo", icon: "issue-opened", match: { path: "tickets/todo/**" } },
+      { name: "Rest", match: { path: "tickets/**" } },
+    ])
+  );
+  assert.deepEqual(
+    payload.lanes.map((lane) => lane.icon),
+    ["issue-opened", null]
+  );
+});
+
 test("no Unmapped lane appears when every ticket is placed", async () => {
   const payload = await run(board([{ name: "All", match: { path: "tickets/**" } }]));
   assert.deepEqual(

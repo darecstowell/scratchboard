@@ -416,7 +416,7 @@
       section.setAttribute("aria-label", lane.name);
       section.innerHTML =
         '<header class="col-head">' +
-        `<span class="col-glyph" aria-hidden="true">${drawGlyph("columns")}</span>` +
+        `<span class="col-glyph" aria-hidden="true">${drawGlyph(lane.icon || LANE_ICON)}</span>` +
         `<h2 class="col-name">${esc(lane.name)}</h2>` +
         '<span class="col-count"></span>' +
         (lane.collapsed
@@ -478,7 +478,11 @@
   // ------------------------------------------------------------- tabs
 
   /** A tab wears the shape of what it opens: the lanes, a route, a shelf, or a part. */
+  /** A lane names its own glyph in config. Unnamed, it takes the same one the detail row for
+   *  `lane` takes, so a board with no config still reads. */
+  const LANE_ICON = "columns";
   const TAB_ICONS = { board: "columns", effort: "milestone", context: "book", feature: "package" };
+  const NOTES_ICON = "alert";
 
   function tabHtml(view, label, icon) {
     return (
@@ -1451,7 +1455,7 @@
     button.id = "scan-notes";
     button.style.cursor = "pointer";
     button.title = "Read the scan notes";
-    button.innerHTML = glyphSvg("alert", 12);
+    button.innerHTML = glyphSvg(NOTES_ICON, 12);
     button.appendChild(
       document.createTextNode(warnings.length + (warnings.length === 1 ? " note" : " notes"))
     );

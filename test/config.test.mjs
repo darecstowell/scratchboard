@@ -427,6 +427,22 @@ test("a key a newer version wrote inside the three survives a rewrite untouched"
   ]);
 });
 
+test("a lane's glyph survives a read and a rewrite", () => {
+  const raw = {
+    lanes: [
+      { name: "Done", icon: "check", match: { field: "status", equals: "done" }, collapsed: true },
+    ],
+  };
+  const warnings = [];
+  const config = validate(raw, warnings);
+
+  assert.deepEqual(warnings, []);
+  assert.equal(config.lanes[0].icon, "check");
+  assert.deepEqual(withUnknown(raw, config).lanes, [
+    { name: "Done", collapsed: true, icon: "check", match: { field: "status", in: ["done"] } },
+  ]);
+});
+
 test("a rewrite adds none of the three keys to a config that declared none", () => {
   const raw = { title: "Lanes", tickets: "tickets/**/issue.md" };
   const rewritten = withUnknown(raw, validate(raw, []));

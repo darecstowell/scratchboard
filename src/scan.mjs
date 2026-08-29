@@ -274,6 +274,7 @@ export async function scan(context) {
   const lanes = (config.lanes || []).map((lane) => ({
     name: lane.name,
     collapsed: lane.collapsed === true,
+    icon: lane.icon || null,
     ticketIds: [],
   }));
   const byName = new Map(lanes.map((lane) => [lane.name, lane]));
@@ -288,7 +289,7 @@ export async function scan(context) {
       continue;
     }
     if (!catchAll) {
-      catchAll = { name: CATCH_ALL, collapsed: false, ticketIds: [] };
+      catchAll = { name: CATCH_ALL, collapsed: false, icon: null, ticketIds: [] };
       lanes.push(catchAll);
       byName.set(CATCH_ALL, catchAll);
     }
