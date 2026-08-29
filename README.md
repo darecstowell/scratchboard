@@ -20,7 +20,7 @@ It owns no directory and no file format: it reads the layout your repo already h
 
 <p><code>npx scratchboard</code></p>
 
-<img src="assets/board-tour.gif" alt="Filtering the board by priority and status, sorting it, then opening a ticket" width="800">
+<img src="assets/board-tour.gif" alt="A board of five lanes, then a ticket opening into a drawer that shows its metadata, its body, and a button that copies its path" width="800">
 
 </div>
 
@@ -115,9 +115,9 @@ than a location, so a ticket never gets moved to join one.
   "format": "yaml-frontmatter",
   "idPattern": "^(\\d+)-",
   "lanes": [
-    { "name": "Todo",        "match": { "path": ".scratch/todo/**" } },
-    { "name": "In progress", "match": { "path": ".scratch/in-progress/**" } },
-    { "name": "Done",        "match": { "path": ".scratch/done/**" }, "collapsed": true }
+    { "name": "Todo",        "icon": "issue-opened", "match": { "path": ".scratch/todo/**" } },
+    { "name": "In progress", "icon": "workflow",      "match": { "path": ".scratch/in-progress/**" } },
+    { "name": "Done",        "icon": "check",         "match": { "path": ".scratch/done/**" }, "collapsed": true }
   ],
   "facets": [
     { "field": "priority", "icon": "alert", "colors": { "p0": "red", "p1": "amber", "p2": "cyan", "p3": "neutral" } },
@@ -129,6 +129,9 @@ than a location, so a ticket never gets moved to join one.
 A `priority` of `p0` to `p3`, or of `critical` to `low`, is ranked and coloured with no config at
 all, and so is a `status`. Naming `colors` or `order` yourself replaces the default. Detection
 leaves a vocabulary it does not recognise alone rather than guessing at it.
+
+`icon` marks a lane header or a facet from a small curated set. A lane that names none carries no
+glyph, so the headers stay quiet until you ask for them.
 
 Every key, every flag, the glob tokens, the lane and facet rules, the icon set, and what
 detection does in full: [`docs/reference.md`](./docs/reference.md).
