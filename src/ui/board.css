@@ -142,9 +142,17 @@
   --scrim: color-mix(in srgb, var(--fg-1) 45%, transparent);
   --scanlines: repeating-linear-gradient(
     0deg,
-    color-mix(in srgb, var(--fg-1) 3%, transparent) 0 1px,
+    color-mix(in srgb, var(--fg-1) 6%, transparent) 0 1px,
     transparent 1px 3px
   );
+  /* a panel that sits on a scanlined surface takes the same texture, quieter */
+  --scanlines-soft: repeating-linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--fg-1) 2%, transparent) 0 1px,
+    transparent 1px 3px
+  );
+  /* the tone follows --fg-1, so one value lifts a card on either theme */
+  --card-edge-hi: inset 0 1px 0 color-mix(in srgb, var(--fg-1) 5%, transparent);
 
   --font-mono: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-display: "Martian Mono", "Spline Sans Mono", ui-monospace, monospace;
@@ -305,8 +313,6 @@ kbd {
 /* frame: header, toolbar, board stacked to the viewport */
 .frame {
   height: 100vh;
-  max-width: 1720px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   border-inline: 1px solid var(--line-1);
@@ -371,6 +377,14 @@ kbd {
   max-width: 40ch;
 }
 .hd-notice[hidden] { display: none; }
+
+/* the scan notes button is built into the header beside the theme control,
+   so it takes that control's height and padding */
+#scan-notes {
+  height: var(--control-h);
+  padding: 0 10px;
+  font: 500 12px/1 var(--font-mono);
+}
 
 .theme-btn {
   display: inline-flex;
@@ -648,6 +662,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 .col {
   flex: 1 1 var(--lane-min);
   min-width: var(--lane-min);
+  max-width: 520px;
   display: flex;
   flex-direction: column;
 }
@@ -1306,6 +1321,43 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 
 .wf-view { padding: 22px 24px 48px; }
 
+/* ---- the effort map: a fixed rail of prose, and a diagram that scrolls
+   inside itself, so the diagram is on screen at load. ---- */
+.wf-view[data-kind="effort"] {
+  --wf-rail: 320px;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+.wf-view[data-kind="effort"] .wf-head {
+  flex: none;
+  width: var(--wf-rail);
+  margin: 0;
+  padding: 22px 20px 32px;
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--line-1);
+}
+.wf-view[data-kind="effort"] .wf-board {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 22px 24px 56px;
+}
+.wf-view[data-kind="effort"] .wf-status {
+  position: absolute;
+  left: var(--wf-rail);
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 6px 24px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--line-1);
+}
+
 /* ---- the map body, rendered as the view header ---- */
 .wf-head { margin: 0 0 26px; }
 .wf-head-title {
@@ -1408,14 +1460,26 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 
 /* ---- the three columns and the edges over them ---- */
 .wf-board { position: relative; }
-.wf-edges { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+/* Panel, then edge, then card, stated rather than left to source order. A
+   z-index on .wf-col would trap its own cards under the edge layer instead. */
+.wf-edges {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: visible;
+}
 .wf-cols { display: flex; align-items: flex-start; gap: 96px; }
 
 .wf-col {
-  flex: 0 1 264px;
+  flex: 1 1 264px;
   min-width: 196px;
+  max-width: 520px;
   display: flex;
   flex-direction: column;
+  background-color: var(--bg-surface);
+  background-image: var(--scanlines-soft);
+  border: 1px solid var(--line-1);
 }
 .wf-col-head {
   flex: none;
@@ -1423,6 +1487,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   align-items: center;
   gap: 9px;
   height: 34px;
+  padding: 0 12px;
   border-bottom: 1px solid var(--line-1);
 }
 .wf-col-glyph { display: inline-flex; color: var(--fg-3); }
@@ -1445,7 +1510,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 .wf-col-list {
   flex: 1;
   margin: 0;
-  padding: 13px 0 0;
+  padding: 13px 12px 12px;
   list-style: none;
   display: flex;
   flex-direction: column;
@@ -1508,10 +1573,12 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 /* ---- the card. Smaller than a ticket card on purpose. ---- */
 .wf-card {
   position: relative;
+  z-index: 2;
   padding: 8px 10px;
   cursor: pointer;
   background: var(--surface-card);
   border: 1px solid var(--border-strong);
+  box-shadow: var(--card-edge-hi);
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 .wf-card[data-state="behind-us"] {
