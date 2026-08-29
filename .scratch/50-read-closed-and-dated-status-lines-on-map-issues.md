@@ -1,6 +1,6 @@
 ---
 title: Read closed and dated status lines on map issues
-status: ready-for-agent
+status: done
 priority: p1
 labels: [wayfinder, dialect, bug]
 ---
@@ -49,7 +49,19 @@ dialect suite with the six lines above.
 
 ## Acceptance
 
-- [ ] The six status lines above derive resolved, resolved, resolved, resolved, claimed, resolved.
-- [ ] `npx scratchboard --scan` on a map whose finished tickets say `Status: closed` puts them
+- [x] The six status lines above derive resolved, resolved, resolved, resolved, claimed, resolved.
+- [x] `npx scratchboard --scan` on a map whose finished tickets say `Status: closed` puts them
       behind us and unblocks their dependents.
-- [ ] The spec names the synonyms.
+- [x] The spec names the synonyms.
+
+## Comments
+
+**2026-08-28, shipped as PR 36.**
+
+The reader takes the first word of the status value and maps it, and the spec carries a
+`Status synonyms` table the dialect suite reads against the module. The six lines above derive
+resolved, resolved, resolved, resolved, claimed, resolved. A map whose finished tickets say
+`Status: closed` now scans to behind us and unblocks its dependents.
+
+`deriveStates` needed no change. It compares against the three values the spec names, and the
+reader hands it one of those, so the synonyms live in one place.
