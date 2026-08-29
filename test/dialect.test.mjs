@@ -20,6 +20,7 @@ import {
   SECTION_KEYS,
   SKILL,
   STATES,
+  STATUS_WORDS,
   TICKET_TYPES,
   contextLinks,
   readIssueFields,
@@ -150,6 +151,28 @@ test("the structured lines the spec names are the lines the module reads", () =>
   assert.deepEqual(fields.blockedBy, ["07", "08"]);
 });
 
+test("a status line is read by its first word, and the spec names every word", () => {
+  const lines = [
+    "Status: closed",
+    "Status: closed (resolved 2026-07-12)",
+    "Status: closed (2026-07-19)",
+    "Status: **closed - out of scope (2026-08-05)**",
+    "Status: in-progress",
+    "Status: resolved 2026-07-14",
+  ];
+  assert.deepEqual(
+    lines.map((line) => readIssueFields(`# 01. A ticket\n\n${line}\n\n## Question\n`).status),
+    ["resolved", "resolved", "resolved", "resolved", "claimed", "resolved"]
+  );
+  assert.equal(readIssueFields("# 01. A ticket\n\nStatus: pondering\n").status, "pondering");
+
+  const rows = rowsUnder("Status synonyms");
+  assert.deepEqual(
+    rows.map((row) => [codes(row[0])[0], codes(row[1])[0]]),
+    [...STATUS_WORDS]
+  );
+});
+
 test("the decision record field the spec names is the field the module reads", () => {
   assert.deepEqual(column("A decision record's status", 0), [DECISION_STATUS]);
   assert.deepEqual(
@@ -183,6 +206,7 @@ test("nothing under the recognized values slot is a value the code does not know
   const known = new Set([
     ...TICKET_TYPES,
     ...ISSUE_STATUSES,
+    ...STATUS_WORDS.keys(),
     ...STATES,
     ...triageRoles(),
     NO_BLOCKERS,

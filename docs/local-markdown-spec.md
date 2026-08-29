@@ -158,7 +158,8 @@ what it allows.
 
 ### Issue statuses
 
-Read from the `Status:` line of an issue in an `effort` group. The comparison is lower case.
+Read from the `Status:` line of an issue in an `effort` group. The first word of the value
+decides, lower case. See the synonyms below.
 
 | Value | Meaning | Named by |
 | --- | --- | --- |
@@ -170,6 +171,26 @@ Read from the `Status:` line of an issue in an `effort` group. The comparison is
 in the map's `Out of scope` section, and a flat markdown file has no closed state to carry it. The
 word is taken from that section so it reads as native. An issue with no `Status:` line at all is
 open and unclaimed, which is a shape upstream writes and the board reads.
+
+### Status synonyms
+
+A `Status:` line is read by its first word, lower case, with bold markers stripped. Anything after
+that word stays on the line and is ignored, so a date or a parenthetical costs nothing.
+
+| Word | Reads as |
+| --- | --- |
+| `resolved` | `resolved` |
+| `closed` | `resolved` |
+| `done` | `resolved` |
+| `claimed` | `claimed` |
+| `in-progress` | `claimed` |
+| `out-of-scope` | `out-of-scope` |
+| `wontfix` | `out-of-scope` |
+
+Those words are what agent skills already write for a finished or a taken ticket, and a board
+that reads only three of them reports finished work as blocked. `closed - out of scope` reads as
+resolved, because the first word decides. A map that wants the out-of-scope lane writes
+`out-of-scope`. Any other first word leaves the issue open and unclaimed.
 
 ### Triage statuses
 

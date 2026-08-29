@@ -26,6 +26,17 @@ export const OUT_OF_SCOPE = "out-of-scope";
 export const ISSUE_STATUSES = new Set([CLAIMED, RESOLVED, OUT_OF_SCOPE]);
 export const NO_BLOCKERS = "none";
 
+/** The words a status line opens with, and the status each one reads as. */
+export const STATUS_WORDS = new Map([
+  ["resolved", RESOLVED],
+  ["closed", RESOLVED],
+  ["done", RESOLVED],
+  ["claimed", CLAIMED],
+  ["in-progress", CLAIMED],
+  ["out-of-scope", OUT_OF_SCOPE],
+  ["wontfix", OUT_OF_SCOPE],
+]);
+
 export const BEHIND_US = "behind-us";
 export const TAKEABLE_NOW = "takeable-now";
 export const STILL_BLOCKED = "still-blocked";
@@ -237,13 +248,20 @@ export function readIssueFields(text) {
     const name = field[1].trim().replace(/\s+/g, " ").toLowerCase();
     const value = field[2].replace(/\*\*/g, "").trim();
     if (name === "type" && out.type === null) out.type = value || null;
-    else if (name === "status" && out.status === null) out.status = value.toLowerCase() || null;
+    else if (name === "status" && out.status === null) out.status = readStatus(value);
     else if (name === "blocked by" && !readBlockers) {
       out.blockedBy = readBlockedBy(value);
       readBlockers = true;
     }
   }
   return out;
+}
+
+/** The first word decides, so a date or a parenthetical after it costs nothing. */
+export function readStatus(value) {
+  const word = String(value || "").replace(/\*\*/g, "").trim().split(/\s+/)[0].toLowerCase();
+  if (!word) return null;
+  return STATUS_WORDS.get(word) || word;
 }
 
 function readBlockedBy(value) {
