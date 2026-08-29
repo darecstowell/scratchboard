@@ -308,3 +308,23 @@ export function revealRanks(edges, path) {
     return from === undefined ? EDGE_HIDDEN : from;
   });
 }
+
+/** The skill that repairs what a scan reports, named the way a user types it. */
+export const NOTES_SKILL = "/scratchboard";
+
+const NOTES_PROMPT_HEAD =
+  `Use the ${NOTES_SKILL} skill on this repo. The scratchboard scan left the notes below. ` +
+  "Fix each one at its source, then run the scan again.";
+
+/** The notes panel hands an agent its own text, so the reader copies what the panel shows. */
+export function notesPrompt(warnings) {
+  const lines = (warnings || [])
+    .map((note) => (typeof note === "string" ? { reason: note } : note))
+    .filter((note) => note && note.reason)
+    .map((note) => {
+      const where = note.path ? `${note.path}: ` : "";
+      const fix = note.fix ? ` ${note.fix}` : "";
+      return `- ${where}${note.reason}${fix}`;
+    });
+  return lines.length ? `${NOTES_PROMPT_HEAD}\n\n${lines.join("\n")}\n` : "";
+}

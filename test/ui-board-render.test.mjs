@@ -15,6 +15,8 @@ import {
   edgeShape,
   headHtml,
   inBoardTarget,
+  NOTES_SKILL,
+  notesPrompt,
   revealRanks,
   rowsHtml,
 } from "../src/ui/board-render.mjs";
@@ -423,4 +425,23 @@ test("a rank is how many blockers a line waits behind, and a ring still answers"
   const ring = [{ from: "1.md", to: "2.md" }, { from: "2.md", to: "1.md" }];
   assert.deepEqual(revealRanks(ring, "1.md"), [0, 0], "a cycle ends, and the edge back in draws first");
   assert.deepEqual(revealRanks([], "1.md"), [], "a group with no edge reveals nothing");
+});
+
+test("the fix prompt names the skill and carries every note the panel shows", () => {
+  const text = notesPrompt([
+    { path: null, reason: "id 03 is on 2 issues in .scratch/an-effort: one.md, two.md" },
+    { path: "scratchboard.json", reason: "is not valid JSON", fix: "Repair the file." },
+    "a warning that is only a string",
+    null,
+    { path: "x.md" },
+  ]);
+
+  assert.ok(text.startsWith(`Use the ${NOTES_SKILL} skill on this repo.`), "the skill leads");
+  assert.deepEqual(text.trimEnd().split("\n").slice(2), [
+    "- id 03 is on 2 issues in .scratch/an-effort: one.md, two.md",
+    "- scratchboard.json: is not valid JSON Repair the file.",
+    "- a warning that is only a string",
+  ]);
+  assert.equal(notesPrompt([]), "", "no note is no prompt");
+  assert.equal(notesPrompt(null), "");
 });

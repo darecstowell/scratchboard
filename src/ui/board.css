@@ -1690,6 +1690,19 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   color: var(--fg-3);
 }
 
+.notes-copy {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0 4px;
+}
+.notes-copy-line {
+  flex: 1 1 24ch;
+  font: var(--type-ui);
+  color: var(--fg-3);
+}
+
 .wf-list,
 .wf-adrs {
   margin: 0;
