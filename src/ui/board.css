@@ -338,31 +338,6 @@ kbd {
   white-space: nowrap;
 }
 
-.hd-pipe { color: var(--line-2); user-select: none; }
-
-.hd-counts {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  overflow: hidden;
-}
-.hd-count {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  font: 500 11px/1.2 var(--font-mono);
-  letter-spacing: var(--tracking-micro);
-  text-transform: uppercase;
-  color: var(--fg-3);
-  white-space: nowrap;
-}
-.hd-count-n {
-  font: 500 13px/1 var(--font-mono);
-  letter-spacing: 0;
-  color: var(--fg-1);
-}
-
 .hd-spacer { flex: 1; }
 
 /* the soft re-render speaks here, and nowhere else */
@@ -1259,13 +1234,10 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 .detail-body li li:has(> input[type="checkbox"]) { margin-left: 0; }
 
 /* ---- narrow. The lanes never respond; they hold their minimum and scroll.
-   These only keep the header and the toolbar whole. ---- */
+   These only keep the toolbar whole. ---- */
 @media (max-width: 1440px) {
   .bar { column-gap: 12px; }
   .search { flex-basis: 220px; min-width: 180px; }
-}
-@media (max-width: 1180px) {
-  .hd-counts { display: none; }
 }
 @media (max-width: 1000px) {
   .bar { row-gap: 8px; }

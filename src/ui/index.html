@@ -26,8 +26,6 @@
   <header class="hd">
     <span class="hd-title" data-board-title>scratchboard</span>
 
-    <nav class="hd-counts" id="hd-counts" aria-label="Ticket counts"></nav>
-
     <span class="hd-spacer"></span>
     <span class="hd-notice" id="notice" role="status" aria-live="polite" hidden></span>
     <button type="button" class="theme-btn" id="theme-toggle" title="Switch theme">
@@ -196,7 +194,6 @@ IDS
   #sort-dd             sort dropdown; one radio per key, name="sort"
   #sort-val            the key the sort button reads
   #sort-by-id          the id row; hidden when no ticket carries an id
-  #hd-counts           header count nav, one entry per lane
   #lanes               the horizontal scroller that holds every lane section
   #board-empty         board-level empty state
   #clear-filters       toolbar button; resets search + all facets, then
@@ -335,9 +332,9 @@ COPY PATH BUTTON
   first focus to the close control, not to the button that precedes it.
 
 COUNTS
-  #hd-counts and each .col-count show the UNFILTERED total per lane, taken
-  from counts.byLane. When a filter is active .col-count shows
-  "matches/total" (e.g. "4/53"); the header counts stay total.
+  Each .col-count shows the UNFILTERED total for its lane, taken from
+  counts.byLane. When a filter is active it shows "matches/total"
+  (e.g. "4/53"). The header carries no count of its own.
 
 EMPTY STATES
   Per lane: unhide the lane's .col-empty when its filtered list is empty.

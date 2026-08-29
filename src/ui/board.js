@@ -42,7 +42,6 @@
 
   const el = {
     boardTitle: document.querySelector("[data-board-title]"),
-    headCounts: document.getElementById("hd-counts"),
     notice: document.getElementById("notice"),
     search: document.getElementById("search-input"),
     sortDrop: document.getElementById("sort-dd"),
@@ -1511,13 +1510,6 @@
     lanes.forEach((lane) => {
       lane.records = records.filter((record) => record.ticket.lane === lane.name);
     });
-    el.headCounts.innerHTML = lanes
-      .map(
-        (lane, index) =>
-          (index ? '<span class="hd-pipe" aria-hidden="true">|</span>' : "") +
-          `<span class="hd-count"><span class="hd-count-n">${lane.total}</span> ${esc(lane.name)}</span>`
-      )
-      .join("");
 
     buildTabs();
     readHash();
