@@ -40,3 +40,14 @@ the board is seven rails rather than eight, and `labels` grew from 28 to 29.
 
 There is now a second row to consider. A group gets a tab, and this repo has two, so a tab row sits
 above the toolbar. That is a rail count of its own and it changes what any cleanup is looking at.
+
+**2026-08-28, the lane icon half is answered, in PR 34 and PR 35.**
+
+A lane names its own `icon` in config, validated against `ICON_NAMES` and warned on when unknown,
+the same way a facet already did. No lane name or icon string moved into the source. A lane that
+names no icon carries no glyph: a default put the same glyph on every lane, which reads as
+decoration rather than information, and it made a stranger's board look broken on first run.
+This repo's own `scratchboard.json` names seven, all from the curated set.
+
+The priority labels and the single-ticket label tail are untouched, so this ticket stays open on
+those two.

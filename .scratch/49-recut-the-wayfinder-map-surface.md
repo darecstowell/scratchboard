@@ -1,6 +1,6 @@
 ---
 title: Recut the wayfinder map surface
-status: ready-for-agent
+status: done
 priority: p2
 labels: [ui, wayfinder, design, css]
 ---
@@ -146,3 +146,21 @@ stronger shape and it is a separate ticket.
 [Ticket 39](./39-split-the-wayfinder-box-math-from-the-dom-read.md) holds the split of `boxesOf`
 from `edgeShape`. It was parked because the shape was not settled. Slice 2 settles the edge
 shape, so the `edgeShape` half moves here and the `layoutBoxes` half stays on 39.
+
+## Comments
+
+**2026-08-28, shipped as PR 34 (`1f76484`) and PR 35 (`80476da`), released in 0.4.0.**
+
+Every decision above shipped. Three claims in the body were wrong and the work proved it. The
+answer text was already in the payload on `file.body`, so no parser change was needed and the
+renderer reads the `## Answer` section itself. The same-column bulge already existed in
+`edgeShape`. Four `z-index` values already existed elsewhere in the stylesheet, though none in the
+map.
+
+Two things arrived that the ticket did not name. A lane now names its own `icon` in config,
+because a single hardcoded glyph on every lane carries no information and put lane vocabulary in
+the source. A keyboard user had lost the graph entirely once edges became hover-only, so `focusin`
+draws the same edges a hover does.
+
+Left undone on purpose: the density pass, and an `answer` field owned by the parser and published
+in the spec. Ticket 51 owns the second.

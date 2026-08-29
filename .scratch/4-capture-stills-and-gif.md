@@ -37,3 +37,11 @@ state, with the takeable tickets in the middle. It is a comment rather than a li
 broken while it is missing.
 
 That view now exists and this repo's own board renders it, so the capture is takeable.
+
+**2026-08-28, the fourth image slot is filled, by a GIF rather than a still.**
+
+`assets/screenshot-effort.png` is gone and `assets/wayfinder-tour.gif` took its place, under a
+`## The /wayfinder view` section of its own. A still could not show the thing worth showing, which
+is an edge drawing itself when a ticket is hovered. It runs 8 seconds at 990KB.
+
+The live reload capture is still missing, so this ticket stays open on that alone.

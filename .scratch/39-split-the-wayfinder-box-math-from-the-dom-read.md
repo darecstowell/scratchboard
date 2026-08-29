@@ -36,3 +36,16 @@ in, so nothing here is blocked on design once the view settles.
 - If it is: `layoutBoxes` is pure and tested, `edgeShape` has input and output tests including the
   same-column bulge, and the source-text tests are deleted.
 - If it is not: this ticket carries `deferred` and says what would change the answer.
+
+## Comments
+
+**2026-08-28, half of this shipped in PR 34 (`1f76484`).**
+
+The view settled, so the question this ticket held open is answered. `edgeShape` now lives in
+`src/ui/board-render.mjs` with real input and output tests, including the same-column bulge and
+the rounding, and the source-text test that stood in for them is gone.
+
+`boxesOf` was left alone, so `layoutBoxes` is still the whole of this ticket. It also grew a
+little: the map board is its own scroll container now, so `boxesOf` takes the scroll offset into
+the origin, and that arithmetic is worth a test it cannot have while it sits beside the
+`getBoundingClientRect` call.
