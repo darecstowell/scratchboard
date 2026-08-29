@@ -125,9 +125,12 @@ never run at the same time.
 
 ## Checks
 
-`npm test` on Node 18 and on current. `node tools/compare-detection.mjs tools/fixtures/offmain`
-and `node tools/compare-python.mjs` are not required: no slice touches `scan.mjs`, `parse/`,
-`detect.mjs`, or `config.mjs` behaviour, and the one edit to `config.mjs` adds icon names.
+`npm test` on Node 18 and on current, and `node tools/compare-detection.mjs tools/fixtures/offmain`.
+
+The comparison runs ARE required. This ticket was written before the lane icon key existed, and
+that work changed `src/config.mjs` validation and the lane records `src/scan.mjs` emits, which is
+exactly what those runs guard. `compare-detection` passes locally and in CI. `compare-python`
+stays a local step, because it needs a second repository at one commit.
 
 Bake the demo board and read it. The scan must stay at zero warnings and the lanes must hold the
 same ticket count as before.
