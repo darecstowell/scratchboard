@@ -64,7 +64,7 @@ test("a malformed payload keeps every entry the contract can still read", () => 
   assert.equal(payload.title, "scratchboard", "an empty title is no title");
   assert.deepEqual(payload.warnings, []);
   assert.deepEqual(payload.tickets, [{ path: "a.md", lane: "Todo", fields: {}, refs: [] }]);
-  assert.deepEqual(payload.lanes, [{ name: "Todo", collapsed: false, total: 1 }]);
+  assert.deepEqual(payload.lanes, [{ name: "Todo", collapsed: false, icon: null, total: 1 }]);
   assert.equal(payload.groups.length, 1, "a group with no path is not a group");
   assert.deepEqual(
     payload.groups[0].files.map((file) => file.path),
@@ -195,6 +195,19 @@ test("a ticket gets a fields map and a refs list whatever arrived", () => {
   assert.deepEqual(payload.tickets[2].refs, ["1"]);
 });
 
+test("a lane carries the glyph the scan named, and nothing else reaches the board", () => {
+  const payload = normalizePayload({
+    lanes: [{ name: "Todo", icon: "check" }, { name: "Doing", icon: 7 }, { name: "Done", icon: "" }],
+    tickets: [],
+  });
+
+  assert.deepEqual(
+    payload.lanes.map((lane) => lane.icon),
+    ["check", null, null],
+    "a glyph that is not a non-empty string is no glyph"
+  );
+});
+
 test("a lane counts what the scan says, and counts its own tickets when the scan says nothing", () => {
   const payload = normalizePayload({
     counts: { byLane: { Todo: 40, Done: "many" } },
@@ -207,9 +220,9 @@ test("a lane counts what the scan says, and counts its own tickets when the scan
   });
 
   assert.deepEqual(payload.lanes, [
-    { name: "Todo", collapsed: false, total: 40 },
-    { name: "Done", collapsed: false, total: 2 },
-    { name: "Empty", collapsed: true, total: 0 },
+    { name: "Todo", collapsed: false, icon: null, total: 40 },
+    { name: "Done", collapsed: false, icon: null, total: 2 },
+    { name: "Empty", collapsed: true, icon: null, total: 0 },
   ]);
 });
 

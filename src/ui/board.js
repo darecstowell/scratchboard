@@ -10,17 +10,22 @@
      board, and a name this map does not hold warns at config read. */
   const ICONS = {
     "alert": '<path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/>',
+    "blocked": '<path d="M4.467.22a.749.749 0 0 1 .53-.22h6.006c.199 0 .389.079.53.22l4.247 4.247c.141.14.22.331.22.53v6.006a.749.749 0 0 1-.22.53l-4.247 4.247a.749.749 0 0 1-.53.22H4.997a.749.749 0 0 1-.53-.22L.22 11.533a.749.749 0 0 1-.22-.53V4.997c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.308v5.384L5.308 14.5h5.384l3.808-3.808V5.308L10.692 1.5ZM4 7.75A.75.75 0 0 1 4.75 7h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 7.75Z"/>',
     "book": '<path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z"/>',
     "calendar": '<path d="M4.75 0a.75.75 0 0 1 .75.75V2h5V.75a.75.75 0 0 1 1.5 0V2h1.25c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0 1 13.25 16H2.75A1.75 1.75 0 0 1 1 14.25V3.75C1 2.784 1.784 2 2.75 2H4V.75A.75.75 0 0 1 4.75 0ZM2.5 7.5v6.75c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25V7.5Zm10.75-4H2.75a.25.25 0 0 0-.25.25V6h11V3.75a.25.25 0 0 0-.25-.25Z"/>',
     "check": '<path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>',
+    "circle-slash": '<path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM3.965 13.096a6.5 6.5 0 0 0 9.131-9.131ZM1.5 8a6.474 6.474 0 0 0 1.404 4.035l9.131-9.131A6.499 6.499 0 0 0 1.5 8Z"/>',
     "columns": '<path d="M2.75 0h2.5C6.216 0 7 .784 7 1.75v12.5A1.75 1.75 0 0 1 5.25 16h-2.5A1.75 1.75 0 0 1 1 14.25V1.75C1 .784 1.784 0 2.75 0Zm8 0h2.5C14.216 0 15 .784 15 1.75v12.5A1.75 1.75 0 0 1 13.25 16h-2.5A1.75 1.75 0 0 1 9 14.25V1.75C9 .784 9.784 0 10.75 0ZM2.5 1.75v12.5c0 .138.112.25.25.25h2.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Zm8 0v12.5c0 .138.112.25.25.25h2.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/>',
     "copy": '<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>',
     "cross-reference": '<path d="M2.75 3.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 13H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 14.543V13H2.75A1.75 1.75 0 0 1 1 11.25v-7.5C1 2.784 1.784 2 2.75 2h5.5a.75.75 0 0 1 0 1.5ZM16 1.25v4.146a.25.25 0 0 1-.427.177L14.03 4.03l-3.75 3.75a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734l3.75-3.75-1.543-1.543A.25.25 0 0 1 11.604 1h4.146a.25.25 0 0 1 .25.25Z"/>',
     "file": '<path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"/>',
+    "issue-opened": '<path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/>',
     "link": '<path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"/>',
     "milestone": '<path d="M7.75 0a.75.75 0 0 1 .75.75V3h3.634c.414 0 .814.147 1.13.414l2.07 1.75a1.75 1.75 0 0 1 0 2.672l-2.07 1.75a1.75 1.75 0 0 1-1.13.414H8.5v5.25a.75.75 0 0 1-1.5 0V10H2.75A1.75 1.75 0 0 1 1 8.25v-3.5C1 3.784 1.784 3 2.75 3H7V.75A.75.75 0 0 1 7.75 0Zm4.384 8.5a.25.25 0 0 0 .161-.06l2.07-1.75a.248.248 0 0 0 0-.38l-2.07-1.75a.25.25 0 0 0-.161-.06H2.75a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h9.384Z"/>',
+    "note": '<path d="M0 3.75C0 2.784.784 2 1.75 2h12.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 14H1.75A1.75 1.75 0 0 1 0 12.25Zm1.75-.25a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25ZM3.5 6.25a.75.75 0 0 1 .75-.75h7a.75.75 0 0 1 0 1.5h-7a.75.75 0 0 1-.75-.75Zm.75 2.25h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1 0-1.5Z"/>',
     "package": '<path d="m8.878.392 5.25 3.045c.54.314.872.89.872 1.514v6.098a1.75 1.75 0 0 1-.872 1.514l-5.25 3.045a1.75 1.75 0 0 1-1.756 0l-5.25-3.045A1.75 1.75 0 0 1 1 11.049V4.951c0-.624.332-1.201.872-1.514L7.122.392a1.75 1.75 0 0 1 1.756 0ZM7.875 1.69l-4.63 2.685L8 7.133l4.755-2.758-4.63-2.685a.248.248 0 0 0-.25 0ZM2.5 5.677v5.372c0 .09.047.171.125.216l4.625 2.683V8.432Zm6.25 8.271 4.625-2.683a.25.25 0 0 0 .125-.216V5.677L8.75 8.432Z"/>',
     "person": '<path d="M10.561 8.073a6.005 6.005 0 0 1 3.432 5.142.75.75 0 1 1-1.498.07 4.5 4.5 0 0 0-8.99 0 .75.75 0 0 1-1.498-.07 6.004 6.004 0 0 1 3.431-5.142 3.999 3.999 0 1 1 5.123 0ZM10.5 5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z"/>',
+    "question": '<path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.92 6.085h.001a.749.749 0 1 1-1.342-.67c.169-.339.436-.701.849-.977C6.845 4.16 7.369 4 8 4a2.756 2.756 0 0 1 1.637.525c.503.377.863.965.863 1.725 0 .448-.115.83-.329 1.15-.205.307-.47.513-.692.662-.109.072-.22.138-.313.195l-.006.004a6.24 6.24 0 0 0-.26.16.952.952 0 0 0-.276.245.75.75 0 0 1-1.248-.832c.184-.264.42-.489.692-.661.103-.067.207-.132.313-.195l.007-.004c.1-.061.182-.11.258-.161a.969.969 0 0 0 .277-.245C8.96 6.514 9 6.427 9 6.25a.612.612 0 0 0-.262-.525A1.27 1.27 0 0 0 8 5.5c-.369 0-.595.09-.74.187a1.01 1.01 0 0 0-.34.398ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/>',
     "tag": '<path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/>',
     "workflow": '<path d="M0 1.75C0 .784.784 0 1.75 0h3.5C6.216 0 7 .784 7 1.75v3.5A1.75 1.75 0 0 1 5.25 7H4v4a1 1 0 0 0 1 1h4v-1.25C9 9.784 9.784 9 10.75 9h3.5c.966 0 1.75.784 1.75 1.75v3.5A1.75 1.75 0 0 1 14.25 16h-3.5A1.75 1.75 0 0 1 9 14.25v-.75H5A2.5 2.5 0 0 1 2.5 11V7h-.75A1.75 1.75 0 0 1 0 5.25Zm1.75-.25a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h3.5a.25.25 0 0 0 .25-.25v-3.5a.25.25 0 0 0-.25-.25Zm9 9a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h3.5a.25.25 0 0 0 .25-.25v-3.5a.25.25 0 0 0-.25-.25Z"/>',
   };
@@ -37,7 +42,6 @@
 
   const el = {
     boardTitle: document.querySelector("[data-board-title]"),
-    headCounts: document.getElementById("hd-counts"),
     notice: document.getElementById("notice"),
     search: document.getElementById("search-input"),
     sortDrop: document.getElementById("sort-dd"),
@@ -412,7 +416,7 @@
       section.setAttribute("aria-label", lane.name);
       section.innerHTML =
         '<header class="col-head">' +
-        `<span class="col-glyph" aria-hidden="true">${LANE_GLYPH}</span>` +
+        `<span class="col-glyph" aria-hidden="true">${drawGlyph(lane.icon || LANE_ICON)}</span>` +
         `<h2 class="col-name">${esc(lane.name)}</h2>` +
         '<span class="col-count"></span>' +
         (lane.collapsed
@@ -439,7 +443,7 @@
   /* These three are the payload's own state values, not lane names a config owns: the view has
      no facet system and the scan computes the membership. */
   const STATE_KEYS = ["behind-us", "takeable-now", "still-blocked"];
-  const BULGE = 34;
+  const EDGE_STAGGER = 40;
   const fileLabel = (file) => (file.id ? "#" + file.id : file.title);
 
   function setGroups(normalized) {
@@ -473,9 +477,18 @@
 
   // ------------------------------------------------------------- tabs
 
-  function tabHtml(view, label) {
+  /** A tab wears the shape of what it opens: the lanes, a route, a shelf, or a part. */
+  /** A lane names its own glyph in config. Unnamed, it takes the same one the detail row for
+   *  `lane` takes, so a board with no config still reads. */
+  const LANE_ICON = "columns";
+  const TAB_ICONS = { board: "columns", effort: "milestone", context: "book", feature: "package" };
+  const NOTES_ICON = "alert";
+
+  function tabHtml(view, label, icon) {
     return (
-      '<button type="button" class="tab" data-view="' + esc(view) + '">' + esc(label) + "</button>"
+      '<button type="button" class="tab" data-view="' + esc(view) + '">' +
+      '<span class="tab-glyph" aria-hidden="true">' + drawGlyph(icon) + "</span>" +
+      esc(label) + "</button>"
     );
   }
 
@@ -488,7 +501,8 @@
     }
     if (!el.tabs.parentNode) el.frame.insertBefore(el.tabs, el.bar);
     el.tabs.innerHTML =
-      tabHtml("board", "board") + groups.map((group) => tabHtml(group.path, group.title)).join("");
+      tabHtml("board", "board", TAB_ICONS.board) +
+      groups.map((group) => tabHtml(group.path, group.title, TAB_ICONS[group.kind])).join("");
   }
 
   function paintTabs() {
@@ -527,21 +541,25 @@
     );
   }
 
+  /** The line carries the arrowhead, held back by CSS until it lands, and a second path over
+   *  it carries the dash that travels the way the work flows. */
+  function edgeHtml(edge) {
+    const kind = edge.live ? "live" : "satisfied";
+    return (
+      '<path class="wf-edge is-' + kind + '" d="" fill="none" stroke="' + STROKES[kind] + '"' +
+      ' data-from="' + esc(edge.from) + '" data-to="' + esc(edge.to) + '"' +
+      ' stroke-width="' + (edge.live ? "2" : "1.4") + '"' +
+      ' style="--wf-marker:url(#' + ARROWS[kind] + ')"/>' +
+      '<path class="wf-dash" d="" fill="none"' +
+      ' stroke-width="' + (edge.live ? "3" : "2.4") + '"/>'
+    );
+  }
+
   function edgesHtml(group) {
     return (
       '<svg class="wf-edges" aria-hidden="true"><defs>' +
       markerHtml("live") + markerHtml("satisfied") + "</defs>" +
-      group.edges
-        .map((edge) => {
-          const kind = edge.live ? "live" : "satisfied";
-          return (
-            '<path class="wf-edge is-' + kind + '" d=""' +
-            ' data-from="' + esc(edge.from) + '" data-to="' + esc(edge.to) + '"' +
-            ' fill="none" stroke="' + STROKES[kind] + '" stroke-width="' + (edge.live ? "2" : "1.4") + '"' +
-            ' marker-end="url(#' + ARROWS[kind] + ')"/>'
-          );
-        })
-        .join("") +
+      group.edges.map(edgeHtml).join("") +
       "</svg>"
     );
   }
@@ -549,9 +567,10 @@
   function effortHtml(group) {
     return (
       '<section class="wf-view" data-group="' + esc(group.path) + '" data-kind="effort">' +
-      headHtml(group, markdownHtml) +
+      headHtml(group, markdownHtml, drawGlyph) +
       '<div class="wf-board">' + edgesHtml(group) +
-      '<div class="wf-cols">' + STATE_KEYS.map((key) => columnHtml(group, key)).join("") + "</div></div>" +
+      '<div class="wf-cols">' + STATE_KEYS.map((key) => columnHtml(group, key, drawGlyph)).join("") +
+      "</div></div>" +
       '<p class="wf-status" role="status" aria-live="polite"></p>' +
       "</section>"
     );
@@ -561,7 +580,7 @@
     const files = group.files.filter((file) => file.role === "issue");
     return (
       '<section class="wf-view" data-group="' + esc(group.path) + '" data-kind="feature">' +
-      headHtml(group, markdownHtml) +
+      headHtml(group, markdownHtml, drawGlyph) +
       (files.length ? rowsHtml(files) : '<p class="wf-none">No ticket sits under this folder yet.</p>') +
       "</section>"
     );
@@ -591,7 +610,7 @@
       .map((file) => ({ file, key: numberOf(file) }));
     return (
       '<section class="wf-view" data-group="' + esc(group.path) + '" data-kind="context">' +
-      headHtml(group, markdownHtml) +
+      headHtml(group, markdownHtml, drawGlyph) +
       (records.length
         ? '<ol class="wf-adrs">' + records.map((record) => adrHtml(record.file, record.key)).join("") + "</ol>"
         : "") +
@@ -615,8 +634,11 @@
       group,
       cards: new Map(),
       paths: [...view.querySelectorAll(".wf-edge")],
+      dashes: [...view.querySelectorAll(".wf-dash")],
       pinned: null,
-      hovered: null
+      hovered: null,
+      focused: null,
+      shown: null
     };
     view.querySelectorAll(".wf-card").forEach((node) => wf.cards.set(node.dataset.path, node));
     drawEdges();
@@ -626,6 +648,8 @@
   /** Real cards wrap, so every endpoint is read back from the layout rather than computed. */
   function boxesOf(board) {
     const base = board.getBoundingClientRect();
+    const left = base.left - board.scrollLeft;
+    const top = base.top - board.scrollTop;
     const found = new Map();
     STATE_KEYS.forEach((key, column) => {
       const section = wf.view.querySelector('.wf-col[data-state="' + key + '"]');
@@ -638,8 +662,8 @@
         const node = folded ? null : wf.cards.get(file.path);
         const box = node ? node.getBoundingClientRect() : null;
         found.set(file.path, {
-          x: (box ? box.left : rail.left) - base.left,
-          y: (box ? box.top : rail.top + slice * row) - base.top,
+          x: (box ? box.left : rail.left) - left,
+          y: (box ? box.top : rail.top + slice * row) - top,
           w: box ? box.width : rail.width,
           h: box ? box.height : slice,
           column
@@ -649,28 +673,15 @@
     return found;
   }
 
-  /** Both ends in one column would run backwards, so that edge bulges out on the right instead. */
-  function edgeShape(p, q) {
-    const y1 = Math.round(p.y + p.h / 2);
-    const y2 = Math.round(q.y + q.h / 2);
-    if (p.column === q.column) {
-      const x = Math.round(p.x + p.w);
-      const bulge = x + BULGE;
-      return "M" + x + " " + y1 + " C" + bulge + " " + y1 + " " + bulge + " " + y2 + " " + x + " " + y2;
-    }
-    const x1 = Math.round(p.x + p.w);
-    const x2 = Math.round(q.x);
-    const mid = Math.round((x1 + x2) / 2);
-    return "M" + x1 + " " + y1 + " C" + mid + " " + y1 + " " + mid + " " + y2 + " " + x2 + " " + y2;
-  }
-
   function drawEdges() {
     if (!wf) return;
     const board = wf.view.querySelector(".wf-board");
     const svg = wf.view.querySelector(".wf-edges");
     if (!board || !svg) return;
-    const width = Math.round(board.clientWidth);
-    const height = Math.round(board.clientHeight);
+    /* The board scrolls inside itself and the edge layer scrolls with it, so the layer covers
+       the content rather than the part of it a reader can see. */
+    const width = Math.round(board.scrollWidth);
+    const height = Math.round(board.scrollHeight);
     svg.setAttribute("width", width);
     svg.setAttribute("height", height);
     svg.setAttribute("viewBox", "0 0 " + width + " " + height);
@@ -679,7 +690,16 @@
       const edge = wf.group.edges[index];
       const from = edge && boxes.get(edge.from);
       const to = edge && boxes.get(edge.to);
-      node.setAttribute("d", from && to ? edgeShape(from, to) : "");
+      const shape = from && to ? edgeShape(from, to) : "";
+      node.setAttribute("d", shape);
+      /* The draw runs on the line's own length, and it is only measurable once the line is set. */
+      const length = Math.round(shape ? node.getTotalLength() : 0) + "px";
+      const dash = wf.dashes[index];
+      node.style.setProperty("--wf-len", length);
+      if (dash) {
+        dash.setAttribute("d", shape);
+        dash.style.setProperty("--wf-len", length);
+      }
     });
   }
 
@@ -696,9 +716,13 @@
     const keep = downstreamOf(wf.group.edges, path);
     wf.view.classList.add("is-focused");
     wf.cards.forEach((node, key) => node.classList.toggle("is-dim", !keep.has(key)));
-    wf.paths.forEach((node) =>
-      node.classList.toggle("is-on", keep.has(node.dataset.from) && keep.has(node.dataset.to))
-    );
+    revealRanks(wf.group.edges, path).forEach((rank, index) => {
+      [wf.paths[index], wf.dashes[index]].forEach((node) => {
+        if (!node) return;
+        node.classList.toggle("is-on", rank !== EDGE_HIDDEN);
+        node.style.setProperty("--wf-delay", rank * EDGE_STAGGER + "ms");
+      });
+    });
 
     const file = entry.file;
     const unblocks = [...keep]
@@ -724,7 +748,7 @@
       '<span class="wf-none">' +
       esc(
         live + (live === 1 ? " live blocker" : " live blockers") + " of " + wf.group.edges.length +
-        ". Hover a ticket to see what it unblocks."
+        ". Hover or tab to a ticket to see what it unblocks."
       ) +
       "</span>"
     );
@@ -734,14 +758,27 @@
     if (!wf || wf.pinned) return;
     wf.view.classList.remove("is-focused");
     wf.cards.forEach((node) => node.classList.remove("is-dim"));
-    wf.paths.forEach((node) => node.classList.remove("is-on"));
+    wf.paths.concat(wf.dashes).forEach((node) => node.classList.remove("is-on"));
     setStatus(restText());
+  }
+
+  /** A pointer and a keyboard each hold their own card, so one letting go does not take the
+   *  other's edges with it. */
+  function showCard() {
+    if (!wf || wf.pinned) return;
+    const card = wf.focused || wf.hovered || null;
+    if (card === wf.shown) return;
+    wf.shown = card;
+    if (card) focusCard(card.dataset.path);
+    else restView();
   }
 
   function clearPin() {
     if (!wf || !wf.pinned) return;
     wf.pinned = null;
     wf.hovered = null;
+    wf.focused = null;
+    wf.shown = null;
     restView();
   }
 
@@ -789,6 +826,11 @@
       ICONS[name] +
       "</svg>"
     );
+  }
+
+  /** The pure renderer holds no path data, so the board hands it the drawing. */
+  function drawGlyph(name) {
+    return glyphSvg(name, 13);
   }
 
   function iconFor(term) {
@@ -1258,24 +1300,48 @@
       return;
     }
     wf.pinned = wf.pinned === card.dataset.path ? null : card.dataset.path;
-    if (wf.pinned) focusCard(wf.pinned);
-    else restView();
+    if (wf.pinned) {
+      wf.shown = card;
+      focusCard(wf.pinned);
+      return;
+    }
+    wf.shown = null;
+    restView();
+    showCard();
   });
 
   el.views.addEventListener("mouseover", (event) => {
-    if (!wf || wf.pinned) return;
+    if (!wf) return;
     const card = event.target.closest(".wf-card");
-    if (!card || card === wf.hovered) return;
+    if (!card) return;
     wf.hovered = card;
-    focusCard(card.dataset.path);
+    showCard();
   });
 
   el.views.addEventListener("mouseout", (event) => {
-    if (!wf || wf.pinned) return;
+    if (!wf) return;
     const card = event.target.closest(".wf-card");
     if (!card || (event.relatedTarget && card.contains(event.relatedTarget))) return;
     wf.hovered = null;
-    restView();
+    showCard();
+  });
+
+  /** The only focusable thing on a card is its open button, so tabbing through the diagram
+   *  reveals the same edges a pointer does. */
+  el.views.addEventListener("focusin", (event) => {
+    if (!wf) return;
+    const card = event.target.closest(".wf-card");
+    if (!card) return;
+    wf.focused = card;
+    showCard();
+  });
+
+  el.views.addEventListener("focusout", (event) => {
+    if (!wf) return;
+    const card = event.target.closest(".wf-card");
+    if (!card || (event.relatedTarget && card.contains(event.relatedTarget))) return;
+    wf.focused = null;
+    showCard();
   });
 
   el.detail.addEventListener("click", (event) => {
@@ -1428,7 +1494,10 @@
     button.id = "scan-notes";
     button.style.cursor = "pointer";
     button.title = "Read the scan notes";
-    button.textContent = warnings.length + (warnings.length === 1 ? " note" : " notes");
+    button.innerHTML = glyphSvg(NOTES_ICON, 12);
+    button.appendChild(
+      document.createTextNode(warnings.length + (warnings.length === 1 ? " note" : " notes"))
+    );
     button.addEventListener("click", () => {
       opener = button;
       showNotes();
@@ -1484,13 +1553,6 @@
     lanes.forEach((lane) => {
       lane.records = records.filter((record) => record.ticket.lane === lane.name);
     });
-    el.headCounts.innerHTML = lanes
-      .map(
-        (lane, index) =>
-          (index ? '<span class="hd-pipe" aria-hidden="true">|</span>' : "") +
-          `<span class="hd-count"><span class="hd-count-n">${lane.total}</span> ${esc(lane.name)}</span>`
-      )
-      .join("");
 
     buildTabs();
     readHash();

@@ -80,7 +80,7 @@ board is already open. Answering no writes nothing.
 | `format` | `yaml-frontmatter` or `key-value-block` | Which preset reads the metadata. |
 | `idPattern` | regex source | Pulls a ticket ID out of the file or folder name. The first capture group wins, and the whole match is used when there is no group. |
 | `parser` | path | A local module that reads a format neither preset covers. Replaces `format`. |
-| `lanes` | array | Lane name, match rule, and whether it starts collapsed. |
+| `lanes` | array | Lane name, match rule, icon, and whether it starts collapsed. |
 | `facets` | array | Which metadata fields become filter chips, their colours, their value order, and their icon. |
 | `groups` | array | Which folders are groups and which kind each one takes, when the shape on disk is not enough. |
 | `documents` | object | Which fixed-path documents the board looks for. |
@@ -120,9 +120,9 @@ A lane is a match, not a location. A ticket is never relocated to join one.
 
 ```json
 "lanes": [
-  { "name": "Todo",  "match": { "path": ".scratch/todo/**" } },
-  { "name": "Ready", "match": { "field": "status", "in": ["ready-for-agent", "ready-for-human"] } },
-  { "name": "Done",  "match": { "field": "status", "equals": "done" }, "collapsed": true }
+  { "name": "Todo",  "icon": "issue-opened", "match": { "path": ".scratch/todo/**" } },
+  { "name": "Ready", "icon": "workflow", "match": { "field": "status", "in": ["ready-for-agent", "ready-for-human"] } },
+  { "name": "Done",  "icon": "check", "match": { "field": "status", "equals": "done" }, "collapsed": true }
 ]
 ```
 
@@ -133,6 +133,8 @@ A lane is a match, not a location. A ticket is never relocated to join one.
 - Lanes are tried in order and the first match wins. That order is also the order on screen.
 - `"collapsed": true` renders a lane as a narrow rail carrying its count, and builds its cards
   the first time you expand it.
+- `icon` marks the lane header. With no `icon` named, a lane takes `columns`. See
+  [Icons](#icons).
 - A ticket matching no lane goes to a trailing `Unmapped` lane and raises a warning naming the
   values that matched nothing. It is never dropped.
 
@@ -234,18 +236,30 @@ the board offers none.
 
 ## Icons
 
-Every row in the ticket detail carries a small glyph beside its name. The icons are
+Every row in the ticket detail carries a small glyph beside its name, and so do the lane
+headers, the tab bar, and the folds on a group surface. The icons are
 [Octicons](https://github.com/primer/octicons), MIT, inlined as path data so a baked board still
 fetches nothing.
 
 The set is deliberately small, because every icon is bytes in every board:
 
-`alert`, `book`, `calendar`, `check`, `columns`, `copy`, `cross-reference`, `file`, `link`,
-`milestone`, `package`, `person`, `tag`, `workflow`.
+`alert`, `blocked`, `book`, `calendar`, `check`, `circle-slash`, `columns`, `copy`,
+`cross-reference`, `file`, `issue-opened`, `link`, `milestone`, `note`, `package`, `person`,
+`question`, `tag`, `workflow`.
 
 The rows the board builds itself are fixed: `lane` takes `columns`, `path` takes `file`, `dates`
 takes `calendar`, and `refs` takes `cross-reference`. The copy button in the ticket header takes
 `copy`, and swaps to `check` while it confirms.
+
+A lane header on a kanban board takes the `icon` its lane names, and `columns` when it names
+none. Naming one per lane is what makes the headers read apart at their size.
+
+The rest of the board's own furniture is fixed. On an effort map the three lanes read as
+settled, open, and obstructed, so `behind-us` takes `check`,
+`takeable-now` takes `issue-opened`, and `still-blocked` takes `blocked`. The folds beside the
+map take `note`, `question`, `circle-slash`, and `file`, in that order. A tab wears what it
+opens: `columns` for the board, `milestone` for an effort, `book` for a context, and `package`
+for a feature. The scan notes button takes `alert`.
 
 A metadata row takes the `icon` its facet names. With no `icon` named, these field names carry a
 default, so a board reads right with no config at all:
@@ -262,7 +276,7 @@ default, so a board reads right with no config at all:
 | `source` | `book` |
 
 Any other field is drawn with no icon rather than a guessed one. An `icon` naming something
-outside the set warns and the row keeps its default.
+outside the set warns and the row or lane keeps its default.
 
 ## Detection
 
@@ -399,7 +413,7 @@ scanner and the interface.
 | `title` | Board header |
 | `format` | The preset name, or `parser:` and the parser path |
 | `counts` | `total`, and `byLane` keyed by lane name |
-| `lanes` | Name, collapsed, and the ticket IDs in order |
+| `lanes` | Name, collapsed, icon, and the ticket IDs in order |
 | `facets` | Per field, the values with their counts |
 | `facetConfig` | The facets as configured, minus any field used by a lane |
 | `tickets` | ID, slug, title, path, lane, fields, excerpt, body, refs, dates |

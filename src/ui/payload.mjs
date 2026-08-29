@@ -21,6 +21,7 @@ function normalizeLanes(source, tickets) {
     .map((lane) => ({
       ...lane,
       collapsed: lane.collapsed === true,
+      icon: typeof lane.icon === "string" && lane.icon ? lane.icon : null,
       total:
         typeof counts[lane.name] === "number"
           ? counts[lane.name]

@@ -142,9 +142,17 @@
   --scrim: color-mix(in srgb, var(--fg-1) 45%, transparent);
   --scanlines: repeating-linear-gradient(
     0deg,
-    color-mix(in srgb, var(--fg-1) 3%, transparent) 0 1px,
+    color-mix(in srgb, var(--fg-1) 6%, transparent) 0 1px,
     transparent 1px 3px
   );
+  /* a panel that sits on a scanlined surface takes the same texture, quieter */
+  --scanlines-soft: repeating-linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--fg-1) 2%, transparent) 0 1px,
+    transparent 1px 3px
+  );
+  /* the tone follows --fg-1, so one value lifts a card on either theme */
+  --card-edge-hi: inset 0 1px 0 color-mix(in srgb, var(--fg-1) 5%, transparent);
 
   --font-mono: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-display: "Martian Mono", "Spline Sans Mono", ui-monospace, monospace;
@@ -305,8 +313,6 @@ kbd {
 /* frame: header, toolbar, board stacked to the viewport */
 .frame {
   height: 100vh;
-  max-width: 1720px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   border-inline: 1px solid var(--line-1);
@@ -332,31 +338,6 @@ kbd {
   white-space: nowrap;
 }
 
-.hd-pipe { color: var(--line-2); user-select: none; }
-
-.hd-counts {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  overflow: hidden;
-}
-.hd-count {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  font: 500 11px/1.2 var(--font-mono);
-  letter-spacing: var(--tracking-micro);
-  text-transform: uppercase;
-  color: var(--fg-3);
-  white-space: nowrap;
-}
-.hd-count-n {
-  font: 500 13px/1 var(--font-mono);
-  letter-spacing: 0;
-  color: var(--fg-1);
-}
-
 .hd-spacer { flex: 1; }
 
 /* the soft re-render speaks here, and nowhere else */
@@ -371,6 +352,17 @@ kbd {
   max-width: 40ch;
 }
 .hd-notice[hidden] { display: none; }
+
+/* the scan notes button is built into the header beside the theme control,
+   so it takes that control's height and padding */
+#scan-notes {
+  height: var(--control-h);
+  padding: 0 10px;
+  font: 500 12px/1 var(--font-mono);
+  gap: 6px;
+  color: var(--amber);
+  border-color: var(--amber-dim);
+}
 
 .theme-btn {
   display: inline-flex;
@@ -648,6 +640,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 .col {
   flex: 1 1 var(--lane-min);
   min-width: var(--lane-min);
+  max-width: 520px;
   display: flex;
   flex-direction: column;
 }
@@ -1241,13 +1234,10 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 .detail-body li li:has(> input[type="checkbox"]) { margin-left: 0; }
 
 /* ---- narrow. The lanes never respond; they hold their minimum and scroll.
-   These only keep the header and the toolbar whole. ---- */
+   These only keep the toolbar whole. ---- */
 @media (max-width: 1440px) {
   .bar { column-gap: 12px; }
   .search { flex-basis: 220px; min-width: 180px; }
-}
-@media (max-width: 1180px) {
-  .hd-counts { display: none; }
 }
 @media (max-width: 1000px) {
   .bar { row-gap: 8px; }
@@ -1291,6 +1281,13 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   border-bottom: 2px solid transparent;
   cursor: pointer;
 }
+.tab-glyph {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-right: 8px;
+  color: var(--fg-4);
+}
+.tab[aria-current="page"] .tab-glyph { color: var(--fg-2); }
 .tab + .tab { border-left: 1px solid var(--line-1); }
 .tab:hover { color: var(--fg-1); background: var(--surface-hover); }
 .tab[aria-current="page"] { color: var(--fg-1); border-bottom-color: var(--green); }
@@ -1305,6 +1302,43 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 }
 
 .wf-view { padding: 22px 24px 48px; }
+
+/* ---- the effort map: a fixed rail of prose, and a diagram that scrolls
+   inside itself, so the diagram is on screen at load. ---- */
+.wf-view[data-kind="effort"] {
+  --wf-rail: 320px;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+.wf-view[data-kind="effort"] .wf-head {
+  flex: none;
+  width: var(--wf-rail);
+  margin: 0;
+  padding: 22px 20px 32px;
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--line-1);
+}
+.wf-view[data-kind="effort"] .wf-board {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 22px 24px 56px;
+}
+.wf-view[data-kind="effort"] .wf-status {
+  position: absolute;
+  left: var(--wf-rail);
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 6px 24px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--line-1);
+}
 
 /* ---- the map body, rendered as the view header ---- */
 .wf-head { margin: 0 0 26px; }
@@ -1336,6 +1370,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   text-transform: uppercase;
   color: var(--fg-2);
 }
+.wf-fold-glyph { display: inline-flex; flex: none; color: var(--fg-4); }
 .wf-fold-btn::-webkit-details-marker,
 .wf-doc-btn::-webkit-details-marker { display: none; }
 .wf-fold-btn:hover,
@@ -1408,14 +1443,27 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 
 /* ---- the three columns and the edges over them ---- */
 .wf-board { position: relative; }
-.wf-edges { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+/* Panel, then edge, then card, stated rather than left to source order: a z-index on
+   .wf-col would trap that lane's own cards under the edge layer. */
+.wf-edges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: visible;
+}
 .wf-cols { display: flex; align-items: flex-start; gap: 96px; }
 
 .wf-col {
-  flex: 0 1 264px;
+  flex: 1 1 264px;
   min-width: 196px;
+  max-width: 520px;
   display: flex;
   flex-direction: column;
+  background-color: var(--bg-surface);
+  background-image: var(--scanlines-soft);
+  border: 1px solid var(--line-1);
 }
 .wf-col-head {
   flex: none;
@@ -1423,9 +1471,12 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   align-items: center;
   gap: 9px;
   height: 34px;
+  padding: 0 12px;
   border-bottom: 1px solid var(--line-1);
 }
-.wf-col-glyph { display: inline-flex; color: var(--fg-3); }
+.wf-col-glyph { display: inline-flex; flex: none; color: var(--fg-3); }
+.wf-col[data-state="behind-us"] .wf-col-glyph { color: var(--green); }
+.wf-col[data-state="still-blocked"] .wf-col-glyph { color: var(--amber); }
 .wf-col-name {
   margin: 0;
   font: 500 11px var(--font-display);
@@ -1445,7 +1496,7 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 .wf-col-list {
   flex: 1;
   margin: 0;
-  padding: 13px 0 0;
+  padding: 13px 12px 12px;
   list-style: none;
   display: flex;
   flex-direction: column;
@@ -1453,8 +1504,10 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 }
 
 /* ---- behind us: folded with its count, always ---- */
+/* above the edge layer, because a fold routes edges through the rail and over the label */
 .wf-col.is-collapsed {
   position: relative;
+  z-index: 3;
   flex: 0 0 52px;
   min-width: 52px;
   align-self: stretch;
@@ -1508,10 +1561,12 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 /* ---- the card. Smaller than a ticket card on purpose. ---- */
 .wf-card {
   position: relative;
+  z-index: 2;
   padding: 8px 10px;
   cursor: pointer;
   background: var(--surface-card);
   border: 1px solid var(--border-strong);
+  box-shadow: var(--card-edge-hi);
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 .wf-card[data-state="behind-us"] {
@@ -1562,14 +1617,60 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
 }
 .wf-card-open:hover { color: var(--cyan); }
 .wf-card-open:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+.wf-card-answer {
+  margin: 7px 0 0;
+  padding-left: 8px;
+  font: 400 12px/1.35 var(--font-mono);
+  color: var(--fg-3);
+  border-left: 2px solid var(--accent-green);
+}
 
-/* ---- edges: live at rest, satisfied only on hover ---- */
-.wf-edge { transition: opacity var(--dur-fast) var(--ease-out); }
-.wf-edge.is-live { opacity: 1; }
-.wf-edge.is-satisfied { opacity: 0; }
-.wf-view.is-focused .wf-edge.is-live { opacity: 0.12; }
+/* ---- edges: nothing at rest, drawn source to target on hover ---- */
+/* The board sets --wf-len and --wf-delay on each path, because CSS cannot measure a curve. */
+.wf-edge,
+.wf-dash {
+  --wf-draw: 220ms;
+  --wf-land: cubic-bezier(0.23, 1, 0.32, 1);
+  opacity: 0;
+}
+.wf-edge {
+  stroke-dasharray: var(--wf-len, none);
+  stroke-dashoffset: 0;
+  marker-end: none;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    stroke-dashoffset var(--dur-fast) var(--ease-out);
+}
+/* Exit undraws: a line that landed retracts, and one caught mid-draw leaves at once rather
+   than flashing its full length. */
+.wf-edge:not(.is-on) { stroke-dashoffset: var(--wf-len, 0px); }
+.wf-view.is-focused .wf-edge.is-on {
+  marker-end: var(--wf-marker);
+  animation:
+    wf-draw var(--wf-draw) var(--wf-land) var(--wf-delay, 0ms) backwards,
+    wf-tip var(--wf-draw) steps(1, end) var(--wf-delay, 0ms) backwards;
+}
 .wf-view.is-focused .wf-edge.is-live.is-on { opacity: 1; }
-.wf-view.is-focused .wf-edge.is-satisfied.is-on { opacity: 0.85; }
+.wf-view.is-focused .wf-edge.is-satisfied.is-on { opacity: 0.7; }
+
+/* One dash travels the line the moment it lands, and it takes the text colour rather than the
+   line's, because a pulse the colour of the line under it reads as nothing. */
+.wf-dash {
+  stroke: var(--fg-1);
+  stroke-linecap: round;
+  stroke-dasharray: 16px var(--wf-len, 0px);
+}
+.wf-view.is-focused .wf-dash.is-on {
+  animation: wf-flow 2.4s linear calc(var(--wf-delay, 0ms) + var(--wf-draw)) infinite;
+}
+
+@keyframes wf-draw { from { stroke-dashoffset: var(--wf-len, 0px); } }
+/* The arrowhead is a discrete value, so a one step curve holds it back until the line lands. */
+@keyframes wf-tip { from { marker-end: none; } }
+@keyframes wf-flow {
+  from { opacity: 0.9; stroke-dashoffset: 0; }
+  to { opacity: 0.9; stroke-dashoffset: calc(-1 * (var(--wf-len, 0px) + 16px)); }
+}
 .wf-view.is-focused .wf-card.is-dim { opacity: 0.22; }
 
 .wf-status {
