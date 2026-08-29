@@ -211,7 +211,9 @@ export async function scan(context) {
 
   const groups = plans.map((plan) => {
     const assembled = assembleGroup(plan, held, config);
-    warnDuplicateIds(warnings, assembled.group.files, `files in ${plan.path}`);
+    // Only an issue's id is read, by the blocker line, so a document beside them collides with nothing.
+    const issues = assembled.group.files.filter((file) => file.role === "issue");
+    warnDuplicateIds(warnings, issues, `issues in ${plan.path}`);
     warnings.push(...assembled.warnings);
     return assembled.group;
   });
