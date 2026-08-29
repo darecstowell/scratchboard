@@ -165,6 +165,29 @@ test("no edge is drawn at rest, and a hover reveals the ones a card touches", ()
   assert.match(board, /node\.classList\.toggle\("is-on", rank !== EDGE_HIDDEN\)/, "the reveal keys on the rank");
 });
 
+/** No edge is drawn at rest, so a reader who never touches a pointer would see none at all. */
+test("a card reveals its edges to a keyboard as well as to a pointer", () => {
+  const board = source("board.js");
+
+  for (const event of ["mouseover", "mouseout", "focusin", "focusout"]) {
+    assert.ok(
+      board.indexOf(`el.views.addEventListener("${event}"`) !== -1,
+      `the diagram never hears ${event}`
+    );
+  }
+  assert.match(board, /function showCard\(\) \{/, "one place decides which card is shown");
+  assert.match(board, /const card = wf\.focused \|\| wf\.hovered \|\| null;/, "focus and hover fight");
+  assert.equal(
+    (board.match(/showCard\(\);/g) || []).length >= 5,
+    true,
+    "every hover and focus edge routes through the one decision"
+  );
+  assert.ok(
+    board.indexOf('class="wf-card-open"') !== -1 || source("board-render.mjs").indexOf("wf-card-open") !== -1,
+    "the card holds a focusable control for focusin to land on"
+  );
+});
+
 /** Reduced motion turns off every transition and animation, so a hand rolled frame loop would
  *  drive right through it. The reveal is CSS, and this holds it that way. */
 test("a revealed edge draws itself in CSS, and its arrowhead waits for the line to land", () => {

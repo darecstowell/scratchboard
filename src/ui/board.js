@@ -636,7 +636,9 @@
       paths: [...view.querySelectorAll(".wf-edge")],
       dashes: [...view.querySelectorAll(".wf-dash")],
       pinned: null,
-      hovered: null
+      hovered: null,
+      focused: null,
+      shown: null
     };
     view.querySelectorAll(".wf-card").forEach((node) => wf.cards.set(node.dataset.path, node));
     drawEdges();
@@ -746,7 +748,7 @@
       '<span class="wf-none">' +
       esc(
         live + (live === 1 ? " live blocker" : " live blockers") + " of " + wf.group.edges.length +
-        ". Hover a ticket to see what it unblocks."
+        ". Hover or tab to a ticket to see what it unblocks."
       ) +
       "</span>"
     );
@@ -760,10 +762,23 @@
     setStatus(restText());
   }
 
+  /** A pointer and a keyboard each hold their own card, so one letting go does not take the
+   *  other's edges with it. */
+  function showCard() {
+    if (!wf || wf.pinned) return;
+    const card = wf.focused || wf.hovered || null;
+    if (card === wf.shown) return;
+    wf.shown = card;
+    if (card) focusCard(card.dataset.path);
+    else restView();
+  }
+
   function clearPin() {
     if (!wf || !wf.pinned) return;
     wf.pinned = null;
     wf.hovered = null;
+    wf.focused = null;
+    wf.shown = null;
     restView();
   }
 
@@ -1285,24 +1300,48 @@
       return;
     }
     wf.pinned = wf.pinned === card.dataset.path ? null : card.dataset.path;
-    if (wf.pinned) focusCard(wf.pinned);
-    else restView();
+    if (wf.pinned) {
+      wf.shown = card;
+      focusCard(wf.pinned);
+      return;
+    }
+    wf.shown = null;
+    restView();
+    showCard();
   });
 
   el.views.addEventListener("mouseover", (event) => {
-    if (!wf || wf.pinned) return;
+    if (!wf) return;
     const card = event.target.closest(".wf-card");
-    if (!card || card === wf.hovered) return;
+    if (!card) return;
     wf.hovered = card;
-    focusCard(card.dataset.path);
+    showCard();
   });
 
   el.views.addEventListener("mouseout", (event) => {
-    if (!wf || wf.pinned) return;
+    if (!wf) return;
     const card = event.target.closest(".wf-card");
     if (!card || (event.relatedTarget && card.contains(event.relatedTarget))) return;
     wf.hovered = null;
-    restView();
+    showCard();
+  });
+
+  /** The only focusable thing on a card is its open button, so tabbing through the diagram
+   *  reveals the same edges a pointer does. */
+  el.views.addEventListener("focusin", (event) => {
+    if (!wf) return;
+    const card = event.target.closest(".wf-card");
+    if (!card) return;
+    wf.focused = card;
+    showCard();
+  });
+
+  el.views.addEventListener("focusout", (event) => {
+    if (!wf) return;
+    const card = event.target.closest(".wf-card");
+    if (!card || (event.relatedTarget && card.contains(event.relatedTarget))) return;
+    wf.focused = null;
+    showCard();
   });
 
   el.detail.addEventListener("click", (event) => {

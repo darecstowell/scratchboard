@@ -279,6 +279,29 @@ test("the answer section reads out of a body, and stops at the next heading", ()
   assert.equal(answerOf("## answer\nStill it.\n"), "Still it.", "the heading is matched by name, not by case");
 });
 
+test("a heading inside a fenced block is text, never a heading", () => {
+  assert.equal(
+    answerOf("## Notes\n\n```md\n## Answer\nNot an answer.\n```\n"),
+    "",
+    "a fenced sample grew a bogus answer"
+  );
+  assert.equal(
+    answerOf("## Answer\n\nWe ship it.\n\n```sh\n# run it\nnpx scratchboard\n```\n\nDone.\n"),
+    "We ship it. # run it npx scratchboard Done.",
+    "a fenced comment cut the answer short"
+  );
+  assert.equal(
+    answerOf("## Answer\n\n~~~\n## Not a heading\n~~~\n\nWe ship it.\n"),
+    "## Not a heading We ship it.",
+    "a tilde fence is a fence too"
+  );
+  assert.equal(
+    answerOf("## Answer\n\n````\n```\n## Still fenced\n````\n\nWe ship it.\n"),
+    "## Still fenced We ship it.",
+    "a shorter run does not close a longer fence"
+  );
+});
+
 test("a body with no answer, and no body at all, answer with nothing", () => {
   assert.equal(answerOf("## Notes\n\nNothing was settled.\n"), "");
   assert.equal(answerOf("## Answer\n\n## Notes\n"), "", "an empty section still reported text");

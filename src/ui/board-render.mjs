@@ -34,6 +34,8 @@ export const columnName = (key) => COLUMN_LABELS.get(key) || key.replace(/-/g, "
 
 const ANSWER_HEAD_RE = /^ {0,3}##[ \t]+answer[ \t]*#*[ \t]*$/i;
 const HEAD_RE = /^ {0,3}#{1,6}[ \t]/;
+/* Named apart from the renderer's own fence rule: the baked page holds both in one scope. */
+const ANSWER_FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
 const ANSWER_MAX = 180;
 
 const answerPlain = (line) =>
@@ -49,12 +51,28 @@ const answerPlain = (line) =>
  */
 export function answerOf(body) {
   const lines = String(body == null ? "" : body).replace(/\r\n?/g, "\n").split("\n");
-  const from = lines.findIndex((line) => ANSWER_HEAD_RE.test(line));
-  if (from === -1) return "";
   const said = [];
-  for (let n = from + 1; n < lines.length && !HEAD_RE.test(lines[n]); n += 1) {
-    said.push(answerPlain(lines[n]));
+  let fence = "";
+  let reading = false;
+  for (const line of lines) {
+    const mark = ANSWER_FENCE_RE.exec(line);
+    if (fence) {
+      if (mark && mark[1][0] === fence[0] && mark[1].length >= fence.length) fence = "";
+      else if (reading) said.push(answerPlain(line));
+      continue;
+    }
+    if (mark) {
+      fence = mark[1];
+      continue;
+    }
+    if (!reading) {
+      reading = ANSWER_HEAD_RE.test(line);
+      continue;
+    }
+    if (HEAD_RE.test(line)) break;
+    said.push(answerPlain(line));
   }
+  if (!reading) return "";
   const text = said.join(" ").replace(/\s+/g, " ").trim();
   if (text.length <= ANSWER_MAX) return text;
   const cut = text.slice(0, ANSWER_MAX);
