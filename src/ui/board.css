@@ -1329,8 +1329,10 @@ html[data-theme="phosphor"] .theme-opt--phosphor { display: none; }
   overflow: auto;
   padding: 22px 24px 56px;
 }
+/* the bar sits over the scrolling diagram, so it outranks the cards beneath it */
 .wf-view[data-kind="effort"] .wf-status {
   position: absolute;
+  z-index: 4;
   left: var(--wf-rail);
   right: 0;
   bottom: 0;
