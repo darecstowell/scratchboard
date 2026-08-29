@@ -27,8 +27,9 @@ It owns no directory and no file format: it reads the layout your repo already h
 `npx scratchboard` reads the markdown tickets already in your repo, maps them to lanes, and
 opens a board in your browser. One self-contained HTML file in your temp directory. No config,
 no dependencies, nothing written back to your repo. It reads the file layout the
-[mattpocock/skills](https://github.com/mattpocock/skills) agent skills write, so an effort map or
-a feature spec gets a view of its own rather than one more card. That view is experimental.
+[mattpocock/skills](https://github.com/mattpocock/skills) agent skills write, so a
+[/wayfinder map](#the-wayfinder-view) or a feature spec gets a view of its own rather than one
+more card.
 
 There is no drag and drop and no write-back, so your current flow stays safe.
 
@@ -45,14 +46,29 @@ Node 18 or later.
 
 One board, two themes. Both are the tickets in this repo, not a fixture.
 
-![An effort in this repo: the destination on top, then three columns by state, with the tickets you can take now in the middle](assets/screenshot-effort.png)
-
-**The effort view is experimental.** A planning folder gets a tab of its own, and this is what an
-effort looks like inside it. The shape of that view may change. The board itself does not: a repo
-with no planning folder renders exactly as it did before, with no tab row at all.
-
 **Live demo:** [darecstowell.github.io/scratchboard](https://darecstowell.github.io/scratchboard/)
 is this repo's own backlog, baked by this repo's own scratchboard on every push to `main`.
+
+## The /wayfinder view
+
+[/wayfinder](https://www.aihero.dev/skills-wayfinder) is Matt Pocock's skill for an effort that is
+too big for one agent session. It charts the effort as a map of decision tickets on your tracker,
+then resolves them one at a time until the way is clear. The map is the plan, so the plan outlives
+the session that wrote it.
+
+<img src="assets/wayfinder-tour.gif" alt="A wayfinder map: settled decisions with their answers on the left, takeable tickets in the middle, blocked tickets on the right, and hovering one draws the tickets it unblocks" width="800">
+
+Your tracker shows that map as a list of issues. A list does not tell you where you are.
+Scratchboard reads the same files and lays the voyage out left to right: the decisions behind you
+and the answer each one produced, the tickets you can take right now, and the work still in the
+fog. Hover any ticket and it draws what it unblocks, so you see what a decision releases before
+you make it.
+
+There is nothing new to write. It reads the map the skill already wrote.
+
+**The /wayfinder view is experimental.** A planning folder gets a tab of its own, and the shape of
+that view may change. The board itself does not: a repo with no planning folder renders exactly as
+it did before, with no tab row at all.
 
 ## How it works
 
