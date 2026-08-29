@@ -416,7 +416,7 @@
       section.setAttribute("aria-label", lane.name);
       section.innerHTML =
         '<header class="col-head">' +
-        `<span class="col-glyph" aria-hidden="true">${drawGlyph(lane.icon || LANE_ICON)}</span>` +
+        (lane.icon ? `<span class="col-glyph" aria-hidden="true">${drawGlyph(lane.icon)}</span>` : "") +
         `<h2 class="col-name">${esc(lane.name)}</h2>` +
         '<span class="col-count"></span>' +
         (lane.collapsed
@@ -480,7 +480,6 @@
   /** A tab wears the shape of what it opens: the lanes, a route, a shelf, or a part. */
   /** A lane names its own glyph in config. Unnamed, it takes the same one the detail row for
    *  `lane` takes, so a board with no config still reads. */
-  const LANE_ICON = "columns";
   const TAB_ICONS = { board: "columns", effort: "milestone", context: "book", feature: "package" };
   const NOTES_ICON = "alert";
 

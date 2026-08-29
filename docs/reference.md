@@ -133,7 +133,8 @@ A lane is a match, not a location. A ticket is never relocated to join one.
 - Lanes are tried in order and the first match wins. That order is also the order on screen.
 - `"collapsed": true` renders a lane as a narrow rail carrying its count, and builds its cards
   the first time you expand it.
-- `icon` marks the lane header. With no `icon` named, a lane takes `columns`. See
+- `icon` marks the lane header. A lane that names none carries no glyph, so a board shows
+  icons only where its config asks for them. See
   [Icons](#icons).
 - A ticket matching no lane goes to a trailing `Unmapped` lane and raises a warning naming the
   values that matched nothing. It is never dropped.
@@ -251,7 +252,7 @@ The rows the board builds itself are fixed: `lane` takes `columns`, `path` takes
 takes `calendar`, and `refs` takes `cross-reference`. The copy button in the ticket header takes
 `copy`, and swaps to `check` while it confirms.
 
-A lane header on a kanban board takes the `icon` its lane names, and `columns` when it names
+A lane header on a kanban board takes the `icon` its lane names, and no glyph when it names
 none. Naming one per lane is what makes the headers read apart at their size.
 
 The rest of the board's own furniture is fixed. On an effort map the three lanes read as

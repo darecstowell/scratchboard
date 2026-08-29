@@ -46,8 +46,8 @@ function furnitureIcons() {
     assert.ok(found, `board.js declares ${declaration}`);
     return [...found[1].matchAll(/"([a-z-]+)"/g)].map((hit) => hit[1]);
   };
-  const all = [...named("LANE_ICON"), ...named("TAB_ICONS"), ...named("NOTES_ICON")];
-  assert.ok(all.length >= 6, "the board names a glyph for its lanes, its tabs, and its notes");
+  const all = [...named("TAB_ICONS"), ...named("NOTES_ICON")];
+  assert.ok(all.length >= 5, "the board names a glyph for its tabs and its notes");
   return all;
 }
 
