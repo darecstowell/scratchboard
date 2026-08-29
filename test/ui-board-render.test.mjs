@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   LANE_GLYPH,
   OUT_OF_SCOPE,
+  answerOf,
   cardHtmlFor,
   columnHtml,
   columnName,
@@ -41,9 +42,10 @@ test("a path with no slash has no directory", () => {
   assert.equal(dirOf(".scratch/e/1-one.md"), ".scratch/e");
 });
 
-test("a state key reads as words on the page", () => {
-  assert.equal(columnName("behind-us"), "behind us");
+test("a state key reads as words on the page, and one key carries a label of its own", () => {
+  assert.equal(columnName("behind-us"), "Done", "the label is on screen only, the key is unchanged");
   assert.equal(columnName("still-blocked"), "still blocked");
+  assert.equal(columnName("takeable-now"), "takeable now");
 });
 
 test("the walk follows a blocker forward and never back up its own edges", () => {
@@ -100,13 +102,14 @@ test("a hostile title, id and path leave a card escaped", () => {
   assert.ok(html.includes('data-path="a&quot;.md"'), "a quote closed the attribute early");
 });
 
-test("behind us renders folded with its count, with no threshold", () => {
+test("the done lane opens, and keeps the control that collapses it", () => {
   const behind = columnHtml(group({ files: [file({ state: "behind-us" })] }), "behind-us");
   const many = group({ files: Array.from({ length: 9 }, (one, n) => file({ path: `${n}.md` })) });
 
-  assert.ok(behind.includes('class="wf-col is-collapsed"'), "the fold is the state, not a size");
-  assert.ok(behind.includes('<span class="wf-col-count">1</span>'), "a folded column still counts");
-  assert.ok(behind.includes('class="wf-col-toggle" aria-expanded="false"'));
+  assert.equal(behind.includes("is-collapsed"), false, "the done lane opened collapsed");
+  assert.ok(behind.includes('<h2 class="wf-col-name">Done</h2>'), "the lane reads by its label");
+  assert.ok(behind.includes('<span class="wf-col-count">1</span>'), "an open column still counts");
+  assert.ok(behind.includes('class="wf-col-toggle" aria-expanded="true"'), "the reader lost the fold");
 
   const open = columnHtml(many, "takeable-now");
   assert.equal(open.includes("is-collapsed"), false, "a long column folded on its size");
@@ -230,4 +233,67 @@ test("no file at all means no list, and a row escapes what it carries", () => {
   assert.ok(html.includes('<span class="wf-row-type">decision</span>'));
   assert.ok(html.includes("&lt;b&gt;Name it&lt;/b&gt;"));
   assert.equal(html.includes("<b>"), false, "a title carried an element through");
+});
+
+test("the answer section reads out of a body, and stops at the next heading", () => {
+  assert.equal(answerOf("## Answer\nWe ship the reader spec.\n"), "We ship the reader spec.");
+  assert.equal(
+    answerOf("# One\n\n## Answer\n\nWe ship it.\n\n## Notes\n\nNot this.\n"),
+    "We ship it.",
+    "the next heading ended the section"
+  );
+  assert.equal(
+    answerOf("## Answer\r\n\r\nWe ship it.\r\n"),
+    "We ship it.",
+    "a carriage return rode into the text"
+  );
+  assert.equal(
+    answerOf("## Answer\nOne line.\nA second line.\n"),
+    "One line. A second line.",
+    "the section reads as one run of text"
+  );
+  assert.equal(answerOf("## answer\nStill it.\n"), "Still it.", "the heading is matched by name, not by case");
+});
+
+test("a body with no answer, and no body at all, answer with nothing", () => {
+  assert.equal(answerOf("## Notes\n\nNothing was settled.\n"), "");
+  assert.equal(answerOf("## Answer\n\n## Notes\n"), "", "an empty section still reported text");
+  assert.equal(answerOf(""), "");
+  assert.equal(answerOf(undefined), "");
+  assert.equal(answerOf(null), "");
+});
+
+test("the answer flattens its markdown and cuts to a card's length", () => {
+  assert.equal(
+    answerOf("## Answer\n\n- **Ship** the [spec](./one.md), and `hold` the _line_.\n"),
+    "Ship the spec, and hold the line.",
+    "markdown syntax reached the card"
+  );
+
+  const long = answerOf("## Answer\n\n" + "word ".repeat(80));
+  assert.ok(long.length < 200, "a whole section rode onto the card");
+  assert.ok(long.endsWith("\u2026"), "the cut is not marked");
+});
+
+test("a resolved card shows its answer as text, and no other card does", () => {
+  const body = "## Answer\n\nWe read it in the renderer.\n";
+  const done = cardHtmlFor(file({ state: "behind-us", body }));
+
+  assert.ok(done.includes('<p class="wf-card-answer">We read it in the renderer.</p>'));
+  assert.ok(done.indexOf("wf-card-title") < done.indexOf("wf-card-answer"), "the answer reads under the title");
+
+  const open = cardHtmlFor(file({ state: "takeable-now", body }));
+  assert.equal(open.includes("wf-card-answer"), false, "an unresolved card showed an answer");
+
+  const none = cardHtmlFor(file({ state: "behind-us" }));
+  assert.equal(none.includes("wf-card-answer"), false, "a card with no body grew an empty element");
+});
+
+test("a hostile answer lands on the card as escaped text", () => {
+  const html = cardHtmlFor(
+    file({ state: "behind-us", body: '## Answer\n\n<img src=x onerror="alert(1)"> & done\n' })
+  );
+
+  assert.equal(html.includes("<img"), false, "an answer carried an element through");
+  assert.ok(html.includes("&lt;img src=x onerror=&quot;alert(1)&quot;&gt; &amp; done"));
 });

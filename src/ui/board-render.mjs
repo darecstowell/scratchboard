@@ -7,11 +7,44 @@ export const LANE_GLYPH =
   '<path d="M1.5 1.5h13v13h-13v-13Zm1.5 1.5v10h10V3H3Z"/><path d="M5.5 5.5h5v5h-5v-5Z"/></svg>';
 
 export const OUT_OF_SCOPE = "out-of-scope";
+const BEHIND_US = "behind-us";
 
 export const dirOf = (path) =>
   path.lastIndexOf("/") === -1 ? "" : path.slice(0, path.lastIndexOf("/"));
 
-export const columnName = (key) => key.replace(/-/g, " ");
+/** A key the reader never types can read better than it spells. */
+const COLUMN_LABELS = new Map([[BEHIND_US, "Done"]]);
+
+export const columnName = (key) => COLUMN_LABELS.get(key) || key.replace(/-/g, " ");
+
+const ANSWER_HEAD_RE = /^ {0,3}##[ \t]+answer[ \t]*#*[ \t]*$/i;
+const HEAD_RE = /^ {0,3}#{1,6}[ \t]/;
+const ANSWER_MAX = 180;
+
+const answerPlain = (line) =>
+  line
+    .replace(/^\s*>+\s?/, "")
+    .replace(/^\s*(?:[-*+]|\d{1,9}[.)])\s+/, "")
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[`*_~]/g, "");
+
+/**
+ * A resolved ticket carries its answer under a heading, and a card reads it back as plain text.
+ * Ticket markdown is untrusted, so the syntax is flattened rather than rendered.
+ */
+export function answerOf(body) {
+  const lines = String(body == null ? "" : body).replace(/\r\n?/g, "\n").split("\n");
+  const from = lines.findIndex((line) => ANSWER_HEAD_RE.test(line));
+  if (from === -1) return "";
+  const said = [];
+  for (let n = from + 1; n < lines.length && !HEAD_RE.test(lines[n]); n += 1) {
+    said.push(answerPlain(lines[n]));
+  }
+  const text = said.join(" ").replace(/\s+/g, " ").trim();
+  if (text.length <= ANSWER_MAX) return text;
+  const cut = text.slice(0, ANSWER_MAX);
+  return (cut.replace(/\s+\S*$/, "") || cut) + "\u2026";
+}
 
 /**
  * A baked board is one file, so a relative link to a path the payload holds is navigation.
@@ -135,6 +168,7 @@ export function headHtml(group, markdownHtml) {
 }
 
 export function cardHtmlFor(file) {
+  const answer = file.state === BEHIND_US ? answerOf(file.body) : "";
   return (
     '<li class="wf-card" data-path="' + escapeHtml(file.path) + '"' +
     (file.id ? ' data-id="' + escapeHtml(file.id) + '"' : "") +
@@ -146,24 +180,26 @@ export function cardHtmlFor(file) {
     (file.id ? '<span class="wf-card-id">' + escapeHtml(file.id) + "</span>" : "") +
     "</div>" +
     '<h3 class="wf-card-title"><button type="button" class="wf-card-open" aria-haspopup="dialog">' +
-    escapeHtml(file.title) + "</button></h3></li>"
+    escapeHtml(file.title) + "</button></h3>" +
+    (answer ? '<p class="wf-card-answer">' + escapeHtml(answer) + "</p>" : "") +
+    "</li>"
   );
 }
 
 export function columnHtml(group, key) {
   const files = group.files.filter((file) => file.state === key);
   const claimed = key === "takeable-now" ? files.filter((file) => file.claimed).length : 0;
-  const folded = key === "behind-us";
+  const foldable = key === BEHIND_US;
   return (
-    '<section class="wf-col' + (folded ? " is-collapsed" : "") + '" data-state="' + key + '"' +
+    '<section class="wf-col" data-state="' + key + '"' +
     ' aria-label="' + columnName(key) + '">' +
     '<header class="wf-col-head">' +
     '<span class="wf-col-glyph" aria-hidden="true">' + LANE_GLYPH + "</span>" +
     '<h2 class="wf-col-name">' + columnName(key) + "</h2>" +
     '<span class="wf-col-count">' + (files.length - claimed) + "</span>" +
     (claimed ? '<span class="wf-col-claimed">+' + claimed + " claimed</span>" : "") +
-    (folded
-      ? '<button type="button" class="wf-col-toggle" aria-expanded="false">' +
+    (foldable
+      ? '<button type="button" class="wf-col-toggle" aria-expanded="true">' +
         '<span class="wf-col-toggle-txt wf-col-toggle-show">show tickets</span>' +
         '<span class="wf-col-toggle-txt wf-col-toggle-collapse">collapse</span></button>'
       : "") +
