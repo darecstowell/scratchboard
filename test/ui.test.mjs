@@ -104,7 +104,10 @@ test("a payload with no group leaves the page with no tab row at all", () => {
   const body = board.slice(at, board.indexOf("\n  }", at));
 
   assert.match(body, /if \(!groups\.length\) \{\s*\n\s*el\.tabs\.remove\(\);/, "the row survives an empty payload");
-  assert.ok(body.indexOf('tabHtml("board", "board")') !== -1, "the board tab is pinned first");
+  assert.ok(
+    body.indexOf('tabHtml("board", "board", TAB_ICONS.board)') !== -1,
+    "the board tab is pinned first"
+  );
   assert.match(source("board.css"), /\.tabs:empty \{ display: none; \}/, "an empty row still paints a band");
 });
 

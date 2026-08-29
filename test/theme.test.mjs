@@ -58,6 +58,18 @@ for (const [name, theme] of THEMES) {
     }
   });
 
+  /* amber carries the scan notes button and the blocked lane, green the done lane. Each one
+     paints straight onto a panel, a card, or the page, with no tint under it. bg-deep stays
+     out: it is the search box, and no accent paints there. */
+  test(`${name} draws an accent on a bare surface at ${TEXT} to 1 or better`, () => {
+    for (const accent of ["amber", "green"]) {
+      for (const surface of ["bg-root", "bg-surface", "bg-raised", "bg-overlay"]) {
+        const got = contrast(theme[accent], theme[surface]);
+        assert.ok(got >= TEXT, `${accent} ${theme[accent]} is ${got.toFixed(2)} on ${surface}`);
+      }
+    }
+  });
+
   test(`${name} badge text clears ${TEXT} to 1 on its own tint`, () => {
     for (const accent of ["green", "amber", "red", "cyan"]) {
       const got = contrast(theme[accent], theme[`${accent}-tint`]);

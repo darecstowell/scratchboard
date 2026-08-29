@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { test } from "./context.mjs";
 import { ICON_NAMES, validate } from "../src/config.mjs";
+import { columnIcon, foldIcon } from "../src/ui/board-render.mjs";
 
 const source = (name) => readFileSync(fileURLToPath(new URL(`../src/ui/${name}`, import.meta.url)), "utf8");
 
@@ -33,6 +34,27 @@ test("every inlined icon carries drawable path data", () => {
     const row = block.split("\n").filter((line) => line.indexOf(`"${name}":`) !== -1)[0];
     assert.ok(row, `${name} has a row`);
     assert.match(row, /<path d="[^"]+"\/>/, `${name} holds a path`);
+  }
+});
+
+/** The renderer asks for a glyph by name and the board draws it, so a rename in one file is
+ *  silent in the other. These are the names the board builds for itself. */
+test("every glyph the renderer names is one the board inlines", () => {
+  const asked = [
+    ...["behind-us", "takeable-now", "still-blocked"].map(columnIcon),
+    ...["notes", "not yet specified", "out of scope", "documents"].map(foldIcon),
+    "columns",
+    "milestone",
+    "book",
+    "package",
+    "alert",
+  ];
+
+  const bundled = bundledIcons();
+  for (const name of asked) {
+    assert.ok(name, "the renderer asked for an empty glyph name");
+    assert.ok(bundled.has(name), `the board draws nothing for "${name}"`);
+    assert.ok(ICON_NAMES.has(name), `config rejects "${name}"`);
   }
 });
 

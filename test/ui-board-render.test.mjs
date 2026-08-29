@@ -1,13 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  LANE_GLYPH,
   OUT_OF_SCOPE,
   answerOf,
   cardHtmlFor,
   columnHtml,
+  columnIcon,
   columnName,
   dirOf,
+  foldIcon,
   downstreamOf,
   EDGE_BULGE,
   EDGE_HIDDEN,
@@ -19,8 +20,10 @@ import {
 } from "../src/ui/board-render.mjs";
 import { renderMarkdown } from "../src/ui/markdown.mjs";
 
-/** The board hands the header a renderer. This one reports what it was given. */
+/** The board hands the header a renderer and a glyph. These report what they were given. */
 const stub = (base, source) => `[md base=${base} source=${source}]`;
+
+const drawn = (name) => (name ? `[icon ${name}]` : "");
 
 const group = (over) => ({ kind: "effort", path: ".scratch/e", title: "Effort", sections: {}, files: [], ...over });
 
@@ -50,6 +53,19 @@ test("a state key reads as words on the page, and one key carries a label of its
   assert.equal(columnName("behind-us"), "Done", "the label is on screen only, the key is unchanged");
   assert.equal(columnName("still-blocked"), "still blocked");
   assert.equal(columnName("takeable-now"), "takeable now");
+});
+
+test("a lane and a fold each name the glyph the board draws for them", () => {
+  assert.equal(columnIcon("behind-us"), "check", "settled");
+  assert.equal(columnIcon("takeable-now"), "issue-opened", "open");
+  assert.equal(columnIcon("still-blocked"), "blocked", "obstructed");
+  assert.equal(columnIcon("out-of-scope"), "", "a state that never becomes a lane");
+
+  assert.equal(foldIcon("notes"), "note");
+  assert.equal(foldIcon("not yet specified"), "question");
+  assert.equal(foldIcon("out of scope"), "circle-slash");
+  assert.equal(foldIcon("documents"), "file");
+  assert.equal(foldIcon("nothing named"), "", "an unnamed fold reached for a glyph");
 });
 
 test("the walk follows a blocker forward and never back up its own edges", () => {
@@ -107,7 +123,7 @@ test("a hostile title, id and path leave a card escaped", () => {
 });
 
 test("the done lane opens, and keeps the control that collapses it", () => {
-  const behind = columnHtml(group({ files: [file({ state: "behind-us" })] }), "behind-us");
+  const behind = columnHtml(group({ files: [file({ state: "behind-us" })] }), "behind-us", drawn);
   const many = group({ files: Array.from({ length: 9 }, (one, n) => file({ path: `${n}.md` })) });
 
   assert.equal(behind.includes("is-collapsed"), false, "the done lane opened collapsed");
@@ -115,7 +131,7 @@ test("the done lane opens, and keeps the control that collapses it", () => {
   assert.ok(behind.includes('<span class="wf-col-count">1</span>'), "an open column still counts");
   assert.ok(behind.includes('class="wf-col-toggle" aria-expanded="true"'), "the reader lost the fold");
 
-  const open = columnHtml(many, "takeable-now");
+  const open = columnHtml(many, "takeable-now", drawn);
   assert.equal(open.includes("is-collapsed"), false, "a long column folded on its size");
   assert.equal(open.includes("wf-col-toggle"), false, "a column that never folds grew a toggle");
   assert.ok(open.includes('<span class="wf-col-count">9</span>'));
@@ -123,7 +139,7 @@ test("the done lane opens, and keeps the control that collapses it", () => {
 
 test("a claimed ticket is not counted by its column", () => {
   const files = [file({ path: "1.md" }), file({ path: "2.md", claimed: true }), file({ path: "3.md" })];
-  const html = columnHtml(group({ files }), "takeable-now");
+  const html = columnHtml(group({ files }), "takeable-now", drawn);
 
   assert.ok(html.includes('<span class="wf-col-count">2</span>'), "the claimed ticket counts toward the number");
   assert.ok(html.includes('<span class="wf-col-claimed">+1 claimed</span>'));
@@ -136,12 +152,15 @@ test("a column holds the files in its own state, names itself in words, and glyp
     file({ path: "2.md", state: "still-blocked" }),
     file({ path: "3.md", state: OUT_OF_SCOPE }),
   ];
-  const html = columnHtml(group({ files }), "still-blocked");
+  const html = columnHtml(group({ files }), "still-blocked", drawn);
 
   assert.ok(html.includes('data-state="still-blocked"'));
   assert.ok(html.includes('aria-label="still blocked"'), "the column names itself in words");
   assert.ok(html.includes('<h2 class="wf-col-name">still blocked</h2>'));
-  assert.ok(html.includes(LANE_GLYPH), "the column carries the lane glyph the board already inlines");
+  assert.ok(
+    html.includes('<span class="wf-col-glyph" aria-hidden="true">[icon blocked]</span>'),
+    "the column asked the board to draw its own glyph"
+  );
   assert.ok(html.includes('data-path="2.md"'));
   assert.equal(html.includes('data-path="1.md"'), false, "a file in another state reached this column");
   assert.equal(html.includes('data-path="3.md"'), false, "an out of scope file reached a column");
@@ -149,14 +168,14 @@ test("a column holds the files in its own state, names itself in words, and glyp
 
 test("a lead document is openable from its group header", () => {
   const lead = file({ path: ".scratch/e/map.md", role: "lead", title: "The map", state: "" });
-  const html = headHtml(group({ files: [lead] }), stub);
+  const html = headHtml(group({ files: [lead] }), stub, drawn);
 
   assert.ok(html.includes('<header class="wf-head" data-path=".scratch/e/map.md">'), "the head carries the lead path");
   assert.ok(html.includes('<button type="button" class="wf-card-open" aria-haspopup="dialog">Effort</button>'));
 });
 
 test("a group with no lead keeps a plain title, escaped", () => {
-  const html = headHtml(group({ title: '<b>plain</b>' }), stub);
+  const html = headHtml(group({ title: '<b>plain</b>' }), stub, drawn);
 
   assert.equal(html.includes("data-path"), false, "a head with no lead offered a path to open");
   assert.equal(html.includes("wf-card-open"), false, "a head with no lead offered a button");
@@ -165,7 +184,7 @@ test("a group with no lead keeps a plain title, escaped", () => {
 
 test("an out of scope ticket rides in the header fold, never in a column", () => {
   const spare = file({ path: ".scratch/e/9-spare.md", title: "Spare", state: OUT_OF_SCOPE });
-  const html = headHtml(group({ files: [spare], sections: { outOfScope: "- one\n- two\n" } }), stub);
+  const html = headHtml(group({ files: [spare], sections: { outOfScope: "- one\n- two\n" } }), stub, drawn);
 
   assert.ok(html.includes('<span class="wf-fold-name">out of scope</span>'));
   assert.ok(html.includes('<span class="wf-fold-count">3</span>'), "the fold counts the prose and the tickets");
@@ -174,17 +193,18 @@ test("an out of scope ticket rides in the header fold, never in a column", () =>
 });
 
 test("a fold reports how many things it holds", () => {
-  const items = headHtml(group({ sections: { notes: "- one\n- two\n- three\n" } }), stub);
+  const items = headHtml(group({ sections: { notes: "- one\n- two\n- three\n" } }), stub, drawn);
+  assert.ok(items.includes('<span class="wf-fold-glyph" aria-hidden="true">[icon note]</span>'));
   assert.ok(items.includes('<span class="wf-fold-name">notes</span>'));
   assert.ok(items.includes('<span class="wf-fold-count">3</span>'), "a list counts its markers");
 
-  const prose = headHtml(group({ sections: { fog: "First block.\nStill first.\n\nSecond block.\n" } }), stub);
+  const prose = headHtml(group({ sections: { fog: "First block.\nStill first.\n\nSecond block.\n" } }), stub, drawn);
   assert.ok(prose.includes('<span class="wf-fold-name">not yet specified</span>'));
   assert.ok(prose.includes('<span class="wf-fold-count">2</span>'), "prose counts its blocks");
 });
 
 test("a head with no section and no spare ticket carries no fold at all", () => {
-  const html = headHtml(group({ files: [file({ role: "issue" })] }), stub);
+  const html = headHtml(group({ files: [file({ role: "issue" })] }), stub, drawn);
 
   assert.equal(html.includes("wf-folds"), false);
   assert.equal(html.includes("wf-dest"), false, "a group with no destination opened with one");
@@ -195,7 +215,7 @@ test("the documents fold holds every other document, and a context opens with it
     file({ path: ".scratch/e/notes.md", role: "other", title: "Notes", body: "text" }),
     file({ path: ".scratch/e/plan.md", role: "other", title: "Plan", body: "more" }),
   ];
-  const effort = headHtml(group({ files: docs }), stub);
+  const effort = headHtml(group({ files: docs }), stub, drawn);
 
   assert.ok(effort.includes('<span class="wf-fold-name">documents</span>'));
   assert.ok(effort.includes('<span class="wf-fold-count">2</span>'));
@@ -203,7 +223,7 @@ test("the documents fold holds every other document, and a context opens with it
   assert.ok(effort.includes("[md base=.scratch/e source=text]"), "a document body reads its own directory");
 
   const lead = file({ path: "CONTEXT.md", role: "lead", title: "Glossary", body: "the words" });
-  const context = headHtml(group({ kind: "context", path: ".", files: [lead, ...docs] }), stub);
+  const context = headHtml(group({ kind: "context", path: ".", files: [lead, ...docs] }), stub, drawn);
 
   assert.equal(context.includes("wf-fold-name\">documents"), false, "a context folds its records twice");
   assert.ok(context.includes("[md base= source=the words]"), "a context opens with the lead body");
@@ -211,7 +231,7 @@ test("the documents fold holds every other document, and a context opens with it
 
 test("the destination reads against the lead document's own directory", () => {
   const lead = file({ path: ".scratch/e/map.md", role: "lead", state: "" });
-  const html = headHtml(group({ files: [lead], sections: { destination: "where we go" } }), stub);
+  const html = headHtml(group({ files: [lead], sections: { destination: "where we go" } }), stub, drawn);
 
   assert.ok(html.includes('<div class="wf-dest wf-md">[md base=.scratch/e source=where we go]</div>'));
 });
@@ -221,7 +241,7 @@ test("a relative link in a header resolves through the payload the board holds",
   const markdownHtml = (base, source) => renderMarkdown(source, (href) => inBoardTarget(known, base, href));
   const lead = file({ path: ".scratch/e/map.md", role: "lead", state: "" });
   const sections = { destination: "See [one](./1-one.md) and [away](../gone.md)." };
-  const html = headHtml(group({ files: [lead], sections }), markdownHtml);
+  const html = headHtml(group({ files: [lead], sections }), markdownHtml, drawn);
 
   assert.ok(html.includes('<button type="button" class="md-link" data-open=".scratch/e/1-one.md">one</button>'));
   assert.equal(html.includes('data-open="../gone.md"'), false, "a link to nothing became a control");

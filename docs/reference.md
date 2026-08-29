@@ -234,18 +234,27 @@ the board offers none.
 
 ## Icons
 
-Every row in the ticket detail carries a small glyph beside its name. The icons are
+Every row in the ticket detail carries a small glyph beside its name, and so do the lane
+headers, the tab bar, and the folds on a group surface. The icons are
 [Octicons](https://github.com/primer/octicons), MIT, inlined as path data so a baked board still
 fetches nothing.
 
 The set is deliberately small, because every icon is bytes in every board:
 
-`alert`, `book`, `calendar`, `check`, `columns`, `copy`, `cross-reference`, `file`, `link`,
-`milestone`, `package`, `person`, `tag`, `workflow`.
+`alert`, `blocked`, `book`, `calendar`, `check`, `circle-slash`, `columns`, `copy`,
+`cross-reference`, `file`, `issue-opened`, `link`, `milestone`, `note`, `package`, `person`,
+`question`, `tag`, `workflow`.
 
 The rows the board builds itself are fixed: `lane` takes `columns`, `path` takes `file`, `dates`
 takes `calendar`, and `refs` takes `cross-reference`. The copy button in the ticket header takes
 `copy`, and swaps to `check` while it confirms.
+
+The board's own furniture is fixed too. A lane header on a kanban board takes `columns`. On an
+effort map the three lanes read as settled, open, and obstructed, so `behind-us` takes `check`,
+`takeable-now` takes `issue-opened`, and `still-blocked` takes `blocked`. The folds beside the
+map take `note`, `question`, `circle-slash`, and `file`, in that order. A tab wears what it
+opens: `columns` for the board, `milestone` for an effort, `book` for a context, and `package`
+for a feature. The scan notes button takes `alert`.
 
 A metadata row takes the `icon` its facet names. With no `icon` named, these field names carry a
 default, so a board reads right with no config at all:

@@ -2,12 +2,27 @@ const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'
 const escapeHtml = (value) =>
   String(value == null ? "" : value).replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
 
-export const LANE_GLYPH =
-  '<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">' +
-  '<path d="M1.5 1.5h13v13h-13v-13Zm1.5 1.5v10h10V3H3Z"/><path d="M5.5 5.5h5v5h-5v-5Z"/></svg>';
-
 export const OUT_OF_SCOPE = "out-of-scope";
 const BEHIND_US = "behind-us";
+
+/* The path data lives in the board script, so a glyph arrives here the way the renderer does:
+   as a function this module calls by name. Settled, open, obstructed. */
+const COLUMN_ICONS = new Map([
+  [BEHIND_US, "check"],
+  ["takeable-now", "issue-opened"],
+  ["still-blocked", "blocked"],
+]);
+
+export const columnIcon = (key) => COLUMN_ICONS.get(key) || "";
+
+const FOLD_ICONS = new Map([
+  ["notes", "note"],
+  ["not yet specified", "question"],
+  ["out of scope", "circle-slash"],
+  ["documents", "file"],
+]);
+
+export const foldIcon = (name) => FOLD_ICONS.get(name) || "";
 
 export const dirOf = (path) =>
   path.lastIndexOf("/") === -1 ? "" : path.slice(0, path.lastIndexOf("/"));
@@ -88,9 +103,10 @@ function countOf(source) {
   return blocks;
 }
 
-function foldHtml(name, count, body) {
+function foldHtml(name, count, body, glyph) {
   return (
     '<details class="wf-fold"><summary class="wf-fold-btn">' +
+    '<span class="wf-fold-glyph" aria-hidden="true">' + glyph(foldIcon(name)) + "</span>" +
     '<span class="wf-fold-name">' + escapeHtml(name) + "</span>" +
     '<span class="wf-fold-count">' + count + "</span></summary>" +
     '<div class="wf-fold-body wf-md">' + body + "</div></details>"
@@ -131,8 +147,9 @@ function leadTitle(group, lead) {
   );
 }
 
-/** `markdownHtml(base, source)` comes in, because a link resolves against the payload. */
-export function headHtml(group, markdownHtml) {
+/** `markdownHtml(base, source)` and `glyph(name)` come in, because neither belongs to a pure
+ *  helper: a link resolves against the payload, and the icon path data lives in the board. */
+export function headHtml(group, markdownHtml, glyph) {
   const base = baseOf(group);
   const lead = group.files.filter((file) => file.role === "lead")[0] || null;
   const sections = group.sections;
@@ -141,21 +158,24 @@ export function headHtml(group, markdownHtml) {
   const docs = group.files.filter((file) => file.role === "other");
   const folds = [];
 
-  if (sections.notes) folds.push(foldHtml("notes", countOf(sections.notes), markdownHtml(base, sections.notes)));
+  if (sections.notes) {
+    folds.push(foldHtml("notes", countOf(sections.notes), markdownHtml(base, sections.notes), glyph));
+  }
   if (sections.fog) {
-    folds.push(foldHtml("not yet specified", countOf(sections.fog), markdownHtml(base, sections.fog)));
+    folds.push(foldHtml("not yet specified", countOf(sections.fog), markdownHtml(base, sections.fog), glyph));
   }
   if (sections.outOfScope || spare.length) {
     folds.push(
       foldHtml(
         "out of scope",
         countOf(sections.outOfScope) + spare.length,
-        (sections.outOfScope ? markdownHtml(base, sections.outOfScope) : "") + rowsHtml(spare)
+        (sections.outOfScope ? markdownHtml(base, sections.outOfScope) : "") + rowsHtml(spare),
+        glyph
       )
     );
   }
   if (docs.length && group.kind !== "context") {
-    folds.push(foldHtml("documents", docs.length, docsHtml(group, markdownHtml)));
+    folds.push(foldHtml("documents", docs.length, docsHtml(group, markdownHtml), glyph));
   }
 
   return (
@@ -186,7 +206,7 @@ export function cardHtmlFor(file) {
   );
 }
 
-export function columnHtml(group, key) {
+export function columnHtml(group, key, glyph) {
   const files = group.files.filter((file) => file.state === key);
   const claimed = key === "takeable-now" ? files.filter((file) => file.claimed).length : 0;
   const foldable = key === BEHIND_US;
@@ -194,7 +214,7 @@ export function columnHtml(group, key) {
     '<section class="wf-col" data-state="' + key + '"' +
     ' aria-label="' + columnName(key) + '">' +
     '<header class="wf-col-head">' +
-    '<span class="wf-col-glyph" aria-hidden="true">' + LANE_GLYPH + "</span>" +
+    '<span class="wf-col-glyph" aria-hidden="true">' + glyph(columnIcon(key)) + "</span>" +
     '<h2 class="wf-col-name">' + columnName(key) + "</h2>" +
     '<span class="wf-col-count">' + (files.length - claimed) + "</span>" +
     (claimed ? '<span class="wf-col-claimed">+' + claimed + " claimed</span>" : "") +

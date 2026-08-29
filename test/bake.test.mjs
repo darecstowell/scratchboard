@@ -184,7 +184,7 @@ test("the markup helpers travel inside the board's one script, with no module ke
   const html = await bake({ payload: payloadWith("plain") });
   const helpers = await readFile(new URL("../src/ui/board-render.mjs", import.meta.url), "utf8");
 
-  assert.match(helpers, /^export function headHtml\(group, markdownHtml\) \{$/m, "the seam is gone");
+  assert.match(helpers, /^export function headHtml\(group, markdownHtml, glyph\) \{$/m, "the seam is gone");
   assert.equal(html.includes("export function headHtml"), false, "a module keyword reached the page");
   assert.equal(html.split("function headHtml(").length - 1, 1, "the helpers are inlined once");
 

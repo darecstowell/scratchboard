@@ -24,17 +24,22 @@ export const PATH_TOKEN = "{path}";
 /** The Octicons the board inlines. `test/icons.test.mjs` holds this to what the UI actually has. */
 export const ICON_NAMES = new Set([
   "alert",
+  "blocked",
   "book",
   "calendar",
   "check",
+  "circle-slash",
   "columns",
   "copy",
   "cross-reference",
   "file",
+  "issue-opened",
   "link",
   "milestone",
+  "note",
   "package",
   "person",
+  "question",
   "tag",
   "workflow",
 ]);
