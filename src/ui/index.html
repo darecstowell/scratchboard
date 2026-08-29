@@ -331,7 +331,8 @@ SCAN NOTES
   carrying [data-notes-copy], which copies every note plus the sentence
   naming the skill that repairs them, and a .notes-copy-line that says so in
   the panel. The button wears the same three labels, "copy fix prompt" at
-  rest. notesPrompt in board-render.mjs writes the text.
+  rest. notesPrompt in board-render.mjs writes the text, and it fences the
+  notes as data, because a note quotes a stranger's file names.
   Both state labels revert to rest after 1400 ms. CSS uppercases the label;
   keep the DOM text lowercase. navigator.clipboard.writeText runs first and
   a hidden textarea plus document.execCommand("copy") is the fallback, so
