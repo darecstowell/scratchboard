@@ -1,6 +1,6 @@
 {
   "name": "scratchboard",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Render the markdown tickets already in your repo as a kanban board. Reads the file layout the mattpocock/skills agent skills write. Read-only by choice, zero config.",
   "type": "module",
   "license": "MIT",
