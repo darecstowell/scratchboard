@@ -648,13 +648,18 @@ test("ids scope to the group, so a collision inside one warns and one across doe
   assert.equal(payload.counts.total, 1);
   const inside = payload.warnings.filter((one) => one.reason.startsWith("id 03 is on"));
   assert.equal(inside.length, 1);
-  assert.match(inside[0].reason, /2 files in \.scratch\/an-effort/);
+  assert.match(inside[0].reason, /2 issues in \.scratch\/an-effort/);
   assert.match(inside[0].reason, /issues\/03-one\.md/);
   assert.match(inside[0].reason, /issues\/03-two\.md/);
   assert.equal(
     payload.warnings.some((one) => one.reason.includes("03-backlog.md")),
     false,
     "the backlog ticket numbered 03 no longer collides"
+  );
+  assert.equal(
+    payload.warnings.some((one) => one.reason.includes("assets/03-one.md")),
+    false,
+    "a document beside the issues carries an id nothing reads"
   );
 });
 

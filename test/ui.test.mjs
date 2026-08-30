@@ -364,3 +364,16 @@ test("every class a wayfinder card emits has a rule", () => {
     assert.match(css, new RegExp("\\." + name + "[\\s,:.{]"), `.${name} is rendered, so it is styled`);
   }
 });
+
+/** The notes panel is built by the script alone, so its classes still have to reach the sheet. */
+test("the scan notes copy button is built, wired, and styled", () => {
+  const board = source("board.js");
+  const css = source("board.css");
+
+  assert.match(board, /data-notes-copy/, "the script builds the button");
+  assert.match(board, /copyNotes\(notesCopy\)/, "the click and the key both reach one action");
+  assert.match(board, /copyText\(notesPrompt\(warnings\)/, "it copies the prompt, not the notes alone");
+  for (const name of ["notes-copy", "notes-copy-line", "detail-copy"]) {
+    assert.match(css, new RegExp("\\." + name + "[\\s,:.{]"), `.${name} is rendered, so it is styled`);
+  }
+});

@@ -894,18 +894,25 @@
   }
 
   const COPY_LABELS = { rest: "copy path", done: "copied", failed: "copy failed" };
+  const NOTES_COPY_LABELS = { rest: "copy fix prompt", done: "copied", failed: "copy failed" };
   const COPY_REVERT_MS = 1400;
   let copyTimer = null;
 
-  function markCopy(result) {
+  function markButton(button, labels, result) {
     clearTimeout(copyTimer);
-    const text = el.detailCopy.querySelector(".detail-copy-text");
-    const glyph = el.detailCopy.querySelector(".detail-copy-glyph");
-    if (text) text.textContent = COPY_LABELS[result];
+    const text = button.querySelector(".detail-copy-text");
+    const glyph = button.querySelector(".detail-copy-glyph");
+    if (text) text.textContent = labels[result];
     if (glyph) glyph.innerHTML = glyphSvg(result === "done" ? "check" : "copy", 12);
-    el.detailCopy.classList.toggle("is-done", result === "done");
-    el.detailCopy.classList.toggle("is-failed", result === "failed");
-    if (result !== "rest") copyTimer = setTimeout(() => markCopy("rest"), COPY_REVERT_MS);
+    button.classList.toggle("is-done", result === "done");
+    button.classList.toggle("is-failed", result === "failed");
+    if (result !== "rest") {
+      copyTimer = setTimeout(() => markButton(button, labels, "rest"), COPY_REVERT_MS);
+    }
+  }
+
+  function markCopy(result) {
+    markButton(el.detailCopy, COPY_LABELS, result);
   }
 
   function copyByCommand(text) {
@@ -927,11 +934,11 @@
     return ok;
   }
 
-  function copyText(text) {
+  function copyText(text, mark = markCopy) {
     if (!text) return;
-    const byCommand = () => markCopy(copyByCommand(text) ? "done" : "failed");
+    const byCommand = () => mark(copyByCommand(text) ? "done" : "failed");
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => markCopy("done"), byCommand);
+      navigator.clipboard.writeText(text).then(() => mark("done"), byCommand);
       return;
     }
     byCommand();
@@ -944,6 +951,11 @@
 
   function copyPath() {
     copyText(openPathText());
+  }
+
+  /** The notes panel copies itself, so an agent gets the whole list and the skill that repairs it. */
+  function copyNotes(button) {
+    copyText(notesPrompt(warnings), (result) => markButton(button, NOTES_COPY_LABELS, result));
   }
 
   /* The declared list is the whole menu, so a board that declares none grows no caret. */
@@ -1074,7 +1086,14 @@
     setSlot("id", "");
     setSlot("title", "Scan notes");
     el.detailBody.innerHTML =
-      "<p>What the scan wants you to know. Every ticket it could read is on the board.</p><ul>" +
+      "<p>What the scan wants you to know. Every ticket it could read is on the board.</p>" +
+      '<div class="notes-copy">' +
+      '<button type="button" class="detail-copy" data-notes-copy>' +
+      '<span class="detail-copy-glyph" aria-hidden="true">' + glyphSvg("copy", 12) + "</span>" +
+      '<span class="detail-copy-text">' + NOTES_COPY_LABELS.rest + "</span></button>" +
+      '<span class="notes-copy-line">Copies every note below, worded as an instruction to fix them' +
+      " with the " + esc(NOTES_SKILL) + " skill. Paste it to an agent in this repo.</span>" +
+      "</div><ul>" +
       warnings
         .map((note) => {
           const where = note && note.path ? "<code>" + esc(note.path) + "</code> " : "";
@@ -1084,6 +1103,8 @@
         })
         .join("") +
       "</ul>";
+    const notesCopy = el.detailBody.querySelector("[data-notes-copy]");
+    if (notesCopy) notesCopy.addEventListener("click", () => copyNotes(notesCopy));
     el.detailBody.scrollTop = 0;
     openPath = null;
     if (!el.detail.open) el.detail.showModal();
@@ -1411,15 +1432,22 @@
     if (
       (event.key === "c" || event.key === "C") &&
       el.detail.open &&
-      !el.detailCopy.hidden &&
       !typing &&
       !event.metaKey &&
       !event.ctrlKey &&
       !event.altKey
     ) {
-      event.preventDefault();
-      copyPath();
-      return;
+      const notesCopy = el.detailBody.querySelector("[data-notes-copy]");
+      if (notesCopy) {
+        event.preventDefault();
+        copyNotes(notesCopy);
+        return;
+      }
+      if (!el.detailCopy.hidden) {
+        event.preventDefault();
+        copyPath();
+        return;
+      }
     }
     if (event.key !== "Escape") return;
     if (el.detail.open) return;

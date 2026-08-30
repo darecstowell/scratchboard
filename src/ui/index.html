@@ -312,7 +312,8 @@ KEYBOARD
   The detail dialog: open with document.getElementById("detail").showModal()
   so Escape-to-close and the backdrop come from the platform. Wire
   #detail-close to dialog.close(). Return focus to the opening .tkt-open.
-  "c"  (dialog open, focus not in an input) runs the #detail-copy action.
+  "c"  (dialog open, focus not in an input) runs the #detail-copy action,
+       or the [data-notes-copy] action while the scan notes are open.
 
 COPY PATH BUTTON
   #detail-copy sits in .detail-top between [data-detail-id] and .detail-esc,
@@ -323,6 +324,15 @@ COPY PATH BUTTON
     rest    "copy path"    no state class
     done    "copied"       class "is-done"     (green)
     failed  "copy failed"  class "is-failed"   (red)
+
+SCAN NOTES
+  The notes panel fills the same dialog with #detail-copy hidden. board.js
+  builds a .notes-copy row at the top of the body: a .detail-copy button
+  carrying [data-notes-copy], which copies every note plus the sentence
+  naming the skill that repairs them, and a .notes-copy-line that says so in
+  the panel. The button wears the same three labels, "copy fix prompt" at
+  rest. notesPrompt in board-render.mjs writes the text, and it fences the
+  notes as data, because a note quotes a stranger's file names.
   Both state labels revert to rest after 1400 ms. CSS uppercases the label;
   keep the DOM text lowercase. navigator.clipboard.writeText runs first and
   a hidden textarea plus document.execCommand("copy") is the fallback, so

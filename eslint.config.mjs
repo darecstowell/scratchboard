@@ -180,6 +180,8 @@ export default [
         EDGE_HIDDEN: "readonly",
         headHtml: "readonly",
         inBoardTarget: "readonly",
+        notesPrompt: "readonly",
+        NOTES_SKILL: "readonly",
         revealRanks: "readonly",
         rowsHtml: "readonly",
       },
